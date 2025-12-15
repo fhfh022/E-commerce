@@ -3,6 +3,7 @@ import { Toaster } from "react-hot-toast";
 import StoreProvider from "@/app/StoreProvider";
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
+import SyncUser from "@/app/SyncUser";
 
 const outfit = Outfit({ subsets: ["latin"], weight: ["400", "500", "600"] });
 
@@ -18,6 +19,7 @@ export default function RootLayout({ children }) {
         <body className={`${outfit.className} antialiased`}>
           <StoreProvider>
             <Toaster />
+            <SyncUser />
             {children}
           </StoreProvider>
         </body>

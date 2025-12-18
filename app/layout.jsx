@@ -4,6 +4,7 @@ import StoreProvider from "@/app/StoreProvider";
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import SyncUser from "@/app/SyncUser";
+import RoleInitializer from "@/components/RoleInitializer";
 
 const outfit = Outfit({ subsets: ["latin"], weight: ["400", "500", "600"] });
 
@@ -20,6 +21,7 @@ export default function RootLayout({ children }) {
           <StoreProvider>
             <Toaster />
             <SyncUser />
+            <RoleInitializer />
             {children}
           </StoreProvider>
         </body>

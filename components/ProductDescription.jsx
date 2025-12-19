@@ -1,31 +1,75 @@
 'use client'
-import { ArrowRight, StarIcon } from "lucide-react"
-import Image from "next/image"
-import Link from "next/link"
 import { useState } from "react"
 
 const ProductDescription = ({ product }) => {
 
-    const [selectedTab, setSelectedTab] = useState('Description')
+    // เพิ่ม Tab 'Specifications' เข้าไปใน Array
+    const [selectedTab, setSelectedTab] = useState('Specifications')
+    const tabs = ['Specifications', 'Reviews']; 
+
+    // ดึงข้อมูล Specs (กัน Error ถ้าเป็น null)
+    const specs = product.specs || {};
+
+    // กำหนด Mapping ข้อมูลที่จะแสดงในตาราง
+    const specList = [
+        { label: "Brand", value: product.brand },
+        { label: "Model", value: product.model },
+        { label: "Processor", value: specs.processor },
+        { label: "Graphics", value: specs.graphics },
+        { label: "Display Screen", value: specs.display },
+        { label: "Main Memory", value: specs.ram },
+        { label: "Storage", value: specs.storage },
+        { label: "Network", value: specs.network },
+        { label: "Wireless", value: specs.wireless },
+        { label: "Bluetooth", value: specs.bluetooth },
+        { label: "Ports", value: specs.ports },
+        { label: "Battery", value: specs.battery },
+        { label: "OS", value: specs.os },
+        { label: "Weight", value: specs.weight },
+    ];
 
     return (
-        <div className="my-18 text-sm text-slate-600">
+        <div className="my-16 text-sm text-slate-600">
 
-            {/* Tabs */}
-            {/* ['Description', 'Reviews'] */}
-            <div className="flex border-b border-slate-200 mb-6 max-w-2xl">
-                
-
-                {['Description'].map((tab, index) => (
-                    <button className={`${tab === selectedTab ? 'border-b-[1.5px] font-semibold' : 'text-slate-400'} px-3 py-2 font-medium`} key={index} onClick={() => setSelectedTab(tab)}>
+            {/* Tabs Header */}
+            <div className="flex border-b border-slate-200 mb-8">
+                {tabs.map((tab, index) => (
+                    <button 
+                        key={index} 
+                        onClick={() => setSelectedTab(tab)}
+                        className={`px-6 py-3 font-medium transition-colors border-b-2 ${
+                            tab === selectedTab 
+                            ? 'border-slate-800 text-slate-800 font-semibold' 
+                            : 'border-transparent text-slate-400 hover:text-slate-600'
+                        }`}
+                    >
                         {tab}
                     </button>
                 ))}
             </div>
 
-            {/* Description */}
-            {selectedTab === "Description" && (
-                <p className="max-w-xl">{product.description}</p>
+            {/* Content: Specifications */}
+            {selectedTab === "Specifications" && (
+                <div className="animate-fade-in">
+                    <div className="border rounded-lg overflow-hidden max-w-3xl">
+                        {specList.map((item, index) => (
+                            item.value ? (
+                                <div key={index} className={`flex flex-col sm:flex-row border-b last:border-b-0 ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50'}`}>
+                                    <div className="sm:w-1/3 p-4 font-medium text-slate-700 sm:border-r">
+                                        {item.label}
+                                    </div>
+                                    <div className="sm:w-2/3 p-4 text-slate-600 break-words">
+                                        {item.value}
+                                    </div>
+                                </div>
+                            ) : null
+                        ))}
+                        
+                        {specList.every(s => !s.value) && (
+                             <div className="p-6 text-center text-slate-400">No specifications available for this product.</div>
+                        )}
+                    </div>
+                </div>
             )}
 
             {/* Reviews */}
@@ -49,14 +93,7 @@ const ProductDescription = ({ product }) => {
                 </div>
             )} */}
 
-            {/* Store Page */}
-            {/* <div className="flex gap-3 mt-14">
-                <Image src={product.store.logo} alt="" className="size-11 rounded-full ring ring-slate-400" width={100} height={100} />
-                <div>
-                    <p className="font-medium text-slate-600">Product by {product.store.name}</p>
-                    <Link href={`/shop/${product.store.username}`} className="flex items-center gap-1.5 text-green-500"> view store <ArrowRight size={14} /></Link>
-                </div>
-            </div> */}
+           
         </div>
     )
 }

@@ -27,8 +27,8 @@ export default function StoreAddProduct() {
     name: "", brand: "", model: "", price: "", category: "",
   });
   const [specs, setSpecs] = useState({
-    processor: "", graphics: "", ram: "", storage: "", display: "", ports: "",
-    wireless: "", bluetooth: "", network: "", battery: "", os: "", weight: "",
+    processor: "", graphics: "", display: "",ram: "", storage: "", network: "",  
+    wireless: "",bluetooth: "",ports: "",  battery: "", os: "", weight: "",
   });
 
   /* ---------- Handlers ---------- */
@@ -83,9 +83,9 @@ export default function StoreAddProduct() {
       setSpecs({
         processor: "",
         graphics: "",
+        display: "",
         ram: "",
         storage: "",
-        display: "",
         ports: "",
         wireless: "",
         bluetooth: "",
@@ -106,7 +106,7 @@ export default function StoreAddProduct() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto py-10 px-4">
+    <div className="max-w-4xl mx-auto  px-4">
       <form onSubmit={onSubmitHandler} className="space-y-8">
         <header className="border-b border-slate-200 pb-5">
           <h1 className="text-2xl font-bold text-slate-800">Add New Notebook</h1>

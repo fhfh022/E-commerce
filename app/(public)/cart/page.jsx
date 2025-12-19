@@ -73,9 +73,9 @@ export default function Cart() {
                                                 <Image src={item.images[0]} className="h-14 w-auto" alt="" width={45} height={45} />
                                             </div>
                                             <div>
-                                                <p className="max-sm:text-sm">{item.name}</p>
-                                                <p className="text-xs text-slate-500">{item.category}</p>
-                                                <p>{currency}{item.price}</p>
+                                                <p className="max-sm:text-sm">{item.name} {item.model}</p>
+                                                <p className="text-xs text-slate-500 uppercase" >{item.category}</p>
+                                                <p>{currency} {item.price}</p>
                                             </div>
                                         </td>
                                         <td className="text-center">

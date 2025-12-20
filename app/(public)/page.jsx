@@ -1,9 +1,9 @@
 'use client'
-import BestSelling from "@/components/BestSelling";
-import Hero from "@/components/Hero";
-import Newsletter from "@/components/Newsletter";
-import OurSpecs from "@/components/OurSpec";
-import LatestProducts from "@/components/LatestProducts";
+import BestSelling from "@/components/product/BestSelling";
+import Hero from "@/components/layout/Hero";
+import Newsletter from "@/components/layout/Newsletter";
+import OurSpecs from "@/components/product/OurSpec";
+import LatestProducts from "@/components/product/LatestProducts";
 
 export default function Home() {
     return (

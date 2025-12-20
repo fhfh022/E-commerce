@@ -1,4 +1,4 @@
-import StoreLayout from "@/components/store/StoreLayout";
+import StoreLayout from "@/components/layout/store/StoreLayout";
 
 export const metadata = {
     title: "GoCart. - Store Dashboard",

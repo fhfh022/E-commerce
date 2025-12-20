@@ -26,11 +26,10 @@ export default clerkMiddleware(async (auth, req: NextRequest) => {
     }
 
     // เช็ก role จาก Supabase
-    const { data, error } = await supabase
-      .from("users")
-      .select("role")
-      .eq("clerk_id", userId)
-      .single();
+    const { data, error } = await supabase.from("users")
+    .select("role")
+    .eq("clerk_id", userId)
+    .single();
 
     // ไม่ใช่ admin
     if (error || data?.role !== "admin") {

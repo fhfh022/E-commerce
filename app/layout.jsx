@@ -3,8 +3,9 @@ import { Toaster } from "react-hot-toast";
 import StoreProvider from "@/app/StoreProvider";
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
-import SyncUser from "@/app/SyncUser";
-import RoleInitializer from "@/components/RoleInitializer";
+import SyncUser from "@/components/providers/SyncUser";
+import RoleInitializer from "@/components/providers/RoleInitializer";
+import AppInitializer from "../components/providers/AppInitializer";
 
 const outfit = Outfit({ subsets: ["latin"], weight: ["400", "500", "600"] });
 
@@ -19,10 +20,12 @@ export default function RootLayout({ children }) {
       <html lang="en">
         <body className={`${outfit.className} antialiased`}>
           <StoreProvider>
-            <Toaster />
-            <SyncUser />
-            <RoleInitializer />
-            {children}
+            <AppInitializer>
+              <Toaster />
+              <SyncUser />
+              <RoleInitializer />
+              {children}
+            </AppInitializer>
           </StoreProvider>
         </body>
       </html>

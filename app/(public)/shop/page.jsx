@@ -1,6 +1,6 @@
 "use client";
 import { Suspense, useState, useMemo, useEffect } from "react";
-import ProductCard from "@/components/ProductCard";
+import ProductCard from "@/components/product/ProductCard";
 import { SlidersHorizontal, X, ChevronDown, Check } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSelector, useDispatch } from "react-redux";
@@ -23,34 +23,6 @@ function ShopContent() {
   const [selectedBrands, setSelectedBrands] = useState(new Set());
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-
-  // -------------------------------------------------------
-  // 1️⃣ Fetch Data from Supabase
-  // -------------------------------------------------------
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        setIsLoading(true);
-        // ดึงข้อมูลสินค้าทั้งหมด เรียงตามวันที่ล่าสุด
-        const { data, error } = await supabase
-          .from('products')
-          .select('*')
-          .order('created_at', { ascending: false });
-
-        if (error) throw error;
-
-        if (data) {
-          dispatch(setProduct(data));
-        }
-      } catch (error) {
-        console.error("Error fetching products:", error.message);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchProducts();
-  }, [dispatch]);
 
   // -------------------------------------------------------
   // 2️⃣ Filter & Sort Logic

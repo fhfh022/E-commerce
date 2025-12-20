@@ -1,53 +1,136 @@
-<div align="center">
-  <h1><img src="https://gocartshop.in/favicon.ico" width="20" height="20" alt="GoCart Favicon">
-   GoCart</h1>
-  <p>
-    An open-source multi-vendor e-commerce platform built with Next.js and Tailwind CSS.
-  </p>
-  <p>
-    <a href="https://github.com/GreatStackDev/goCart/blob/main/LICENSE.md"><img src="https://img.shields.io/github/license/GreatStackDev/goCart?style=for-the-badge" alt="License"></a>
-    <a href="https://github.com/GreatStackDev/goCart/pulls"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=for-the-badge" alt="PRs Welcome"></a>
-    <a href="https://github.com/GreatStackDev/goCart/issues"><img src="https://img.shields.io/github/issues/GreatStackDev/goCart?style=for-the-badge" alt="GitHub issues"></a>
-  </p>
-</div>
+# GoCart - E-commerce Platform
 
----
+A modern, full-featured e-commerce application built with Next.js, featuring user authentication, product management, shopping cart, and admin/store dashboards.
 
-## 📖 Table of Contents
+## 🚀 Features
 
-- [✨ Features](#-features)
-- [🛠️ Tech Stack](#-tech-stack)
-- [🚀 Getting Started](#-getting-started)
-- [🤝 Contributing](#-contributing)
-- [📜 License](#-license)
+- **User Authentication**: Secure login/signup with Clerk
+- **Product Management**: Browse, search, and filter products
+- **Shopping Cart**: Add, remove, and manage cart items
+- **Order Management**: Place orders, track status, and view order history
+- **Store Management**: Sellers can manage their products and orders
+- **Admin Dashboard**: Comprehensive admin panel for platform management
+- **Responsive Design**: Mobile-first design with modern UI
+- **Real-time Updates**: Live cart and product updates
 
----
+## 🛠 Tech Stack
 
-## Features
+- **Frontend**: Next.js 15, React 19, TypeScript
+- **Styling**: Tailwind CSS
+- **Authentication**: Clerk
+- **Database**: Supabase
+- **State Management**: Redux Toolkit
+- **Icons**: Lucide React
+- **Deployment**: Ready for Vercel/Netlify
 
-- **Multi-Vendor Architecture:** Allows multiple vendors to register, manage their own products, and sell on a single platform.
-- **Customer-Facing Storefront:** A beautiful and responsive user interface for customers to browse and purchase products.
-- **Vendor Dashboards:** Dedicated dashboards for vendors to manage products, view sales analytics, and track orders.
-- **Admin Panel:** A comprehensive dashboard for platform administrators to oversee vendors, products, and commissions.
+## 📁 Project Structure
 
-## 🛠️ Tech Stack <a name="-tech-stack"></a>
+```
+gocart-main/
+├── app/                          # Next.js app router pages
+│   ├── (public)/                 # Public pages
+│   │   ├── cart/                 # Shopping cart
+│   │   ├── favorites/            # User favorites
+│   │   ├── orders/               # Order history
+│   │   ├── product/[productId]/  # Product details
+│   │   ├── shop/                 # Product listing
+│   │   └── page.jsx              # Homepage
+│   ├── admin/                    # Admin dashboard
+│   ├── store/                    # Store management
+│   ├── layout.jsx                # Root layout
+│   └── page.jsx                  # Home redirect
+├── components/                   # React components
+│   ├── layout/                   # Layout components
+│   │   ├── admin/                # Admin UI components
+│   │   ├── store/                # Store UI components
+│   │   └── [Banner, Footer, etc.]
+│   ├── product/                  # Product-related components
+│   │   └── [ProductCard, etc.]
+│   └── providers/                # Context providers
+├── lib/                          # Utilities and configurations
+│   ├── features/                 # Redux slices
+│   ├── store.js                  # Redux store
+│   └── supabase.ts               # Database client
+├── assets/                       # Static assets
+├── middleware.ts                 # Next.js middleware
+├── tailwind.config.js            # Tailwind configuration
+└── package.json                  # Dependencies
+```
 
-- **Framework:** Next.js
-- **Styling:** Tailwind CSS
-- **UI Components:** Lucide React for icons
-- **State Management:** Redux Toolkit
+## 🚀 Getting Started
 
-## 🚀 Getting Started <a name="-getting-started"></a>
+### Prerequisites
 
-First, install the dependencies. We recommend using `npm` for this project.
+- Node.js 18+
+- npm or yarn
+- Supabase account
+- Clerk account
 
+### Installation
+
+1. Clone the repository:
+```bash
+git clone https://github.com/fhfh022/E-commerce.git
+cd gocart-main
+```
+
+2. Install dependencies:
 ```bash
 npm install
 ```
 
-Then, run the development server:
+3. Set up environment variables:
+Create a `.env.local` file with:
+```env
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_key
+CLERK_SECRET_KEY=your_clerk_secret
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+NEXT_PUBLIC_CURRENCY_SYMBOL=$
+```
 
+4. Run the development server:
 ```bash
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+## 📜 Available Scripts
+
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run start` - Start production server
+- `npm run lint` - Run ESLint
+
+## 🎯 Key Components
+
+### Components Organization
+- **providers/**: Authentication and app initialization
+- **layout/**: UI layout components (Navbar, Footer, etc.)
+- **product/**: Product display and management components
+
+### Main Features
+- **Public Pages**: Homepage, product browsing, cart, checkout
+- **User Dashboard**: Order history, favorites, profile
+- **Store Dashboard**: Product management, order fulfillment
+- **Admin Dashboard**: Platform analytics, user management
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/your-feature`
+3. Commit changes: `git commit -m 'Add your feature'`
+4. Push to branch: `git push origin feature/your-feature`
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
+
+## 📞 Contact
+
+For questions or support, please open an issue on GitHub.
 npm run dev
 # or
 yarn dev

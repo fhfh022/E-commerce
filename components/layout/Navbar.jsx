@@ -1,50 +1,59 @@
 "use client";
-import { Search, ShoppingCart, Menu, X, PackageIcon ,ClipboardList,Package2 } from "lucide-react";
+import {
+  Search,
+  ShoppingCart,
+  Menu,
+  X,
+  PackageIcon,
+  ClipboardList,
+  Package2,
+  Heart,
+} from "lucide-react"; // [1] เพิ่ม Heart
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useSelector } from "react-redux";
 import Banner from "./Banner";
 import { useUser, useClerk, UserButton } from "@clerk/nextjs";
+
 const Navbar = () => {
   const { user, isLoaded } = useUser();
   const { openSignIn } = useClerk();
   const router = useRouter();
   const role = user?.publicMetadata?.role;
   const isAdmin = role === "admin";
- 
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [search, setSearch] = useState("");
-  const [isSearchOpen, setIsSearchOpen] = useState(false); // State สำหรับควบคุม Dropdown Search
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   const cartCount = useSelector((state) => state.cart.total);
-  const products = useSelector((state) => state.product.list); // ดึงรายการสินค้าทั้งหมด
+  // [2] ดึงจำนวน Favorites
+  const favoriteCount = useSelector((state) => state.favorite.items.length);
+  const products = useSelector((state) => state.product.list);
 
-  // 1. Logic กรองคำแนะนำการค้นหา (Suggestions)
+  // Logic กรองคำแนะนำการค้นหา
   const getSuggestions = () => {
-    if (!search || search.length < 2) return []; // พิมพ์อย่างน้อย 2 ตัวอักษรถึงจะแสดง
-
+    if (!search || search.length < 2) return [];
     return products
       .filter((product) =>
         product.name.toLowerCase().includes(search.toLowerCase())
       )
-      .slice(0, 5); // จำกัดผลลัพธ์ไม่เกิน 5 รายการ
+      .slice(0, 5);
   };
   const searchSuggestions = getSuggestions();
 
   const handleSearch = (e) => {
     e.preventDefault();
     setIsMenuOpen(false);
-    setIsSearchOpen(false); // เมื่อค้นหาเสร็จ ปิด Dropdown
+    setIsSearchOpen(false);
     router.push(`/shop?search=${search}`);
   };
 
-  // ฟังก์ชันนี้จะทำงานเมื่อคลิกที่คำแนะนำ
   const handleSuggestionClick = (productName) => {
-    setSearch(productName); // ตั้งค่าช่องค้นหาเป็นชื่อสินค้าที่เลือก
-    setIsSearchOpen(false); // ปิด Dropdown
-    router.push(`/shop?search=${productName}`); // นำทางไปหน้าผลลัพธ์
+    setSearch(productName);
+    setIsSearchOpen(false);
+    router.push(`/shop?search=${productName}`);
   };
 
   if (!isLoaded) return null;
@@ -78,14 +87,10 @@ const Navbar = () => {
               <Link href="/shop" className="transition hover:text-green-600">
                 Shop
               </Link>
-              <Link href="/" className="transition hover:text-green-600">
-                About
-              </Link>
-              <Link href="/" className="transition hover:text-green-600">
-                Contact
-              </Link>
 
-              {/* 2. Desktop Search (เปลี่ยนเป็น Relative เพื่อให้ Dropdown ลอยทับได้) */}
+              {/* [3] ลบ Link Text 'Favorites' เดิมออกไปแล้ว */}
+
+              {/* Desktop Search */}
               <div className="relative hidden xl:block">
                 <form
                   onSubmit={handleSearch}
@@ -97,16 +102,14 @@ const Navbar = () => {
                     type="text"
                     placeholder="Search products"
                     value={search}
-                    // เมื่อโฟกัสที่ Input ให้เปิด Dropdown
                     onFocus={() => setIsSearchOpen(true)}
-                    // เมื่อออกจาก Input ให้ปิด Dropdown (ใช้ setTimeout เพื่อให้คลิก Link ใน Dropdown ทัน)
                     onBlur={() => setTimeout(() => setIsSearchOpen(false), 200)}
                     onChange={(e) => setSearch(e.target.value)}
                     required
                   />
                 </form>
 
-                {/* 3. Suggestion Dropdown UI */}
+                {/* Suggestion Dropdown UI */}
                 {isSearchOpen &&
                   search.length >= 2 &&
                   searchSuggestions.length > 0 && (
@@ -115,7 +118,6 @@ const Navbar = () => {
                         {searchSuggestions.map((product) => (
                           <li
                             key={product.id}
-                            // ใช้ onMouseDown แทน onClick เพื่อให้ทำงานทันทีก่อน onBlur ของ input จะสั่งปิด
                             onMouseDown={() =>
                               handleSuggestionClick(product.name)
                             }
@@ -128,7 +130,6 @@ const Navbar = () => {
                           </li>
                         ))}
                       </ul>
-                      {/* ปุ่ม "See all results" */}
                       <div
                         onMouseDown={handleSearch}
                         className="px-4 py-2 text-center text-xs bg-slate-50 text-slate-600 border-t hover:bg-slate-100 rounded-b-lg cursor-pointer transition"
@@ -137,7 +138,7 @@ const Navbar = () => {
                       </div>
                     </div>
                   )}
-                {/* 4. กรณีพิมพ์แล้วไม่พบสินค้า */}
+
                 {isSearchOpen &&
                   search.length >= 2 &&
                   searchSuggestions.length === 0 && (
@@ -147,19 +148,34 @@ const Navbar = () => {
                   )}
               </div>
 
-              {/* ... (Desktop Cart & Login buttons) ... */}
+              {/* [4] เพิ่ม Favorites Icon Link ตรงนี้ (คู่กับ Cart) */}
+              <Link
+                href="/favorites"
+                className="relative text-slate-600 transition hover:text-green-600"
+                title="My Favorites"
+              >
+                <Heart size={22} />
+                {favoriteCount > 0 && (
+                  <span className="absolute -top-1 -right-1 flex items-center justify-center size-3.5 bg-red-500 rounded-full text-[8px] text-white">
+                    {favoriteCount}
+                  </span>
+                )}
+              </Link>
+
+              {/* Cart */}
               <Link
                 href="/cart"
                 className="relative flex items-center gap-2 text-slate-600 transition hover:text-green-600"
               >
-                <ShoppingCart size={18} />
+                <ShoppingCart size={22} /> {/* ปรับ size ให้เท่ากับ Heart */}
                 Cart
                 {cartCount > 0 && (
-                  <button className="absolute -top-1 left-3 flex items-center justify-center size-3.5 bg-red-500 rounded-full text-[8px] text-white">
+                  <span className="absolute -top-1 left-3 flex items-center justify-center size-3.5 bg-red-500 rounded-full text-[8px] text-white">
                     {cartCount}
-                  </button>
+                  </span>
                 )}
               </Link>
+
               {!user ? (
                 <button
                   onClick={openSignIn}
@@ -186,7 +202,7 @@ const Navbar = () => {
 
                     {isAdmin && (
                       <UserButton.Action
-                       labelIcon={<Package2  size={16} />}
+                        labelIcon={<Package2 size={16} />}
                         label="Store Dashboard"
                         onClick={() => router.push("/store")}
                       />
@@ -196,7 +212,7 @@ const Navbar = () => {
               )}
             </section>
 
-            {/* ---------------- MOBILE TOGGLE & CONTROLS (unchanged) ---------------- */}
+            {/* ---------------- MOBILE TOGGLE & CONTROLS ---------------- */}
             <section
               id="mobile-controls"
               className="flex items-center gap-4 md:hidden"
@@ -204,9 +220,9 @@ const Navbar = () => {
               <Link href="/cart" className="relative text-slate-600">
                 <ShoppingCart size={22} />
                 {cartCount > 0 && (
-                  <button className="absolute -top-2 -right-2 flex items-center justify-center size-4 bg-red-500 rounded-full text-[8px] text-white">
+                  <span className="absolute -top-2 -right-2 flex items-center justify-center size-4 bg-red-500 rounded-full text-[8px] text-white">
                     {cartCount}
-                  </button>
+                  </span>
                 )}
               </Link>
 
@@ -249,19 +265,18 @@ const Navbar = () => {
             >
               Shop
             </Link>
+            {/* [5] ปรับ Mobile Menu ให้มีไอคอนหัวใจด้วย */}
             <Link
-              href="/"
+              href="/favorites"
               onClick={() => setIsMenuOpen(false)}
-              className="transition hover:text-green-600"
+              className="flex items-center gap-2 transition hover:text-green-600"
             >
-              About
-            </Link>
-            <Link
-              href="/"
-              onClick={() => setIsMenuOpen(false)}
-              className="transition hover:text-green-600"
-            >
-              Contact
+              <Heart size={18} /> Favorites
+              {favoriteCount > 0 && (
+                <span className="text-xs text-red-500 font-semibold">
+                  ({favoriteCount})
+                </span>
+              )}
             </Link>
 
             {/* Mobile Search Form */}
@@ -279,9 +294,8 @@ const Navbar = () => {
               />
             </form>
 
-            {/* ====== ส่วน Login/User ที่แก้ไขให้แสดงผลถูกต้อง ====== */}
+            {/* Login/User */}
             {!user ? (
-              // ถ้ายังไม่ Login ให้แสดงปุ่ม Login
               <button
                 onClick={openSignIn}
                 className="w-full py-3 bg-indigo-500 rounded-full text-white text-center mt-2 transition hover:bg-indigo-600"
@@ -289,20 +303,16 @@ const Navbar = () => {
                 Login
               </button>
             ) : (
-              // ถ้า Login แล้ว ให้แสดง User Avatar พร้อม Menu Item ที่จำเป็น
               <div className="mt-2 pt-2 border-t border-slate-100">
                 <div className="flex items-center justify-between text-sm text-slate-500 mb-2">
-                  {/* แสดง User Button หลัก เพื่อควบคุมเมนู */}
                   <div className="flex items-center gap-3">
                     <UserButton afterSignOutUrl="/" />
                     <span className="font-semibold text-slate-700">
                       {user.username || user.fullName}
                     </span>
                   </div>
-                  {/* Note: เราสามารถแสดงไอคอนอื่นๆ ข้างๆ UserButton ได้ ถ้าไม่ใช้ UserButton.Action */}
                 </div>
 
-                {/* เราสามารถใส่ลิงก์ตรงๆ แทน UserButton.Action ได้เพื่อให้แสดงผลแบบ Mobile list */}
                 <Link
                   href="/cart"
                   onClick={() => setIsMenuOpen(false)}
@@ -334,12 +344,11 @@ const Navbar = () => {
                     onClick={() => setIsMenuOpen(false)}
                     className="flex items-center gap-3 py-2 px-3 text-slate-600 hover:bg-slate-50 rounded-lg transition"
                   >
-                    <Package2  size={18} /> Store Dashboard
+                    <Package2 size={18} /> Store Dashboard
                   </Link>
                 )}
               </div>
             )}
-            {/* =================================================== */}
           </div>
         </section>
 

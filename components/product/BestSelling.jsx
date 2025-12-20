@@ -1,5 +1,5 @@
 'use client'
-import Title from './Title'
+import Title from '../layout/Title'
 import ProductCard from './ProductCard'
 import { useSelector } from 'react-redux'
 

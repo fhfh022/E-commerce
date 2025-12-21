@@ -14,7 +14,7 @@ const Footer = () => {
         {
             title: "PRODUCTS",
             links: [
-                { text: "Light & Thin", path: '/', icon: null },
+                { text: "Ultrabook", path: '/', icon: null },
                 { text: "Gaming", path: '/', icon: null },
                 // { text: "Smartphones", path: '/', icon: null },
                 // { text: "Laptops", path: '/', icon: null },

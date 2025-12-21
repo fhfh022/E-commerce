@@ -87,6 +87,9 @@ const Navbar = () => {
               <Link href="/shop" className="transition hover:text-green-600">
                 Shop
               </Link>
+              <Link href="/promotions" className="transition hover:text-green-600">
+                Promotions
+              </Link>
 
               {/* [3] ลบ Link Text 'Favorites' เดิมออกไปแล้ว */}
 
@@ -149,18 +152,24 @@ const Navbar = () => {
               </div>
 
               {/* [4] เพิ่ม Favorites Icon Link ตรงนี้ (คู่กับ Cart) */}
-              <Link
-                href="/favorites"
-                className="relative text-slate-600 transition hover:text-green-600"
+              <button
+                onClick={() => {
+                  if (!user) {
+                    openSignIn(); // ถ้าไม่ Login ให้เปิดหน้าต่าง Login ของ Clerk
+                  } else {
+                    router.push("/favorites"); // ถ้า Login แล้วให้ไปหน้า Favorites
+                  }
+                }}
+                className="relative text-slate-600 transition hover:text-green-600 focus:outline-none"
                 title="My Favorites"
               >
                 <Heart size={22} />
                 {favoriteCount > 0 && (
-                  <span className="absolute -top-1 -right-1 flex items-center justify-center size-3.5 bg-red-500 rounded-full text-[8px] text-white">
+                  <span className="absolute -top-1 -right-1 flex items-center justify-center size-3.5 bg-red-500 rounded-full text-[8px] text-white font-bold">
                     {favoriteCount}
                   </span>
                 )}
-              </Link>
+              </button>
 
               {/* Cart */}
               <Link

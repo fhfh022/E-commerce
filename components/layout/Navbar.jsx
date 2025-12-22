@@ -28,10 +28,15 @@ const Navbar = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   const cartCount = useSelector((state) => state.cart.total);
+  const { cartItems } = useSelector((state) => state.cart);
   // [2] ดึงจำนวน Favorites
   const favoriteCount = useSelector((state) => state.favorite.items.length);
   const products = useSelector((state) => state.product.list);
 
+  const itemCount = Object.values(cartItems).reduce(
+    (total, qty) => total + qty,
+    0
+  );
   // Logic กรองคำแนะนำการค้นหา
   const getSuggestions = () => {
     if (!search || search.length < 2) return [];
@@ -87,7 +92,10 @@ const Navbar = () => {
               <Link href="/shop" className="transition hover:text-green-600">
                 Shop
               </Link>
-              <Link href="/promotions" className="transition hover:text-green-600">
+              <Link
+                href="/promotions"
+                className="transition hover:text-green-600"
+              >
                 Promotions
               </Link>
 
@@ -174,13 +182,12 @@ const Navbar = () => {
               {/* Cart */}
               <Link
                 href="/cart"
-                className="relative flex items-center gap-2 text-slate-600 transition hover:text-green-600"
+                className="relative text-slate-600 transition hover:text-green-600 focus:outline-none"
               >
-                <ShoppingCart size={22} /> {/* ปรับ size ให้เท่ากับ Heart */}
-                Cart
-                {cartCount > 0 && (
-                  <span className="absolute -top-1 left-3 flex items-center justify-center size-3.5 bg-red-500 rounded-full text-[8px] text-white">
-                    {cartCount}
+                <ShoppingCart size={24} />
+                {itemCount > 0 && (
+                  <span className="absolute -top-1 -right-1 flex items-center justify-center size-3.5 bg-red-500 rounded-full text-[8px] text-white font-bold">
+                    {itemCount > 99 ? "99+" : itemCount}
                   </span>
                 )}
               </Link>

@@ -74,8 +74,25 @@ const ProductDetails = ({ product }) => {
   const averageRating = 4;
   const reviewCount = 0;
 
-  const addToCartHandler = () => {
-    dispatch(addToCart({ productId }));
+  const addToCartHandler = async () => {
+    // 1. ส่งข้อมูลไปที่ Redux Store เพื่อให้ UI อัปเดตทันที (Optimistic UI)
+    dispatch(addToCart({ productId: product.id, quantity: 1 }));
+
+    // 2. ถ้า User ล็อกอินอยู่ ให้ส่งข้อมูลไปเก็บที่ Supabase ในตาราง 'cart'
+    if (user) {
+      const { data,error } = await supabase.from("cart").upsert(
+        {
+          user_id: user.id,
+          product_id: product.id,
+          quantity: 1,
+        },
+        { onConflict: "user_id, product_id" }
+      ); // ป้องกันข้อมูลซ้ำ
+
+      if (error) toast.error("Failed to sync cart to server");
+    }
+
+    toast.success("Added to cart!");
   };
 
   const price = Number(product.price);

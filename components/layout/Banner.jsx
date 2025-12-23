@@ -1,54 +1,99 @@
 'use client'
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import toast from 'react-hot-toast';
+import { X } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 export default function Banner() {
+    // เริ่มต้นเป็น false เพื่อป้องกันปัญหา Hydration Mismatch ระหว่าง Server และ Client
+    const [isOpen, setIsOpen] = useState(false);
+    const [coupon, setCoupon] = useState(null);
 
-    const [isOpen, setIsOpen] = React.useState(true);
+    useEffect(() => {
+        // 1. ตรวจสอบใน localStorage ว่าผู้ใช้เคยปิดแบนเนอร์ไปหรือยัง
+        const bannerStatus = localStorage.getItem('hidePromoBanner');
+        
+        // ถ้ายังไม่เคยปิด ให้ดึงข้อมูลคูปอง
+        if (bannerStatus !== 'true') {
+            const fetchPromoCoupon = async () => {
+                try {
+                    const { data } = await supabase
+                        .from('coupons')
+                        .select('code, discount_percent')
+                        .eq('code', 'PRT20')
+                        .eq('is_active', true)
+                        .maybeSingle(); // ใช้ maybeSingle เพื่อป้องกัน error ถ้าไม่เจอข้อมูล
+                    
+                    if (data) {
+                        setCoupon(data);
+                        setIsOpen(true); // แสดงแบนเนอร์เฉพาะเมื่อมีคูปองและยังไม่ถูกปิด
+                    }
+                } catch (error) {
+                    console.error("Banner fetch error:", error);
+                }
+            };
+            fetchPromoCoupon();
+        }
+    }, []);
 
     const handleClaim = () => {
+        if (!coupon) return;
+        
+        // คัดลอกรหัสคูปอง
+        navigator.clipboard.writeText(coupon.code);
+        toast.success(`Coupon code "${coupon.code}" copied to clipboard!`);
+        
+        // บันทึกสถานะลง localStorage เพื่อไม่ให้แบนเนอร์แสดงอีก
+        localStorage.setItem('hidePromoBanner', 'true');
         setIsOpen(false);
-        toast.success('Coupon copied to clipboard!');
-        navigator.clipboard.writeText('NEW20');
     };
 
+    const handleClose = () => {
+        // บันทึกสถานะการปิดลง localStorage
+        localStorage.setItem('hidePromoBanner', 'true');
+        setIsOpen(false);
+    };
+
+    // ถ้าไม่มีคูปอง หรือถูกสั่งปิด ไม่ต้อง Render
+    if (!isOpen || !coupon) return null;
+
     return (
-        // ใช้ div ครอบเพื่อทำ Animation ความสูง
-        // ถ้า isOpen = true -> max-height สูงพอให้เห็นเนื้อหา
-        // ถ้า isOpen = false -> max-height = 0 (ซ่อนและหดพื้นที่)
         <div 
             className={`
-                w-full bg-gradient-to-r from-violet-500 via-[#9938CA] to-[#E0724A] text-white 
-                overflow-hidden transition-all duration-500 ease-in-out
+                w-full bg-gradient-to-r from-violet-600 via-[#9938CA] to-[#E0724A] text-white 
+                overflow-hidden transition-all duration-500 ease-in-out shadow-sm relative z-50
                 ${isOpen ? 'max-h-[60px] opacity-100' : 'max-h-0 opacity-0'}
             `}
         >
-            {/* เนื้อหาข้างใน (เพิ่ม h-full เพื่อให้มั่นใจว่า content หดตาม) */}
-            <div className={`px-6 py-1 font-medium text-sm text-center transition-all duration-300 ${!isOpen && 'py-0'}`}>
-                <div className='flex items-center justify-between max-w-7xl mx-auto'>
-                    <p>Get 20% OFF on Your First Order!</p>
-                    <div className="flex items-center space-x-6">
+            <div className="px-4 sm:px-6 h-[50px] sm:h-[60px] flex items-center justify-center font-medium text-xs sm:text-sm">
+                <div className='flex items-center justify-between w-full max-w-7xl mx-auto gap-4'>
+                    
+                    <p className="truncate">
+                        Get <span className="font-bold text-yellow-300">{coupon.discount_percent}% OFF</span> on Your First Order! 
+                        <span className="hidden sm:inline ml-1 text-white/90"> 
+                            Use code: <span className="font-mono bg-white/20 px-2 py-0.5 rounded border border-white/10">{coupon.code}</span>
+                        </span>
+                    </p>
+
+                    <div className="flex items-center gap-3 sm:gap-4 flex-shrink-0">
                         <button 
                             onClick={handleClaim} 
                             type="button" 
-                            className="font-normal text-gray-800 bg-white px-7 py-2 rounded-full max-sm:hidden hover:bg-gray-100 transition"
+                            className="text-gray-900 bg-white px-4 sm:px-6 py-1.5 rounded-full text-[10px] sm:text-sm font-bold hover:bg-gray-100 active:scale-95 transition shadow-sm whitespace-nowrap"
                         >
                             Claim Offer
                         </button>
                         
                         <button 
-                            onClick={() => setIsOpen(false)} 
+                            onClick={handleClose} 
                             type="button" 
-                            className="font-normal text-white py-2 rounded-full hover:scale-110 transition-transform"
+                            className="text-white/80 hover:text-white hover:bg-white/10 p-1.5 rounded-full transition"
                         >
-                            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <rect y="12.532" width="17.498" height="2.1" rx="1.05" transform="rotate(-45.74 0 12.532)" fill="currentColor" />
-                                <rect x="12.533" y="13.915" width="17.498" height="2.1" rx="1.05" transform="rotate(-135.74 12.533 13.915)" fill="currentColor" />
-                            </svg>
+                            <X size={18} />
                         </button>
                     </div>
                 </div>
             </div>
         </div>
     );
-};
+}

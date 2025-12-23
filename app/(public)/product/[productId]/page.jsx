@@ -1,81 +1,28 @@
-'use client'
-import ProductDescription from "@/components/product/ProductDescription";
-import ProductDetails from "@/components/product/ProductDetails";
-import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
-import { supabase } from "@/lib/supabase"; // อย่าลืม import supabase
+import { supabase } from "@/lib/supabase";
+import ProductClient from "./ProductClient";
 
-export default function Product() {
+// ✅ 1. ฟังก์ชันสร้าง Metadata (ทำงานฝั่ง Server)
+export async function generateMetadata({ params }) {
+  const { productId } = params;
 
-    const { productId } = useParams();
-    const [product, setProduct] = useState(null);
-    const [loading, setLoading] = useState(true); // เพิ่ม Loading State
-    const products = useSelector(state => state.product.list);
+  // ดึงข้อมูลสินค้าเพื่อมาทำชื่อ Tab
+  const { data: product } = await supabase
+    .from("products")
+    .select("name, model")
+    .eq("id", productId)
+    .single();
 
-    useEffect(() => {
-        const fetchProductData = async () => {
-            setLoading(true);
-            
-            // 1. ลองหาจาก Redux ก่อน (กรณี User กดเข้ามาจากหน้า Shop)
-            const foundInRedux = products.find((p) => p.id === productId);
+  if (!product) {
+    return { title: "Product Not Found" };
+  }
 
-            if (foundInRedux) {
-                setProduct(foundInRedux);
-                setLoading(false);
-                return; // เจอแล้ว จบการทำงาน
-            }
+  return {
+    title: `${product.name} - ${product.model}`, // ชื่อ Tab ที่ต้องการ
+    description: `View details for ${product.name} ${product.model}`,
+  };
+}
 
-            // 2. ถ้าไม่เจอใน Redux (กรณี Refresh หน้าจอ) ให้ดึงจาก DB โดยตรง
-            try {
-                const { data, error } = await supabase
-                    .from('products')
-                    .select('*')
-                    .eq('id', productId)
-                    .single(); // เอามาแค่ชิ้นเดียว
-                
-                if (error) throw error;
-                if (data) setProduct(data);
-                
-            } catch (error) {
-                console.error("Error fetching product:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        if (productId) {
-            fetchProductData();
-        }
-
-        window.scrollTo(0, 0);
-    }, [productId, products]); // dependency array
-
-    // แสดง Loading ระหว่างรอข้อมูล (กันหน้าจอขาวหรือ Error)
-    if (loading) {
-        return <div className="min-h-screen flex justify-center items-center text-4xl opacity-80">Loading...</div>;
-    }
-
-    // กรณีหาไม่เจอจริงๆ
-    if (!product) {
-        return <div className="min-h-screen flex justify-center items-center">Product not found</div>;
-    }
-
-    return (
-        <div className="mx-6">
-            <div className="max-w-7xl mx-auto">
-
-                {/* Breadcrumbs */}
-                <div className="text-gray-600 text-sm mt-8 mb-5">
-                    Home / Products / <span className="font-medium text-slate-800">{product.category}</span>
-                </div>
-
-                {/* Product Details */}
-                <ProductDetails product={product} />
-
-                {/* Description & Reviews */}
-                <ProductDescription product={product} />
-            </div>
-        </div>
-    );
+// ✅ 2. Page หลักทำหน้าที่ส่งต่อให้ Client Component
+export default function Page() {
+  return <ProductClient />;
 }

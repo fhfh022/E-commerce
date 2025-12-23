@@ -21,6 +21,8 @@ import Counter from "./Counter";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-hot-toast"; // แนะนำให้ใช้ toast เพื่อแจ้งเตือนผู้ใช้
 
+
+
 const ProductDetails = ({ product }) => {
   const productId = product.id;
   const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || "$";

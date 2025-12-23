@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 
 const ADMIN_ONLY_PATHS = [
   "/admin",
+  "/admin/coupons",
   "/store",
   "/store/add-product",
   "/store/manage-product",

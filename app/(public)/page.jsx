@@ -5,6 +5,7 @@ import Newsletter from "@/components/layout/Newsletter";
 import OurSpecs from "@/components/product/OurSpec";
 import LatestProducts from "@/components/product/LatestProducts";
 
+
 export default function Home() {
     return (
         <div>
@@ -13,6 +14,7 @@ export default function Home() {
             {/* <BestSelling /> */}
             <OurSpecs />
             <Newsletter />
+          
         </div>
     );
 }

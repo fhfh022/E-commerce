@@ -146,7 +146,7 @@ export default function Dashboard() {
                                             <StarIcon 
                                                 key={index} 
                                                 size={16} 
-                                                className={index < review.rating ? "fill-yellow-400 text-yellow-400" : "fill-slate-200 text-slate-200"} 
+                                                className={index < review.rating ? "fill-green-400 text-green-400" : "fill-slate-200 text-slate-200"} 
                                             />
                                         ))}
                                     </div>

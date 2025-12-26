@@ -14,7 +14,7 @@ export async function generateMetadata({ params }) {
      .single();
 
    return {
-     title: product ? `${product.name} | PRT. plus` : 'Product Detail',
+     title: product ? `${product.name} | PRT. Store` : 'Product Detail',
    }
 }
 

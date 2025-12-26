@@ -12,7 +12,7 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { useSelector } from "react-redux";
+import { useSelector } from "react-redux"; // ✅ ใช้ useSelector ดึง Role
 import Banner from "./Banner";
 import { useUser, useClerk, UserButton } from "@clerk/nextjs";
 
@@ -20,27 +20,31 @@ const Navbar = () => {
   const { user, isLoaded } = useUser();
   const { openSignIn } = useClerk();
   const router = useRouter();
-  const role = user?.publicMetadata?.role;
-  const isAdmin = role === "admin";
+
+  // ❌ ลบส่วนนี้ออก (เพราะมันไม่อัปเดตตาม Supabase)
+  // const role = user?.publicMetadata?.role;
+  
+  // ✅ เปลี่ยนมาใช้ Role จาก Redux Store (ที่ดึงมาจาก Supabase จริงๆ)
+  const role = useSelector((state) => state.user?.role); 
+  const isAdmin = role === "master_admin" || role === "admin";
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
-  // ✅ ดึงข้อมูลจาก Redux อย่างปลอดภัย
+  // ... (ส่วนที่เหลือของไฟล์เหมือนเดิม ไม่ต้องแก้) ...
+  // ตรวจสอบให้แน่ใจว่า code ด้านล่างยังคงเดิม
+  
   const cartItems = useSelector((state) => state?.cart?.cartItems) || {};
   const favoriteItems = useSelector((state) => state?.favorite?.items) || [];
   const products = useSelector((state) => state?.product?.list) || [];
 
-  // ✅ คำนวณจำนวนสินค้าใน Cart
   const itemCount = Object.keys(cartItems).length > 0
     ? Object.values(cartItems).reduce((total, qty) => total + (Number(qty) || 0), 0)
     : 0;
 
-  // ✅ คำนวณจำนวน Favorites
   const favoriteCount = Array.isArray(favoriteItems) ? favoriteItems.length : 0;
 
-  // Logic กรองคำแนะนำการค้นหา
   const getSuggestions = () => {
     if (!search || search.length < 2) return [];
     return products
@@ -72,19 +76,17 @@ const Navbar = () => {
       <nav className="sticky top-0 z-50 bg-white shadow-sm">
         <div className="mx-6">
           <div className="flex items-center justify-between max-w-7xl mx-auto py-4 transition-all">
-            {/* --- LOGO AREA --- */}
             <Link
               href="/"
               className="relative text-4xl font-semibold text-slate-700"
             >
-              <span className="text-green-600">PR</span>T
-              <span className="text-green-600 text-5xl leading-0">.</span>
-              <p className="absolute text-xs font-semibold -top-1 -right-8 px-3 p-0.5 rounded-full flex items-center gap-2 text-white bg-green-500">
-                plus
+              <p className="absolute text-xs font-semibold -top-1 -right-9.5 px-2 p-0.5 rounded-full flex items-center gap-2 text-white bg-green-500">
+                Store
               </p>
+              <span className="text-green-600">PR</span>T
+              <span className="text-green-600 text-5xl leading-0"></span>
             </Link>
 
-            {/* ---------------- DESKTOP MENU SECTION ---------------- */}
             <section
               id="desktop-menu"
               className="hidden items-center gap-4 text-slate-600 md:flex lg:gap-8"
@@ -102,7 +104,6 @@ const Navbar = () => {
                 Promotions
               </Link>
 
-              {/* Desktop Search */}
               <div className="relative hidden xl:block">
                 <form
                   onSubmit={handleSearch}
@@ -121,7 +122,6 @@ const Navbar = () => {
                   />
                 </form>
 
-                {/* Suggestion Dropdown UI */}
                 {isSearchOpen &&
                   search.length >= 2 &&
                   searchSuggestions.length > 0 && (
@@ -160,7 +160,6 @@ const Navbar = () => {
                   )}
               </div>
 
-              {/* Favorites Icon */}
               <button
                 onClick={() => {
                   if (!user) {
@@ -180,7 +179,6 @@ const Navbar = () => {
                 )}
               </button>
 
-              {/* Cart */}
               <Link
                 href="/cart"
                 className="relative text-slate-600 transition hover:text-green-600 focus:outline-none"
@@ -209,6 +207,7 @@ const Navbar = () => {
                       onClick={() => router.push("/orders")}
                     />
 
+                    {/* ✅ ส่วนนี้จะแสดงถูกต้องแล้วเพราะ isAdmin มาจาก Redux */}
                     {isAdmin && (
                       <UserButton.Action
                         labelIcon={<ClipboardList size={16} />}
@@ -229,7 +228,6 @@ const Navbar = () => {
               )}
             </section>
 
-            {/* ---------------- MOBILE TOGGLE & CONTROLS ---------------- */}
             <section
               id="mobile-controls"
               className="flex items-center gap-4 md:hidden"
@@ -259,7 +257,6 @@ const Navbar = () => {
           </div>
         </div>
 
-        {/* --- MOBILE MENU DROPDOWN --- */}
         <section
           id="mobile-dropdown"
           className={`
@@ -295,7 +292,6 @@ const Navbar = () => {
               )}
             </Link>
 
-            {/* Mobile Search Form */}
             <form
               onSubmit={handleSearch}
               className="flex items-center gap-2 bg-slate-100 px-4 py-3 rounded-full mt-2"
@@ -310,7 +306,6 @@ const Navbar = () => {
               />
             </form>
 
-            {/* Login/User */}
             {!user ? (
               <button
                 onClick={openSignIn}

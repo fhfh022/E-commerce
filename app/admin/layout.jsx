@@ -21,7 +21,7 @@ export default function RootAdminLayout({ children }) {
 
   // 2. หน้าจอสีขาวป้องกันการเห็นเนื้อหา (Full Screen Overlay)
   // ใช้ z-[9999] เพื่อทับ AdminLayout ทั้งหมดไว้จนกว่าจะยืนยันสิทธิ์เสร็จ
-  if (!isLoaded || !isSignedIn || role !== "admin") {
+  if (!isLoaded || !isSignedIn || (role !== "admin" && role !== "master_admin")) {
     return (
       <div className="fixed inset-0 z-[9999] bg-white flex flex-col items-center justify-center gap-4">
         <div className="w-10 h-10 border-4 border-slate-100 border-t-slate-800 rounded-full animate-spin" />

@@ -1,5 +1,5 @@
 "use client";
-import { PlusIcon, Edit2Icon, Trash2Icon, AlertTriangle } from "lucide-react";
+import { PlusIcon, Edit2Icon, Trash2Icon, AlertTriangle, CheckCircle } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import AddressModal from "./AddressModal";
 import { useDispatch, useSelector } from "react-redux";
@@ -24,148 +24,128 @@ const OrderSummary = ({ totalPrice, items }) => {
   const [selectedAddressIndex, setSelectedAddressIndex] = useState("");
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [addressToEdit, setAddressToEdit] = useState(null);
+  
+  // Modal States
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [addressIdToDelete, setAddressIdToDelete] = useState(null);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+
   const [couponCodeInput, setCouponCodeInput] = useState("");
   const [coupon, setCoupon] = useState("");
 
   useEffect(() => {
-    const fetchAddresses = async () => {
-      if (!user) return;
-      try {
-        const userId = user.id;
-        if (userId) {
-          const { data: addresses } = await supabase
-            .from("addresses")
-            .select("*")
-            .eq("user_id", userId)
-            .order("created_at", { ascending: false });
-
-          if (addresses) dispatch(setAddresses(addresses));
+      const fetchAddresses = async () => {
+        if (!user) return;
+        try {
+          const userId = user.id;
+          if (userId) {
+            const { data: addresses } = await supabase
+              .from("addresses")
+              .select("*")
+              .eq("user_id", userId)
+              .order("created_at", { ascending: false });
+  
+            if (addresses) dispatch(setAddresses(addresses));
+          }
+        } catch (error) {
+          console.error("Fetch Address Error:", error);
         }
-      } catch (error) {
-        console.error("Fetch Address Error:", error);
-      }
-    };
-    if (addressList.length === 0) fetchAddresses();
-  }, [user, dispatch, addressList.length]);
+      };
+      if (addressList.length === 0) fetchAddresses();
+    }, [user, dispatch, addressList.length]);
 
   const handleEditAddress = (address) => {
-    setAddressToEdit(address);
-    setShowAddressModal(true);
-  };
-
-  const requestDeleteAddress = (addressId) => {
-    setAddressIdToDelete(addressId);
-    setShowDeleteModal(true);
-  };
-
-  const confirmDeleteAddress = async () => {
-    if (!addressIdToDelete) return;
-    setIsDeleting(true);
-
-    try {
-      const { error } = await supabase
-        .from("addresses")
-        .delete()
-        .eq("id", addressIdToDelete);
-      if (error) throw error;
-
-      dispatch(deleteAddress(addressIdToDelete));
-
-      if (addressList[selectedAddressIndex]?.id === addressIdToDelete) {
-        setSelectedAddressIndex("");
+      setAddressToEdit(address);
+      setShowAddressModal(true);
+    };
+  
+    const requestDeleteAddress = (addressId) => {
+      setAddressIdToDelete(addressId);
+      setShowDeleteModal(true);
+    };
+  
+    const confirmDeleteAddress = async () => {
+      if (!addressIdToDelete) return;
+      setIsProcessing(true);
+  
+      try {
+        const { error } = await supabase
+          .from("addresses")
+          .delete()
+          .eq("id", addressIdToDelete);
+        if (error) throw error;
+  
+        dispatch(deleteAddress(addressIdToDelete));
+  
+        if (addressList[selectedAddressIndex]?.id === addressIdToDelete) {
+          setSelectedAddressIndex("");
+        }
+  
+        toast.success("Address deleted successfully");
+        setShowDeleteModal(false);
+      } catch (error) {
+        toast.error("Failed to delete address");
+      } finally {
+        setIsProcessing(false);
+        setAddressIdToDelete(null);
       }
-
-      toast.success("Address deleted successfully");
-      setShowDeleteModal(false);
-    } catch (error) {
-      toast.error("Failed to delete address");
-    } finally {
-      setIsDeleting(false);
-      setAddressIdToDelete(null);
-    }
-  };
+    };
 
   const discountAmount = coupon ? (coupon.discount / 100) * totalPrice : 0;
   const finalTotal = totalPrice - discountAmount;
 
   const handleCouponCode = async (event) => {
-    event.preventDefault();
-    if (!couponCodeInput) return;
-
-    try {
-      const { data, error } = await supabase
-        .from("coupons")
-        .select("*")
-        .eq("code", couponCodeInput.toUpperCase())
-        .eq("is_active", true)
-        .single();
-
-      if (error || !data) {
-        toast.error("Invalid or expired coupon code");
-        return;
-      }
-
-      if (data.expiry_date && new Date(data.expiry_date) < new Date()) {
-        toast.error("This coupon has expired");
-        return;
-      }
-
-      setCoupon({
-        code: data.code,
-        discount: data.discount_percent,
-        description: data.description,
-      });
-
-      toast.success(`Coupon Applied: ${data.discount_percent}% off!`);
-      setCouponCodeInput("");
-    } catch (error) {
-      toast.error("Something went wrong");
-    }
-  };
-
-  // ✅ Function สำหรับลบตะกร้าใน Database
-  const clearCartInDatabase = async () => {
-    try {
-      // หา user_id ใน table users จาก clerk_id
-      const { data: userData } = await supabase
-        .from("users")
-        .select("id")
-        .eq("clerk_id", user.id)
-        .single();
-
-      if (userData) {
-        // ลบทุกรายการในตะกร้าของ user นี้
-        const { error } = await supabase
-          .from("cart")
-          .delete()
-          .eq("user_id", userData.id);
-
-        if (error) {
-          console.error("Error clearing cart in database:", error);
-        } else {
-          console.log("✅ Cart cleared in database successfully");
+      event.preventDefault();
+      if (!couponCodeInput) return;
+  
+      try {
+        const { data, error } = await supabase
+          .from("coupons")
+          .select("*")
+          .eq("code", couponCodeInput.toUpperCase())
+          .eq("is_active", true)
+          .single();
+  
+        if (error || !data) {
+          toast.error("Invalid or expired coupon code");
+          return;
         }
+  
+        if (data.expiry_date && new Date(data.expiry_date) < new Date()) {
+          toast.error("This coupon has expired");
+          return;
+        }
+  
+        setCoupon({
+          code: data.code,
+          discount: data.discount_percent,
+          description: data.description,
+        });
+  
+        toast.success(`Coupon Applied: ${data.discount_percent}% off!`);
+        setCouponCodeInput("");
+      } catch (error) {
+        toast.error("Something went wrong");
       }
-    } catch (error) {
-      console.error("Error in clearCartInDatabase:", error);
-    }
-  };
+    };
 
-  const handlePlaceOrder = async (e) => {
+  const handlePlaceOrderClick = (e) => {
     e.preventDefault();
-
     if (selectedAddressIndex === "" || !user) {
       toast.error("Please select an address");
       return;
     }
+    setShowConfirmModal(true);
+  };
 
+  // ✅ แก้ไข Logic ตรงนี้: ล้างตะกร้าให้เสร็จก่อนไปหน้าอื่น
+  const confirmPlaceOrder = async () => {
+    setIsProcessing(true);
     const selectedAddress = addressList[selectedAddressIndex];
 
     try {
-      // 1. บันทึกข้อมูลลงตาราง orders
+      // 1. สร้าง Order
       const { data: order, error: orderError } = await supabase
         .from("orders")
         .insert({
@@ -173,7 +153,7 @@ const OrderSummary = ({ totalPrice, items }) => {
           address_id: selectedAddress.id,
           total_amount: finalTotal,
           discount_amount: discountAmount,
-          payment_method: "STRIPE",
+          payment_method: paymentMethod,
           payment_status: "pending",
           status: "order_placed",
         })
@@ -182,23 +162,13 @@ const OrderSummary = ({ totalPrice, items }) => {
 
       if (orderError) throw orderError;
 
-      // 2. บันทึกรายการสินค้าลงตาราง order_items
-      const orderItemsData = items.map((item) => {
-        console.log("Checking item in cart:", item);
-
-        const productId = item.product?.id || item.productId || item.id;
-
-        if (!productId) {
-          throw new Error("Found an item in cart without a valid product ID");
-        }
-
-        return {
-          order_id: order.id,
-          product_id: productId,
-          quantity: item.quantity,
-          price_at_time: item.price,
-        };
-      });
+      // 2. สร้าง Order Items
+      const orderItemsData = items.map((item) => ({
+        order_id: order.id,
+        product_id: item.product?.id || item.productId || item.id,
+        quantity: item.quantity,
+        price_at_time: item.price,
+      }));
 
       const { error: itemsError } = await supabase
         .from("order_items")
@@ -206,33 +176,28 @@ const OrderSummary = ({ totalPrice, items }) => {
 
       if (itemsError) throw itemsError;
 
-      // 3. ส่งข้อมูลไปที่ API Stripe
-      const response = await fetch("/api/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          items: items,
-          orderId: order.id,
-          userEmail: user.email,
-          discountAmount: discountAmount,
-        }),
-      });
-
-      const { url, error } = await response.json();
-
-      if (url) {
-        // ✅ 4. ลบตะกร้าทั้งใน Database และ Redux
-        // await clearCartInDatabase(); // ลบใน Database ก่อน
-        // dispatch(clearCart()); // ลบใน Redux
-
-        // ✅ 5. Redirect ไปหน้า Stripe
-        window.location.href = url;
-      } else {
-        throw new Error(error);
+      // ✅ 3. ล้างตะกร้าใน Database (รอให้เสร็จชัวร์ๆ)
+      if (user) {
+        const { error: clearDbError } = await supabase.from("cart").delete().eq("user_id", user.id);
+        if (clearDbError) console.error("Clear DB Cart Error:", clearDbError);
       }
+
+      // ✅ 4. ล้างตะกร้าใน Redux (State หน้าเว็บ)
+      dispatch(clearCart());
+
+      toast.success("Order placed successfully!");
+      setShowConfirmModal(false);
+
+      // ✅ 5. หน่วงเวลาเล็กน้อยก่อนเปลี่ยนหน้า เพื่อให้มั่นใจว่า State เคลียร์หมดแล้ว
+      setTimeout(() => {
+          router.push("/orders");
+      }, 1000); // รอ 1 วินาที
+
     } catch (error) {
       console.error("Order Error:", error);
       toast.error("Failed to place order: " + error.message);
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -240,7 +205,8 @@ const OrderSummary = ({ totalPrice, items }) => {
     <div className="w-full max-w-lg lg:max-w-[340px] bg-white border border-slate-200 text-slate-500 text-sm rounded-2xl p-7 shadow-sm">
       <h2 className="text-xl font-bold text-slate-800 mb-6">Order Summary</h2>
 
-      <div className="space-y-3 mb-6">
+      {/* Payment Method Selection */}
+       <div className="space-y-3 mb-6">
         <p className="text-gray-500 text-xs font-bold uppercase tracking-wider">
           Payment Method
         </p>
@@ -281,181 +247,174 @@ const OrderSummary = ({ totalPrice, items }) => {
         </label>
       </div>
 
+      {/* Address Selection */}
       <div className="my-6 py-6 border-y border-slate-100">
-        <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-3">
-          Shipping Address
-        </p>
+              <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-3">
+                Shipping Address
+              </p>
+      
+              {addressList.length > 0 ? (
+                <div className="space-y-3">
+                  <select
+                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-blue-500 transition text-slate-700 font-medium appearance-none cursor-pointer"
+                    onChange={(e) => setSelectedAddressIndex(e.target.value)}
+                    value={selectedAddressIndex}
+                  >
+                    <option value="" disabled>
+                      -- Select Delivery Address --
+                    </option>
+                    {addressList.map((addr, index) => (
+                      <option key={addr.id} value={index}>
+                        {addr.receiver_name} - {addr.province}
+                      </option>
+                    ))}
+                  </select>
+      
+                  {selectedAddressIndex !== "" &&
+                    addressList[selectedAddressIndex] && (
+                      <div className="text-xs text-slate-500 bg-slate-50 p-3 rounded-lg border border-slate-100 leading-relaxed relative group animate-in fade-in slide-in-from-top-2">
+                        <p>
+                          <span className="font-bold">To:</span>{" "}
+                          {addressList[selectedAddressIndex].receiver_name}
+                        </p>
+                        <p>
+                          <span className="font-bold">Tel:</span>{" "}
+                          {addressList[selectedAddressIndex].phone_number}
+                        </p>
+                        <p className="mt-1 mb-2 pr-10">
+                          {addressList[selectedAddressIndex].detail},{" "}
+                          {addressList[selectedAddressIndex].sub_district},{" "}
+                          {addressList[selectedAddressIndex].province},{" "}
+                          {addressList[selectedAddressIndex].postal_code}
+                        </p>
+      
+                        <div className="flex gap-3 mt-2 border-t border-slate-200 pt-2">
+                          <button
+                            onClick={() =>
+                              handleEditAddress(addressList[selectedAddressIndex])
+                            }
+                            className="flex items-center gap-1 text-slate-400 hover:text-blue-600 font-medium transition"
+                          >
+                            <Edit2Icon size={14} /> Edit
+                          </button>
+                          <button
+                            onClick={() =>
+                              requestDeleteAddress(
+                                addressList[selectedAddressIndex].id
+                              )
+                            }
+                            className="flex items-center gap-1 text-slate-400 hover:text-red-500 font-medium transition"
+                          >
+                            <Trash2Icon size={14} /> Delete
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                </div>
+              ) : (
+                <p className="text-xs text-slate-400 italic mb-2">
+                  No address found. Please add one.
+                </p>
+              )}
+      
+              <button
+                className="flex items-center justify-center gap-2 w-full mt-3 py-2.5 border border-dashed border-slate-300 rounded-xl text-slate-500 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50 transition font-medium"
+                onClick={() => {
+                  setAddressToEdit(null);
+                  setShowAddressModal(true);
+                }}
+              >
+                <PlusIcon size={16} /> Add New Address
+              </button>
+            </div>
 
-        {addressList.length > 0 ? (
-          <div className="space-y-3">
-            <select
-              className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-blue-500 transition text-slate-700 font-medium appearance-none cursor-pointer"
-              onChange={(e) => setSelectedAddressIndex(e.target.value)}
-              value={selectedAddressIndex}
-            >
-              <option value="" disabled>
-                -- Select Delivery Address --
-              </option>
-              {addressList.map((addr, index) => (
-                <option key={addr.id} value={index}>
-                  {addr.receiver_name} - {addr.province}
-                </option>
-              ))}
-            </select>
-
-            {selectedAddressIndex !== "" &&
-              addressList[selectedAddressIndex] && (
-                <div className="text-xs text-slate-500 bg-slate-50 p-3 rounded-lg border border-slate-100 leading-relaxed relative group animate-in fade-in slide-in-from-top-2">
-                  <p>
-                    <span className="font-bold">To:</span>{" "}
-                    {addressList[selectedAddressIndex].receiver_name}
-                  </p>
-                  <p>
-                    <span className="font-bold">Tel:</span>{" "}
-                    {addressList[selectedAddressIndex].phone_number}
-                  </p>
-                  <p className="mt-1 mb-2 pr-10">
-                    {addressList[selectedAddressIndex].detail},{" "}
-                    {addressList[selectedAddressIndex].sub_district},{" "}
-                    {addressList[selectedAddressIndex].province},{" "}
-                    {addressList[selectedAddressIndex].postal_code}
-                  </p>
-
-                  <div className="flex gap-3 mt-2 border-t border-slate-200 pt-2">
-                    <button
-                      onClick={() =>
-                        handleEditAddress(addressList[selectedAddressIndex])
-                      }
-                      className="flex items-center gap-1 text-slate-400 hover:text-blue-600 font-medium transition"
-                    >
-                      <Edit2Icon size={14} /> Edit
-                    </button>
-                    <button
-                      onClick={() =>
-                        requestDeleteAddress(
-                          addressList[selectedAddressIndex].id
-                        )
-                      }
-                      className="flex items-center gap-1 text-slate-400 hover:text-red-500 font-medium transition"
-                    >
-                      <Trash2Icon size={14} /> Delete
-                    </button>
-                  </div>
+      {/* Totals & Coupon */}
+      <div className="space-y-3 pb-6 border-b border-slate-100">
+              <div className="flex justify-between text-slate-500">
+                <span>Subtotal</span>
+                <span className="font-medium text-slate-700">
+                  {currency}
+                  {totalPrice.toLocaleString()}
+                </span>
+              </div>
+              <div className="flex justify-between text-slate-500">
+                <span>Shipping</span>
+                <span className="text-green-600 font-medium">Free</span>
+              </div>
+              {coupon && (
+                <div className="flex justify-between text-blue-600">
+                  <span>Coupon ({coupon.code})</span>
+                  <span>
+                    -{currency}
+                    {discountAmount.toLocaleString()}
+                  </span>
                 </div>
               )}
-          </div>
-        ) : (
-          <p className="text-xs text-slate-400 italic mb-2">
-            No address found. Please add one.
-          </p>
-        )}
+            </div>
+      
+            {!coupon ? (
+              <form onSubmit={handleCouponCode} className="flex gap-2 mt-6">
+                <input
+                  onChange={(e) => setCouponCodeInput(e.target.value)}
+                  value={couponCodeInput}
+                  type="text"
+                  placeholder="Promo Code"
+                  className="flex-1 border border-slate-200 p-2.5 px-3 rounded-xl outline-none focus:border-blue-500 transition text-sm"
+                />
+                <button className="bg-slate-800 text-white px-4 rounded-xl hover:bg-slate-900 active:scale-95 transition-all font-medium">
+                  Apply
+                </button>
+              </form>
+            ) : (
+              <div className="mt-6 bg-blue-50 border border-blue-100 p-3 rounded-xl flex items-center justify-between">
+                <div className="flex flex-col">
+                  <span className="text-xs font-bold text-blue-600">
+                    COUPON APPLIED
+                  </span>
+                  <span className="text-xs text-blue-400">{coupon.description}</span>
+                </div>
+              </div>
+            )}
+      
+            <div className="flex justify-between items-center py-6">
+              <span className="font-bold text-slate-800 text-lg">Total</span>
+              <span className="font-black text-slate-900 text-xl">
+                {currency}
+                {finalTotal.toLocaleString()}
+              </span>
+            </div>
 
-        <button
-          className="flex items-center justify-center gap-2 w-full mt-3 py-2.5 border border-dashed border-slate-300 rounded-xl text-slate-500 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50 transition font-medium"
-          onClick={() => {
-            setAddressToEdit(null);
-            setShowAddressModal(true);
-          }}
-        >
-          <PlusIcon size={16} /> Add New Address
-        </button>
-      </div>
-
-      <div className="space-y-3 pb-6 border-b border-slate-100">
-        <div className="flex justify-between text-slate-500">
-          <span>Subtotal</span>
-          <span className="font-medium text-slate-700">
-            {currency}
-            {totalPrice.toLocaleString()}
-          </span>
-        </div>
-        <div className="flex justify-between text-slate-500">
-          <span>Shipping</span>
-          <span className="text-green-600 font-medium">Free</span>
-        </div>
-        {coupon && (
-          <div className="flex justify-between text-blue-600">
-            <span>Coupon ({coupon.code})</span>
-            <span>
-              -{currency}
-              {discountAmount.toLocaleString()}
-            </span>
-          </div>
-        )}
-      </div>
-
-      {!coupon ? (
-        <form onSubmit={handleCouponCode} className="flex gap-2 mt-6">
-          <input
-            onChange={(e) => setCouponCodeInput(e.target.value)}
-            value={couponCodeInput}
-            type="text"
-            placeholder="Promo Code"
-            className="flex-1 border border-slate-200 p-2.5 px-3 rounded-xl outline-none focus:border-blue-500 transition text-sm"
-          />
-          <button className="bg-slate-800 text-white px-4 rounded-xl hover:bg-slate-900 active:scale-95 transition-all font-medium">
-            Apply
-          </button>
-        </form>
-      ) : (
-        <div className="mt-6 bg-blue-50 border border-blue-100 p-3 rounded-xl flex items-center justify-between">
-          <div className="flex flex-col">
-            <span className="text-xs font-bold text-blue-600">
-              COUPON APPLIED
-            </span>
-            <span className="text-xs text-blue-400">{coupon.description}</span>
-          </div>
-        </div>
-      )}
-
-      <div className="flex justify-between items-center py-6">
-        <span className="font-bold text-slate-800 text-lg">Total</span>
-        <span className="font-black text-slate-900 text-xl">
-          {currency}
-          {finalTotal.toLocaleString()}
-        </span>
-      </div>
-
+      {/* Place Order Button */}
       <button
-        onClick={handlePlaceOrder}
+        onClick={handlePlaceOrderClick}
         className="w-full bg-slate-900 text-white py-4 rounded-2xl font-bold text-lg hover:bg-slate-800 active:scale-95 transition-all shadow-lg shadow-slate-200"
       >
         Place Order
       </button>
 
-      {showAddressModal && (
-        <AddressModal
-          setShowAddressModal={setShowAddressModal}
-          addressToEdit={addressToEdit}
-          setAddressToEdit={setAddressToEdit}
-        />
-      )}
-
-      {showDeleteModal && (
+      {/* Confirm Modal */}
+      {showConfirmModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white rounded-[32px] p-8 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200">
             <div className="flex flex-col items-center text-center">
-              <div className="size-20 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-6">
-                <AlertTriangle size={36} />
+              <div className="size-20 bg-green-50 text-green-500 rounded-full flex items-center justify-center mb-6">
+                <CheckCircle size={36} />
               </div>
-              <h3 className="text-2xl font-black text-slate-900">
-                Delete Address?
-              </h3>
-              <p className="text-slate-500 mt-2 leading-relaxed">
-                Are you sure you want to remove this address? This action cannot
-                be undone.
+              <h3 className="text-2xl font-black text-slate-900">Confirm Order?</h3>
+              <p className="text-slate-500 mt-2 leading-relaxed text-sm">
+                You are about to place an order. You can pay immediately or later from the 'My Orders' page.
               </p>
               <div className="grid grid-cols-1 gap-3 w-full mt-8">
                 <button
-                  disabled={isDeleting}
-                  onClick={confirmDeleteAddress}
-                  className="w-full py-3.5 bg-red-500 hover:bg-red-600 text-white font-bold rounded-2xl shadow-lg shadow-red-100 active:scale-95 disabled:opacity-70 transition-all"
+                  disabled={isProcessing}
+                  onClick={confirmPlaceOrder}
+                  className="w-full py-3.5 bg-green-500 hover:bg-green-600 text-white font-bold rounded-2xl shadow-lg shadow-green-100 active:scale-95 disabled:opacity-70 transition-all"
                 >
-                  {isDeleting ? "Deleting..." : "Yes, Delete it"}
+                  {isProcessing ? "Processing..." : "Confirm & Place Order"}
                 </button>
                 <button
-                  disabled={isDeleting}
-                  onClick={() => setShowDeleteModal(false)}
+                  disabled={isProcessing}
+                  onClick={() => setShowConfirmModal(false)}
                   className="w-full py-3.5 bg-white text-slate-400 font-bold rounded-2xl hover:text-slate-600 active:scale-95 transition-all"
                 >
                   Cancel
@@ -465,6 +424,50 @@ const OrderSummary = ({ totalPrice, items }) => {
           </div>
         </div>
       )}
+
+      {/* Address Modals */}
+      {showAddressModal && (
+              <AddressModal
+                setShowAddressModal={setShowAddressModal}
+                addressToEdit={addressToEdit}
+                setAddressToEdit={setAddressToEdit}
+              />
+            )}
+      
+            {showDeleteModal && (
+              <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+                <div className="bg-white rounded-[32px] p-8 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200">
+                  <div className="flex flex-col items-center text-center">
+                    <div className="size-20 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-6">
+                      <AlertTriangle size={36} />
+                    </div>
+                    <h3 className="text-2xl font-black text-slate-900">
+                      Delete Address?
+                    </h3>
+                    <p className="text-slate-500 mt-2 leading-relaxed">
+                      Are you sure you want to remove this address? This action cannot
+                      be undone.
+                    </p>
+                    <div className="grid grid-cols-1 gap-3 w-full mt-8">
+                      <button
+                        disabled={isProcessing}
+                        onClick={confirmDeleteAddress}
+                        className="w-full py-3.5 bg-red-500 hover:bg-red-600 text-white font-bold rounded-2xl shadow-lg shadow-red-100 active:scale-95 disabled:opacity-70 transition-all"
+                      >
+                        {isProcessing ? "Deleting..." : "Yes, Delete it"}
+                      </button>
+                      <button
+                        disabled={isProcessing}
+                        onClick={() => setShowDeleteModal(false)}
+                        className="w-full py-3.5 bg-white text-slate-400 font-bold rounded-2xl hover:text-slate-600 active:scale-95 transition-all"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
     </div>
   );
 };

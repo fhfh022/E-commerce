@@ -1,5 +1,5 @@
 "use client";
-import { PlusIcon, Edit2Icon, Trash2Icon, AlertTriangle } from "lucide-react"; // เพิ่ม AlertTriangle
+import { PlusIcon, Edit2Icon, Trash2Icon, AlertTriangle } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import AddressModal from "./AddressModal";
 import { useDispatch, useSelector } from "react-redux";
@@ -10,6 +10,7 @@ import {
   setAddresses,
   deleteAddress,
 } from "@/lib/features/address/addressSlice";
+import { clearCart } from "@/lib/features/cart/cartSlice";
 
 const OrderSummary = ({ totalPrice, items }) => {
   const dispatch = useDispatch();
@@ -21,17 +22,11 @@ const OrderSummary = ({ totalPrice, items }) => {
 
   const [paymentMethod, setPaymentMethod] = useState("STRIPE");
   const [selectedAddressIndex, setSelectedAddressIndex] = useState("");
-
-  // Modals State
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [addressToEdit, setAddressToEdit] = useState(null);
-
-  // ✅ เพิ่ม State สำหรับ Modal ลบ
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [addressIdToDelete, setAddressIdToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
-
-  // Coupon States
   const [couponCodeInput, setCouponCodeInput] = useState("");
   const [coupon, setCoupon] = useState("");
 
@@ -61,13 +56,11 @@ const OrderSummary = ({ totalPrice, items }) => {
     setShowAddressModal(true);
   };
 
-  // ✅ ฟังก์ชันเปิด Modal ลบ
   const requestDeleteAddress = (addressId) => {
     setAddressIdToDelete(addressId);
     setShowDeleteModal(true);
   };
 
-  // ✅ ฟังก์ชันยืนยันการลบ
   const confirmDeleteAddress = async () => {
     if (!addressIdToDelete) return;
     setIsDeleting(true);
@@ -81,7 +74,6 @@ const OrderSummary = ({ totalPrice, items }) => {
 
       dispatch(deleteAddress(addressIdToDelete));
 
-      // ถ้าลบตัวที่เลือกอยู่ ให้ Reset การเลือก
       if (addressList[selectedAddressIndex]?.id === addressIdToDelete) {
         setSelectedAddressIndex("");
       }
@@ -116,13 +108,11 @@ const OrderSummary = ({ totalPrice, items }) => {
         return;
       }
 
-      // เช็ควันหมดอายุ (ถ้ามี)
       if (data.expiry_date && new Date(data.expiry_date) < new Date()) {
         toast.error("This coupon has expired");
         return;
       }
 
-      // บันทึกข้อมูลคูปองลง State
       setCoupon({
         code: data.code,
         discount: data.discount_percent,
@@ -130,20 +120,120 @@ const OrderSummary = ({ totalPrice, items }) => {
       });
 
       toast.success(`Coupon Applied: ${data.discount_percent}% off!`);
-      setCouponCodeInput(""); // ล้างช่อง Input
+      setCouponCodeInput("");
     } catch (error) {
       toast.error("Something went wrong");
     }
   };
 
+  // ✅ Function สำหรับลบตะกร้าใน Database
+  const clearCartInDatabase = async () => {
+    try {
+      // หา user_id ใน table users จาก clerk_id
+      const { data: userData } = await supabase
+        .from("users")
+        .select("id")
+        .eq("clerk_id", user.id)
+        .single();
+
+      if (userData) {
+        // ลบทุกรายการในตะกร้าของ user นี้
+        const { error } = await supabase
+          .from("cart")
+          .delete()
+          .eq("user_id", userData.id);
+
+        if (error) {
+          console.error("Error clearing cart in database:", error);
+        } else {
+          console.log("✅ Cart cleared in database successfully");
+        }
+      }
+    } catch (error) {
+      console.error("Error in clearCartInDatabase:", error);
+    }
+  };
+
   const handlePlaceOrder = async (e) => {
     e.preventDefault();
-    if (selectedAddressIndex === "" || selectedAddressIndex === null) {
-      toast.error("Please select a shipping address");
+
+    if (selectedAddressIndex === "" || !user) {
+      toast.error("Please select an address");
       return;
     }
-    toast.success("Order Placed Successfully!");
-    router.push("/orders");
+
+    const selectedAddress = addressList[selectedAddressIndex];
+
+    try {
+      // 1. บันทึกข้อมูลลงตาราง orders
+      const { data: order, error: orderError } = await supabase
+        .from("orders")
+        .insert({
+          user_id: user.id,
+          address_id: selectedAddress.id,
+          total_amount: finalTotal,
+          discount_amount: discountAmount,
+          payment_method: "STRIPE",
+          payment_status: "pending",
+          status: "order_placed",
+        })
+        .select()
+        .single();
+
+      if (orderError) throw orderError;
+
+      // 2. บันทึกรายการสินค้าลงตาราง order_items
+      const orderItemsData = items.map((item) => {
+        console.log("Checking item in cart:", item);
+
+        const productId = item.product?.id || item.productId || item.id;
+
+        if (!productId) {
+          throw new Error("Found an item in cart without a valid product ID");
+        }
+
+        return {
+          order_id: order.id,
+          product_id: productId,
+          quantity: item.quantity,
+          price_at_time: item.price,
+        };
+      });
+
+      const { error: itemsError } = await supabase
+        .from("order_items")
+        .insert(orderItemsData);
+
+      if (itemsError) throw itemsError;
+
+      // 3. ส่งข้อมูลไปที่ API Stripe
+      const response = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: items,
+          orderId: order.id,
+          userEmail: user.email,
+          discountAmount: discountAmount,
+        }),
+      });
+
+      const { url, error } = await response.json();
+
+      if (url) {
+        // ✅ 4. ลบตะกร้าทั้งใน Database และ Redux
+        // await clearCartInDatabase(); // ลบใน Database ก่อน
+        // dispatch(clearCart()); // ลบใน Redux
+
+        // ✅ 5. Redirect ไปหน้า Stripe
+        window.location.href = url;
+      } else {
+        throw new Error(error);
+      }
+    } catch (error) {
+      console.error("Order Error:", error);
+      toast.error("Failed to place order: " + error.message);
+    }
   };
 
   return (
@@ -271,7 +361,6 @@ const OrderSummary = ({ totalPrice, items }) => {
         </button>
       </div>
 
-      {/* Cost Breakdown & Total ... */}
       <div className="space-y-3 pb-6 border-b border-slate-100">
         <div className="flex justify-between text-slate-500">
           <span>Subtotal</span>
@@ -316,7 +405,6 @@ const OrderSummary = ({ totalPrice, items }) => {
             </span>
             <span className="text-xs text-blue-400">{coupon.description}</span>
           </div>
-          {/* ปุ่มลบ Coupon ถ้ามี */}
         </div>
       )}
 
@@ -335,7 +423,6 @@ const OrderSummary = ({ totalPrice, items }) => {
         Place Order
       </button>
 
-      {/* Modal: Add/Edit Address */}
       {showAddressModal && (
         <AddressModal
           setShowAddressModal={setShowAddressModal}
@@ -344,7 +431,6 @@ const OrderSummary = ({ totalPrice, items }) => {
         />
       )}
 
-      {/* ✅ Modal: Delete Confirmation */}
       {showDeleteModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white rounded-[32px] p-8 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200">

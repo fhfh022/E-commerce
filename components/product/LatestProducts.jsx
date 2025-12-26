@@ -30,6 +30,7 @@ const LatestProducts = () => {
                             key={product.id || index} 
                             product={product} 
                             hideLikeButton={true} // ✅ [ใส่ตรงนี้] เพื่อซ่อนปุ่มหัวใจในหน้า Home
+                            hideRating={true}
                         />
                     ))
                 }

@@ -1,28 +1,29 @@
+import ProductClient from "./ProductClient"; 
 import { supabase } from "@/lib/supabase";
-import ProductClient from "./ProductClient";
 
-// ✅ 1. ฟังก์ชันสร้าง Metadata (ทำงานฝั่ง Server)
+// ✅ 1. แก้ไขฟังก์ชัน generateMetadata
 export async function generateMetadata({ params }) {
-  const { productId } = params;
+   // เพิ่ม await ตรงนี้
+   const { productId } = await params;
 
-  // ดึงข้อมูลสินค้าเพื่อมาทำชื่อ Tab
-  const { data: product } = await supabase
-    .from("products")
-    .select("name, model")
-    .eq("id", productId)
-    .single();
+   // ดึงข้อมูลสินค้าเพื่อมาทำชื่อ Tab
+   const { data: product } = await supabase
+     .from('products')
+     .select('name')
+     .eq('id', productId)
+     .single();
 
-  if (!product) {
-    return { title: "Product Not Found" };
-  }
-
-  return {
-    title: `${product.name} - ${product.model}`, // ชื่อ Tab ที่ต้องการ
-    description: `View details for ${product.name} ${product.model}`,
-  };
+   return {
+     title: product ? `${product.name} | PRT. plus` : 'Product Detail',
+   }
 }
 
-// ✅ 2. Page หลักทำหน้าที่ส่งต่อให้ Client Component
-export default function Page() {
-  return <ProductClient />;
+// ✅ 2. แก้ไขตัวฟังก์ชันหลักของหน้า Page
+export default async function ProductPage({ params }) {
+    // ต้อง await params ตรงนี้ด้วยเช่นกันครับ
+    const { productId } = await params;
+
+    return (
+        <ProductClient productId={productId} />
+    )
 }

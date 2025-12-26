@@ -11,28 +11,37 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { supabase } from "@/lib/supabase";
 import { toast } from "react-hot-toast";
 
 export default function Cart() {
   const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || "฿";
+  
+  // ✅ ดึง cartItems และ isLoaded จาก Redux
   const { cartItems, isLoaded } = useSelector((state) => state.cart);
   const products = useSelector((state) => state.product.list);
   const user = useSelector((state) => state.auth.user);
 
   const dispatch = useDispatch();
-  const [cartArray, setCartArray] = useState([]);
-  const [totalPrice, setTotalPrice] = useState(0);
-  const [isComputing, setIsComputing] = useState(true);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState(null);
 
-  useEffect(() => {
-    if (isLoaded && products.length > 0) {
-      let currentTotal = 0;
-      const newArray = [];
+  // --------------------------------------------------------------------------
+  // ✅ Logic คำนวณราคาสินค้า (ใช้ useMemo เพื่อประสิทธิภาพ)
+  // --------------------------------------------------------------------------
+  const { cartArray, totalPrice } = React.useMemo(() => {
+    // ถ้าไม่มีข้อมูลสินค้าเลย ให้คืนค่าว่างทันที (ไม่รอ Loading)
+    if (!products || products.length === 0) {
+      return { cartArray: [], totalPrice: 0 };
+    }
+
+    let currentTotal = 0;
+    const newArray = [];
+
+    // เช็คว่า cartItems มีของไหม
+    if (cartItems && typeof cartItems === "object") {
       for (const [key, value] of Object.entries(cartItems)) {
         const product = products.find((p) => p.id === key);
         if (product) {
@@ -40,13 +49,11 @@ export default function Cart() {
           currentTotal += product.price * value;
         }
       }
-      setTotalPrice(currentTotal);
-      setCartArray(newArray);
-      setIsComputing(false);
-    } else if (isLoaded) {
-      setIsComputing(false);
     }
-  }, [cartItems, products, isLoaded]);
+
+    return { cartArray: newArray, totalPrice: currentTotal };
+  }, [cartItems, products]); // ❌ เอา isLoaded ออกจาก dependency เพื่อให้คำนวณทันทีที่มีข้อมูล
+  // --------------------------------------------------------------------------
 
   const handleDeleteItem = async () => {
     if (!productToDelete) return;
@@ -68,16 +75,15 @@ export default function Cart() {
     }
   };
 
-  if (!isLoaded || isComputing) {
-    return (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-blue-500"></div>
-      </div>
-    );
-  }
+  // ==========================================================================
+  // 🔴 จุดแก้ไขสำคัญ: Logic การแสดงผล (Render Logic)
+  // ==========================================================================
+  
+  // 1. เช็คว่าตะกร้าว่างหรือไม่ (เช็คจาก keys ของ cartItems โดยตรงจะแม่นยำกว่า)
+  const isEmpty = !cartItems || Object.keys(cartItems).length === 0;
 
-  // ✅ Layout ตอนไม่มีสินค้าในตะกร้า (Improved Empty State)
-  if (cartArray.length === 0) {
+  // 2. ถ้าตะกร้าว่าง -> แสดงหน้า Empty Cart ทันที (ไม่ต้องรอ isLoaded)
+  if (isEmpty) {
     return (
       <div className="min-h-[80vh] flex flex-col items-center justify-center px-6 text-center animate-in fade-in zoom-in duration-500">
         <div className="size-24 bg-slate-50 text-slate-200 rounded-full flex items-center justify-center mb-6">
@@ -104,9 +110,18 @@ export default function Cart() {
     );
   }
 
+  // 3. ถ้ามีของในตะกร้า แต่ข้อมูลสินค้ายังโหลดไม่เสร็จ -> ถึงจะแสดง Loading Spinner
+  if (!isLoaded || products.length === 0) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
+  // 4. ถ้าทุกอย่างพร้อม -> แสดงหน้าตะกร้าสินค้า
   return (
     <div className="min-h-screen bg-white">
-      {/* ✅ ปรับ Padding ซ้าย-ขวาให้เล็กลงในมือถือ (px-4) */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
         <PageTitle
           heading="My Cart"
@@ -115,9 +130,8 @@ export default function Cart() {
         />
 
         <div className="mt-6 sm:mt-10 flex flex-col lg:flex-row gap-8 lg:gap-12 items-start">
-          {/* รายการสินค้า */}
           <div className="w-full lg:flex-[2.5]">
-            {/* Desktop Header (ซ่อนในมือถือ) */}
+            {/* Desktop Header */}
             <div className="hidden sm:grid grid-cols-12 gap-4 pb-6 border-b border-slate-100 text-[11px] font-bold uppercase tracking-widest text-slate-400">
               <div className="col-span-6">Product Information</div>
               <div className="col-span-3 text-center">Quantity</div>
@@ -131,10 +145,8 @@ export default function Cart() {
                   key={item.id}
                   className="py-6 sm:py-8 grid grid-cols-1 sm:grid-cols-12 gap-4 sm:gap-6 items-start sm:items-center relative"
                 >
-                  {/* ส่วนข้อมูลสินค้า (รูป + ชื่อ + ปุ่มลบ) */}
                   <div className="col-span-1 sm:col-span-6">
                     <div className="flex gap-4 sm:gap-5 items-start sm:items-center">
-                      {/* ✅ ปรับขนาดรูปให้เล็กลงในมือถือ (size-24) และคงที่ใน Desktop */}
                       <Link
                         href={`/product/${item.id}`}
                         className="relative flex-shrink-0 bg-[#F5F5F5] size-24 sm:size-28 rounded-2xl flex items-center justify-center p-3 hover:opacity-90 transition"
@@ -158,10 +170,9 @@ export default function Cart() {
                           {item.brand} | {item.model}
                         </p>
                         <p className="text-blue-600 font-bold mt-1.5 text-sm sm:text-base">
-                          ฿{Number(item.price).toLocaleString()}
+                          {currency}{Number(item.price).toLocaleString()}
                         </p>
 
-                        {/* ✅ ปุ่ม Remove Item ตามตัวอย่าง */}
                         <button
                           onClick={() => {
                             setProductToDelete(item.id);
@@ -175,7 +186,6 @@ export default function Cart() {
                     </div>
                   </div>
 
-                  {/* ✅ ตัวนับจำนวน - จัดวางชิดซ้ายในมือถือตามตัวอย่าง */}
                   <div className="col-span-1 sm:col-span-3 flex flex-col items-start sm:items-center mt-2 sm:mt-0">
                     <p className="sm:hidden text-[10px] font-bold text-slate-400 uppercase mb-2 tracking-wider">
                       Quantity
@@ -183,17 +193,15 @@ export default function Cart() {
                     <Counter productId={item.id} />
                   </div>
 
-                  {/* ✅ ราคารวม - จัดวางชิดขวาในมือถือ */}
                   <div className="col-span-1 sm:col-span-2 text-right mt-[-40px] sm:mt-0">
                     <p className="sm:hidden text-[10px] font-bold text-slate-400 uppercase mb-1 tracking-wider">
                       Total Price
                     </p>
                     <span className="font-black text-slate-900 text-base sm:text-lg">
-                      ฿{(item.price * item.quantity).toLocaleString()}
+                      {currency}{(item.price * item.quantity).toLocaleString()}
                     </span>
                   </div>
 
-                  {/* ปุ่มลบ (Desktop เท่านั้น) */}
                   <div className="hidden sm:flex col-span-1 justify-end">
                     <button
                       onClick={() => {
@@ -210,14 +218,12 @@ export default function Cart() {
             </div>
           </div>
 
-          {/* Order Summary */}
           <div className="w-full lg:flex-1 mt-4 lg:mt-0">
             <OrderSummary totalPrice={totalPrice} items={cartArray} />
           </div>
         </div>
       </div>
 
-      {/* Modal ยืนยันการลบ */}
       {isDeleteModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white rounded-[32px] p-8 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200">

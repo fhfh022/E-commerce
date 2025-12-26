@@ -8,7 +8,7 @@ import {
   ClipboardList,
   Package2,
   Heart,
-} from "lucide-react"; // [1] เพิ่ม Heart
+} from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -27,16 +27,19 @@ const Navbar = () => {
   const [search, setSearch] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
-  const cartCount = useSelector((state) => state.cart.total);
-  const { cartItems } = useSelector((state) => state.cart);
-  // [2] ดึงจำนวน Favorites
-  const favoriteCount = useSelector((state) => state.favorite.items.length);
-  const products = useSelector((state) => state.product.list);
+  // ✅ ดึงข้อมูลจาก Redux อย่างปลอดภัย
+  const cartItems = useSelector((state) => state?.cart?.cartItems) || {};
+  const favoriteItems = useSelector((state) => state?.favorite?.items) || [];
+  const products = useSelector((state) => state?.product?.list) || [];
 
-  const itemCount = Object.values(cartItems).reduce(
-    (total, qty) => total + qty,
-    0
-  );
+  // ✅ คำนวณจำนวนสินค้าใน Cart
+  const itemCount = Object.keys(cartItems).length > 0
+    ? Object.values(cartItems).reduce((total, qty) => total + (Number(qty) || 0), 0)
+    : 0;
+
+  // ✅ คำนวณจำนวน Favorites
+  const favoriteCount = Array.isArray(favoriteItems) ? favoriteItems.length : 0;
+
   // Logic กรองคำแนะนำการค้นหา
   const getSuggestions = () => {
     if (!search || search.length < 2) return [];
@@ -99,8 +102,6 @@ const Navbar = () => {
                 Promotions
               </Link>
 
-              {/* [3] ลบ Link Text 'Favorites' เดิมออกไปแล้ว */}
-
               {/* Desktop Search */}
               <div className="relative hidden xl:block">
                 <form
@@ -159,13 +160,13 @@ const Navbar = () => {
                   )}
               </div>
 
-              {/* [4] เพิ่ม Favorites Icon Link ตรงนี้ (คู่กับ Cart) */}
+              {/* Favorites Icon */}
               <button
                 onClick={() => {
                   if (!user) {
-                    openSignIn(); // ถ้าไม่ Login ให้เปิดหน้าต่าง Login ของ Clerk
+                    openSignIn();
                   } else {
-                    router.push("/favorites"); // ถ้า Login แล้วให้ไปหน้า Favorites
+                    router.push("/favorites");
                   }
                 }}
                 className="relative text-slate-600 transition hover:text-green-600 focus:outline-none"
@@ -235,9 +236,9 @@ const Navbar = () => {
             >
               <Link href="/cart" className="relative text-slate-600">
                 <ShoppingCart size={22} />
-                {cartCount > 0 && (
+                {itemCount > 0 && (
                   <span className="absolute -top-2 -right-2 flex items-center justify-center size-4 bg-red-500 rounded-full text-[8px] text-white">
-                    {cartCount}
+                    {itemCount > 99 ? "99+" : itemCount}
                   </span>
                 )}
               </Link>
@@ -281,7 +282,6 @@ const Navbar = () => {
             >
               Shop
             </Link>
-            {/* [5] ปรับ Mobile Menu ให้มีไอคอนหัวใจด้วย */}
             <Link
               href="/favorites"
               onClick={() => setIsMenuOpen(false)}

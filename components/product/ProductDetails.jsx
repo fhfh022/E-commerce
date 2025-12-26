@@ -4,9 +4,8 @@ import { addToCart } from "@/lib/features/cart/cartSlice";
 import {
   addFavorite,
   removeFavorite,
-} from "@/lib/features/favorite/favoriteSlice"; // เพิ่ม Action Favorite
-import { supabase } from "@/lib/supabase"; // นำเข้า supabase client
-// เพิ่ม Heart เข้ามาในกลุ่ม lucide-react
+} from "@/lib/features/favorite/favoriteSlice";
+import { supabase } from "@/lib/supabase";
 import {
   StarIcon,
   EarthIcon,
@@ -15,13 +14,11 @@ import {
   Heart,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react"; // ✅ เพิ่ม useEffect
 import Image from "next/image";
 import Counter from "./Counter";
 import { useDispatch, useSelector } from "react-redux";
-import { toast } from "react-hot-toast"; // แนะนำให้ใช้ toast เพื่อแจ้งเตือนผู้ใช้
-
-
+import { toast } from "react-hot-toast";
 
 const ProductDetails = ({ product }) => {
   const productId = product.id;
@@ -31,10 +28,48 @@ const ProductDetails = ({ product }) => {
   const dispatch = useDispatch();
   const router = useRouter();
 
-  // --- ส่วนเพิ่ม: Favorite Logic ---
-  const user = useSelector((state) => state.auth.user); // ดึงข้อมูล user จาก auth slice
-  const favorites = useSelector((state) => state.favorite.items); // ดึงรายการ ID ที่ชอบ
+  const user = useSelector((state) => state.auth.user);
+  const favorites = useSelector((state) => state.favorite.items);
   const isFavorite = favorites.includes(productId);
+
+  // ✅ 1. สร้าง State สำหรับเก็บค่าคะแนนจริง
+  const [ratingStats, setRatingStats] = useState({
+    average: 0,
+    count: 0,
+  });
+
+  // ✅ 2. ดึงข้อมูลรีวิวจาก Supabase เพื่อคำนวณคะแนน
+  useEffect(() => {
+    const fetchRatingStats = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("reviews")
+          .select("rating")
+          .eq("product_id", productId);
+
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+          const totalRating = data.reduce((sum, item) => sum + item.rating, 0);
+          const average = totalRating / data.length;
+          
+          setRatingStats({
+            average: average,
+            count: data.length,
+          });
+        } else {
+            // กรณีไม่มีรีวิว
+            setRatingStats({ average: 0, count: 0 });
+        }
+      } catch (err) {
+        console.error("Error fetching ratings:", err);
+      }
+    };
+
+    if (productId) {
+      fetchRatingStats();
+    }
+  }, [productId]);
 
   const toggleFavoriteHandler = async () => {
     if (!user) {
@@ -43,7 +78,6 @@ const ProductDetails = ({ product }) => {
 
     try {
       if (isFavorite) {
-        // ลบออกจาก Database
         const { error } = await supabase
           .from("favorites")
           .delete()
@@ -54,7 +88,6 @@ const ProductDetails = ({ product }) => {
         dispatch(removeFavorite(productId));
         toast.success("Removed from favorites");
       } else {
-        // เพิ่มลง Database
         const { error } = await supabase
           .from("favorites")
           .insert({ product_id: productId, user_id: user.id });
@@ -68,28 +101,22 @@ const ProductDetails = ({ product }) => {
       toast.error("Something went wrong");
     }
   };
-  // ----------------------------
 
   const imageList = product.images || [];
   const [mainImage, setMainImage] = useState(imageList[0] || null);
 
-  const averageRating = 4;
-  const reviewCount = 0;
-
   const addToCartHandler = async () => {
-    // 1. ส่งข้อมูลไปที่ Redux Store เพื่อให้ UI อัปเดตทันที (Optimistic UI)
     dispatch(addToCart({ productId: product.id, quantity: 1 }));
 
-    // 2. ถ้า User ล็อกอินอยู่ ให้ส่งข้อมูลไปเก็บที่ Supabase ในตาราง 'cart'
     if (user) {
-      const { data,error } = await supabase.from("cart").upsert(
+      const { data, error } = await supabase.from("cart").upsert(
         {
           user_id: user.id,
           product_id: product.id,
           quantity: 1,
         },
         { onConflict: "user_id, product_id" }
-      ); // ป้องกันข้อมูลซ้ำ
+      );
 
       if (error) toast.error("Failed to sync cart to server");
     }
@@ -145,7 +172,6 @@ const ProductDetails = ({ product }) => {
 
       {/* --- Details Section --- */}
       <div className="flex-1">
-        {/* แก้ไขส่วนหัวข้อ: เพิ่ม Flex เพื่อจัดปุ่มหัวใจ */}
         <div className="flex items-start justify-between gap-4">
           <h1 className="text-3xl font-semibold text-slate-800">
             {product.name}
@@ -156,7 +182,6 @@ const ProductDetails = ({ product }) => {
             )}
           </h1>
 
-          {/* ปุ่มหัวใจในหน้ารายละเอียด */}
           <button
             onClick={toggleFavoriteHandler}
             className="p-3 bg-slate-50 rounded-full hover:bg-slate-100 transition shadow-sm border border-slate-100 active:scale-90"
@@ -170,6 +195,7 @@ const ProductDetails = ({ product }) => {
           </button>
         </div>
 
+        {/* ✅ แสดงดาวตามคะแนนจริง */}
         <div className="flex items-center mt-2">
           {Array(5)
             .fill("")
@@ -178,11 +204,15 @@ const ProductDetails = ({ product }) => {
                 key={index}
                 size={14}
                 className="mt-0.5"
-                fill={averageRating >= index + 1 ? "#00C950" : "#E5E7EB"}
-                color={averageRating >= index + 1 ? "#00C950" : "#D1D5DB"}
+                // เปลี่ยน Logic การระบายสีดาวให้รองรับทศนิยม (เช่น 4.5 ก็จะสว่าง 5 ดวง หรือปรับตามความต้องการ)
+                // Logic นี้: ถ้าคะแนนเฉลี่ยมากกว่า index ปัจจุบัน ให้แสดงสีเขียว
+                fill={ratingStats.average > index ? "#00C950" : "#E5E7EB"}
+                color={ratingStats.average > index ? "#00C950" : "#D1D5DB"}
               />
             ))}
-          <p className="text-sm ml-3 text-slate-500">({reviewCount} Reviews)</p>
+          <p className="text-sm ml-3 text-slate-500">
+            ({ratingStats.count} Reviews)
+          </p>
         </div>
 
         <div className="flex items-center my-6 gap-3 font-semibold text-slate-800">

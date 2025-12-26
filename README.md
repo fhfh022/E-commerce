@@ -16,11 +16,13 @@ A modern, full-featured e-commerce application built with Next.js, featuring use
 ## 🛠 Tech Stack
 
 - **Frontend**: Next.js 15, React 19, TypeScript
-- **Styling**: Tailwind CSS
+- **Styling**: Tailwind CSS v4
 - **Authentication**: Clerk
 - **Database**: Supabase
 - **State Management**: Redux Toolkit
+- **Payment**: Stripe
 - **Icons**: Lucide React
+- **Charts**: Recharts
 - **Deployment**: Ready for Vercel/Netlify
 
 ## 📁 Project Structure
@@ -50,10 +52,11 @@ gocart-main/
 ├── lib/                          # Utilities and configurations
 │   ├── features/                 # Redux slices
 │   ├── store.js                  # Redux store
-│   └── supabase.ts               # Database client
+│   ├── supabase.ts               # Database client
+│   └── stripe.js                 # Stripe configuration
 ├── assets/                       # Static assets
 ├── middleware.ts                 # Next.js middleware
-├── tailwind.config.js            # Tailwind configuration
+├── postcss.config.mjs            # PostCSS configuration
 └── package.json                  # Dependencies
 ```
 
@@ -65,6 +68,7 @@ gocart-main/
 - npm or yarn
 - Supabase account
 - Clerk account
+- Stripe account
 
 ### Installation
 
@@ -86,6 +90,8 @@ NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_key
 CLERK_SECRET_KEY=your_clerk_secret
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+STRIPE_SECRET_KEY=your_stripe_secret
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=your_stripe_publishable
 NEXT_PUBLIC_CURRENCY_SYMBOL=$
 ```
 
@@ -103,66 +109,8 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 - `npm run start` - Start production server
 - `npm run lint` - Run ESLint
 
-## 🎯 Key Components
-
-### Components Organization
-- **providers/**: Authentication and app initialization
-- **layout/**: UI layout components (Navbar, Footer, etc.)
-- **product/**: Product display and management components
-
-### Main Features
-- **Public Pages**: Homepage, product browsing, cart, checkout
-- **User Dashboard**: Order history, favorites, profile
-- **Store Dashboard**: Product management, order fulfillment
-- **Admin Dashboard**: Platform analytics, user management
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/your-feature`
-3. Commit changes: `git commit -m 'Add your feature'`
-4. Push to branch: `git push origin feature/your-feature`
-5. Open a Pull Request
-
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
 
-## 📞 Contact
 
-For questions or support, please open an issue on GitHub.
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/(public)/page.js`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Outfit](https://vercel.com/font), a new font family for Vercel.
-
----
-
-## 🤝 Contributing <a name="-contributing"></a>
-
-We welcome contributions! Please see our [CONTRIBUTING.md](./CONTRIBUTING.md) for more details on how to get started.
-
----
-
-## 📜 License <a name="-license"></a>
-
-This project is licensed under the MIT License. See the [LICENSE.md](./LICENSE.md) file for details.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!

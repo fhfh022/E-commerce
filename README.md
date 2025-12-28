@@ -1,4 +1,4 @@
-# GoCart - E-commerce Platform
+# PRT - E-commerce Platform
 
 A modern, full-featured e-commerce application built with Next.js, featuring user authentication, product management, shopping cart, and admin/store dashboards.
 
@@ -75,7 +75,7 @@ gocart-main/
 1. Clone the repository:
 ```bash
 git clone https://github.com/fhfh022/E-commerce.git
-cd gocart-main
+cd prt-main
 ```
 
 2. Install dependencies:

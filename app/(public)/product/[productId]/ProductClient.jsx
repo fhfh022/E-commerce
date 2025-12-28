@@ -1,4 +1,4 @@
-'use client' // ✅ ต้องมีบรรทัดนี้
+'use client'
 import ProductDescription from "@/components/product/ProductDescription";
 import ProductDetails from "@/components/product/ProductDetails";
 import { useParams } from "next/navigation";
@@ -25,7 +25,7 @@ export default function ProductClient() {
                 return;
             }
 
-            // 2. ถ้าไม่เจอ ดึงจาก DB
+            // 2. ถ้าไม่เจอ ดึงจาก DB (Supabase จะดึง sale_price มาให้อัตโนมัติเพราะใช้ select *)
             try {
                 const { data, error } = await supabase
                     .from('products')
@@ -51,26 +51,28 @@ export default function ProductClient() {
     }, [productId, products]);
 
     if (loading) {
-        return <div className="min-h-screen flex justify-center items-center text-4xl opacity-80">Loading...</div>;
+        return <div className="min-h-screen flex justify-center items-center text-4xl opacity-80 font-bold text-slate-300">Loading...</div>;
     }
 
     if (!product) {
-        return <div className="min-h-screen flex justify-center items-center">Product not found</div>;
+        return <div className="min-h-screen flex justify-center items-center text-xl font-bold text-slate-500">Product not found</div>;
     }
 
     return (
-        <div className="mx-6">
+        <div className="mx-6 pb-20">
             <div className="max-w-7xl mx-auto">
                 {/* Breadcrumbs */}
-                <div className="text-gray-600 text-sm mt-8 mb-5">
-                    Home / Products / <span className="font-medium text-slate-800">{product.category}</span>
+                <div className="text-gray-500 text-sm mt-8 mb-5 flex items-center gap-1">
+                    Home <span className="text-slate-300">/</span> Products <span className="text-slate-300">/</span> <span className="font-medium text-slate-800 capitalize">{product.category}</span>
                 </div>
 
-                {/* Product Details */}
+                {/* Product Details (ส่ง product ที่มี sale_price ไป) */}
                 <ProductDetails product={product} />
 
                 {/* Description & Reviews */}
-                <ProductDescription product={product} />
+                <div className="mt-20">
+                    <ProductDescription product={product} />
+                </div>
             </div>
         </div>
     );

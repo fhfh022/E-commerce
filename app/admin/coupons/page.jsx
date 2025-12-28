@@ -2,22 +2,30 @@
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import toast from "react-hot-toast";
-import { Trash2Icon, TicketPercent } from "lucide-react"; // เปลี่ยน Icon ให้สื่อความหมาย
-import { supabase } from "@/lib/supabase"; // [เพิ่ม] เรียกใช้ Supabase
+import { Trash2Icon, TicketPercent, AlertTriangle, Loader2 } from "lucide-react";
+import { supabase } from "@/lib/supabase";
+import PageTitle from "@/components/layout/PageTitle"; // สมมติว่ามี Component นี้
 
 export default function AdminCoupons() {
   const [coupons, setCoupons] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // State สำหรับ Form
   const [newCoupon, setNewCoupon] = useState({
     code: "",
     description: "",
-    discount: "",
-    expiry_date: new Date().toISOString().split("T")[0], // เก็บเป็น string YYYY-MM-DD เพื่อใช้กับ input date
+    discount_value: "",
+    discount_type: "percentage",
+    quantity: 100,
+    expiry_date: new Date().toISOString().split("T")[0],
     is_active: true,
   });
 
-  // 1. ดึงข้อมูลคูปองจาก Supabase
+  // State สำหรับ Delete Modal
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [couponToDelete, setCouponToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   const fetchCoupons = async () => {
     try {
       const { data, error } = await supabase
@@ -35,20 +43,47 @@ export default function AdminCoupons() {
     }
   };
 
-  // 2. เพิ่มคูปองใหม่
+  useEffect(() => {
+    fetchCoupons();
+  }, []);
+
   const handleAddCoupon = async (e) => {
     e.preventDefault();
 
     try {
-      // เตรียมข้อมูลให้ตรงกับ Schema Database
+      // 1. ตรวจสอบค่าว่าง
+      if (!newCoupon.discount_value || !newCoupon.quantity) {
+        throw new Error("Please enter valid Discount Value and Quantity");
+      }
+
+      const discountVal = parseInt(newCoupon.discount_value);
+      const quantityVal = parseInt(newCoupon.quantity);
+
+      // 2. ตรวจสอบว่าเป็นตัวเลขจริงหรือไม่
+      if (isNaN(discountVal) || isNaN(quantityVal)) {
+        throw new Error("Discount and Quantity must be numbers");
+      }
+
       const couponData = {
-        code: newCoupon.code.toUpperCase(), // แปลงเป็นตัวพิมพ์ใหญ่เสมอ
+        code: newCoupon.code.toUpperCase(),
         description: newCoupon.description,
-        discount_percent: parseInt(newCoupon.discount), // แปลงเป็นตัวเลข
+        discount_type: newCoupon.discount_type,
+        
+        discount_value: discountVal, // ✅ ค่าใหม่ที่เราใช้จริง
+        discount_percent: discountVal, // ✅ [เพิ่มบรรทัดนี้] ใส่ค่าเดิมกัน Error (เพื่อผ่าน Not Null ใน DB)
+        
+        quantity: quantityVal,
+        used_count: 0,
         expiry_date: newCoupon.expiry_date,
         is_active: newCoupon.is_active,
       };
 
+      // 3. Validation เพิ่มเติม
+      if (couponData.discount_type === 'percentage' && couponData.discount_value > 100) {
+        throw new Error("Percentage discount cannot exceed 100%");
+      }
+
+      // 4. ส่งข้อมูลไปยัง Supabase
       const { data, error } = await supabase
         .from("coupons")
         .insert(couponData)
@@ -56,236 +91,294 @@ export default function AdminCoupons() {
         .single();
 
       if (error) {
-        if (error.code === "23505")
-          throw new Error("Coupon code already exists!"); // ดักจับ Error รหัสซ้ำ
+        if (error.code === "23505") throw new Error(`Coupon code "${couponData.code}" already exists!`);
         throw error;
       }
 
-      setCoupons([data, ...coupons]); // อัปเดต State ทันที
+      setCoupons([data, ...coupons]);
       toast.success("Coupon added successfully");
 
       // Reset Form
       setNewCoupon({
         code: "",
         description: "",
-        discount: "",
+        discount_value: "",
+        discount_type: "percentage",
+        quantity: 100,
         expiry_date: new Date().toISOString().split("T")[0],
         is_active: true,
       });
+
     } catch (error) {
-      console.error("Add error:", error);
-      toast.error(error.message || "Failed to add coupon");
+      console.error("Add error details:", JSON.stringify(error, null, 2));
+      const message = error.message || error.details || "Failed to add coupon";
+      toast.error(message);
     }
   };
 
   const handleChange = (e) => {
-    setNewCoupon({ ...newCoupon, [e.target.name]: e.target.value });
+    const value = e.target.type === "checkbox" ? e.target.checked : e.target.value;
+    setNewCoupon({ ...newCoupon, [e.target.name]: value });
   };
 
-  // 3. ลบคูปอง
-  const deleteCoupon = async (id) => {
-    if (!confirm("Are you sure you want to delete this coupon?")) return;
+  // ฟังก์ชันเปิด Modal ลบ
+  const openDeleteModal = (coupon) => {
+    setCouponToDelete(coupon);
+    setIsDeleteModalOpen(true);
+  };
 
+  // ฟังก์ชันยืนยันการลบจริง
+  const confirmDeleteCoupon = async () => {
+    if (!couponToDelete) return;
+    setIsDeleting(true);
     try {
-      const { error } = await supabase.from("coupons").delete().eq("id", id);
-
+      const { error } = await supabase.from("coupons").delete().eq("id", couponToDelete.id);
       if (error) throw error;
-
-      setCoupons(coupons.filter((c) => c.id !== id)); // ลบออกจาก State
-      toast.success("Coupon deleted");
+      setCoupons(coupons.filter((c) => c.id !== couponToDelete.id));
+      toast.success(`Coupon "${couponToDelete.code}" deleted`);
+      setIsDeleteModalOpen(false);
     } catch (error) {
       console.error("Delete error:", error);
       toast.error("Failed to delete coupon");
+    } finally {
+      setIsDeleting(false);
+      setCouponToDelete(null);
     }
   };
 
-  useEffect(() => {
-    fetchCoupons();
-  }, []);
-
   return (
-    <div className="text-slate-500 mb-40 animate-in fade-in duration-500">
-      {/* Add Coupon Form */}
-      <div className="max-w-md bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="bg-blue-50 p-2.5 rounded-xl text-blue-600">
-            <TicketPercent size={24} />
+    <div className="max-w-7xl mx-auto px-6 pt-10 pb-20 text-slate-500 animate-in fade-in duration-500">
+      <PageTitle heading="Coupon Management" text="Create and manage discount codes" />
+      
+      {/* ✅ Layout หลัก: ใช้ Flexbox จัดเรียงแนวนอนบนจอใหญ่ */}
+      <div className="mt-8 flex flex-col lg:flex-row items-start gap-8">
+        
+        {/* ---- ส่วนที่ 1: Add Coupon Form (ด้านซ้าย) ---- */}
+        <div className="w-full lg:max-w-md bg-white p-6 rounded-2xl border border-slate-100 shadow-sm sticky top-8">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="bg-blue-50 p-2.5 rounded-xl text-blue-600">
+              <TicketPercent size={24} />
+            </div>
+            <h2 className="text-xl font-bold text-slate-800">Add New Coupon</h2>
           </div>
-          <h2 className="text-xl font-bold text-slate-800">Add New Coupon</h2>
-        </div>
 
-        <form
-          onSubmit={handleAddCoupon}
-          className="flex flex-col gap-4 text-sm"
-        >
-          <div className="flex gap-4">
-            <div className="flex-1">
-              <label className="block text-xs font-bold text-slate-400 uppercase mb-1">
-                Code
-              </label>
+          <form onSubmit={handleAddCoupon} className="flex flex-col gap-4 text-sm">
+            <div>
+              <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Code</label>
               <input
                 type="text"
-                placeholder="Example: SALE2024"
-                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-blue-500 transition font-medium uppercase"
                 name="code"
+                placeholder="Example: SALE2024"
                 value={newCoupon.code}
                 onChange={handleChange}
+                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-blue-500 transition font-medium uppercase"
                 required
               />
             </div>
-            <div className="w-1/3">
-              <label className="block text-xs font-bold text-slate-400 uppercase mb-1">
-                Discount (%)
-              </label>
+
+            <div className="flex gap-4">
+              <div className="w-1/2">
+                 <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Type</label>
+                 <select 
+                   name="discount_type"
+                   value={newCoupon.discount_type}
+                   onChange={handleChange}
+                   className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-blue-500 transition"
+                 >  
+    
+                   <option value="percentage">Percent (%)</option>
+                   <option value="fixed">Fixed Amount (฿)</option>
+                 </select>
+              </div>
+              <div className="w-1/2">
+                <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Value</label>
+                <input
+                  type="number"
+                  name="discount_value"
+                  placeholder={newCoupon.discount_type === 'percentage' ? "1-100" : "Amount"}
+                  value={newCoupon.discount_value}
+                  onChange={handleChange}
+                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-blue-500 transition text-center font-medium"
+                  required
+                  min="0"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Total Quantity</label>
               <input
                 type="number"
-                placeholder="%"
-                min={1}
-                max={100}
-                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-blue-500 transition text-center font-medium"
-                name="discount"
-                value={newCoupon.discount}
+                name="quantity"
+                placeholder="100"
+                value={newCoupon.quantity}
                 onChange={handleChange}
+                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-blue-500 transition"
+                required
+                min="1"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Description</label>
+              <input
+                type="text"
+                name="description"
+                placeholder="Brief details about this discount"
+                value={newCoupon.description}
+                onChange={handleChange}
+                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-blue-500 transition"
                 required
               />
             </div>
-          </div>
 
-          <div>
-            <label className="block text-xs font-bold text-slate-400 uppercase mb-1">
-              Description
-            </label>
-            <input
-              type="text"
-              placeholder="Brief details about this discount"
-              className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-blue-500 transition"
-              name="description"
-              value={newCoupon.description}
-              onChange={handleChange}
-              required
-            />
-          </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Expiry Date</label>
+              <input
+                type="date"
+                name="expiry_date"
+                value={newCoupon.expiry_date}
+                onChange={handleChange}
+                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-blue-500 transition text-slate-600"
+                required
+              />
+            </div>
 
-          <div>
-            <label className="block text-xs font-bold text-slate-400 uppercase mb-1">
-              Expiry Date
-            </label>
-            <input
-              type="date"
-              className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-blue-500 transition text-slate-600"
-              name="expiry_date"
-              value={newCoupon.expiry_date}
-              onChange={(e) =>
-                setNewCoupon({ ...newCoupon, expiry_date: e.target.value })
-              }
-              required
-            />
-          </div>
+            <div className="flex items-center gap-3 mt-2 bg-slate-50 p-3 rounded-xl border border-slate-100">
+              <input
+                type="checkbox"
+                id="isActive"
+                name="is_active"
+                checked={newCoupon.is_active}
+                onChange={handleChange}
+                className="accent-blue-600 size-4 cursor-pointer"
+              />
+              <label htmlFor="isActive" className="cursor-pointer select-none text-slate-700 font-medium">
+                Active Coupon
+              </label>
+            </div>
 
-          {/* Checkbox for Is Active */}
-          <div className="flex items-center gap-3 mt-2 bg-slate-50 p-3 rounded-xl border border-slate-100">
-            <input
-              type="checkbox"
-              id="isActive"
-              checked={newCoupon.is_active}
-              onChange={(e) =>
-                setNewCoupon({ ...newCoupon, is_active: e.target.checked })
-              }
-              className="accent-blue-600 size-4 cursor-pointer"
-            />
-            <label
-              htmlFor="isActive"
-              className="cursor-pointer select-none text-slate-700 font-medium"
-            >
-              Active Coupon
-            </label>
-          </div>
+            <button disabled={isLoading} className="mt-2 w-full py-3 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 active:scale-95 transition shadow-lg shadow-slate-200 disabled:opacity-70">
+              Create Coupon
+            </button>
+          </form>
+        </div>
 
-          <button className="mt-2 w-full py-3 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 active:scale-95 transition shadow-lg shadow-slate-200">
-            Create Coupon
-          </button>
-        </form>
+        {/* ---- ส่วนที่ 2: List Coupons (ด้านขวา) ---- */}
+        <div className="flex-1 w-full">
+          <h2 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+            Active Coupons <span className="text-xs bg-slate-100 text-slate-500 px-2 py-1 rounded-full">{coupons.length}</span>
+          </h2>
+
+          {isLoading ? (
+            <div className="text-center py-10 flex items-center justify-center gap-2 text-slate-400">
+                <Loader2 size={20} className="animate-spin" /> Loading coupons...
+            </div>
+          ) : (
+            // เพิ่ม max-w เพื่อให้ scroll แนวนอนทำงานได้ถูกต้องเมื่ออยู่คู่กับ form
+            <div className="max-w-[calc(100vw-3rem)] lg:max-w-none bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm whitespace-nowrap">
+                  <thead className="bg-slate-50 border-b border-slate-100 text-xs uppercase font-bold text-slate-400">
+                    <tr>
+                      <th className="py-4 px-6">Code</th>
+                      <th className="py-4 px-6">Description</th>
+                      <th className="py-4 px-6 text-center">Discount</th>
+                      <th className="py-4 px-6 text-center">Usage</th>
+                      <th className="py-4 px-6">Expires</th>
+                      <th className="py-4 px-6 text-center">Status</th>
+                      <th className="py-4 px-6 text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {coupons.length === 0 ? (
+                        <tr>
+                            <td colSpan="7" className="text-center py-8 text-slate-400">No coupons created yet.</td>
+                        </tr>
+                    ) : (
+                        coupons.map((coupon) => (
+                        <tr key={coupon.id} className="hover:bg-slate-50/50 transition">
+                            <td className="py-4 px-6 font-bold text-slate-800 font-mono tracking-wide">{coupon.code}</td>
+                            <td className="py-4 px-6 text-slate-600 max-w-[200px] truncate" title={coupon.description}>{coupon.description}</td>
+                            <td className="py-4 px-6 text-center font-bold text-green-600">
+                            {coupon.discount_type === 'percentage' ? `${coupon.discount_value}%` : `฿${coupon.discount_value.toLocaleString()}`}
+                            </td>
+                            <td className="py-4 px-6 text-center text-slate-600">
+                            <span className={coupon.used_count >= coupon.quantity ? "text-red-500 font-bold" : ""}>
+                                {coupon.used_count}
+                            </span> 
+                            / {coupon.quantity}
+                            </td>
+                            <td className="py-4 px-6 text-slate-500">{format(new Date(coupon.expiry_date), "dd MMM yyyy")}</td>
+                            <td className="py-4 px-6 text-center">
+                            <span className={`px-2 py-1 rounded-full text-xs font-bold ${coupon.is_active ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-500"}`}>
+                                {coupon.is_active ? "Active" : "Inactive"}
+                            </span>
+                            </td>
+                            <td className="py-4 px-6 text-right">
+                            {/* ✅ เปลี่ยนปุ่มลบให้เปิด Modal */}
+                            <button onClick={() => openDeleteModal(coupon)} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition" title="Delete Coupon">
+                                <Trash2Icon size={18} />
+                            </button>
+                            </td>
+                        </tr>
+                        ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* List Coupons */}
-      <div className="mt-12 max-w-4xl">
-        <h2 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
-          Active Coupons{" "}
-          <span className="text-xs bg-slate-100 text-slate-500 px-2 py-1 rounded-full">
-            {coupons.length}
-          </span>
-        </h2>
+      {/* ✅ Delete Confirmation Modal */}
+      {isDeleteModalOpen && couponToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-white p-6 md:p-8 rounded-2xl shadow-2xl max-w-sm w-full transform transition-all scale-100 animate-in zoom-in-95">
+            <div className="flex flex-col items-center text-center">
+              
+              {/* Icon */}
+              <div className="p-4 rounded-full mb-4 bg-red-100 text-red-600">
+                <AlertTriangle size={32} />
+              </div>
 
-        {isLoading ? (
-          <div className="text-center py-10">Loading coupons...</div>
-        ) : (
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50 border-b border-slate-100 text-xs uppercase font-bold text-slate-400">
-                <tr>
-                  <th className="py-4 px-6">Code</th>
-                  <th className="py-4 px-6">Description</th>
-                  <th className="py-4 px-6 text-center">Discount</th>
-                  <th className="py-4 px-6">Expires</th>
-                  <th className="py-4 px-6 text-center">Status</th>
-                  <th className="py-4 px-6 text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {coupons.map((coupon) => (
-                  <tr
-                    key={coupon.id}
-                    className="hover:bg-slate-50/50 transition"
-                  >
-                    <td className="py-4 px-6 font-bold text-slate-800 font-mono tracking-wide">
-                      {coupon.code}
-                    </td>
-                    <td className="py-4 px-6 text-slate-600">
-                      {coupon.description}
-                    </td>
-                    <td className="py-4 px-6 text-center font-bold text-green-600">
-                      {coupon.discount_percent}%
-                    </td>
-                    <td className="py-4 px-6 text-slate-500">
-                      {format(new Date(coupon.expiry_date), "dd MMM yyyy")}
-                    </td>
-                    <td className="py-4 px-6 text-center">
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs font-bold ${
-                          coupon.is_active
-                            ? "bg-green-100 text-green-700"
-                            : "bg-slate-100 text-slate-500"
-                        }`}
-                      >
-                        {coupon.is_active ? "Active" : "Inactive"}
-                      </span>
-                    </td>
-                    <td className="py-4 px-6 text-right">
-                      <button
-                        onClick={() => deleteCoupon(coupon.id)}
-                        className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition"
-                        title="Delete Coupon"
-                      >
-                        <Trash2Icon size={18} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-                {coupons.length === 0 && (
-                  <tr>
-                    <td
-                      colSpan="6"
-                      className="text-center py-10 text-slate-400"
-                    >
-                      No coupons available
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+              {/* Title */}
+              <h3 className="text-xl font-bold text-slate-900 mb-2">
+                Delete Coupon?
+              </h3>
+
+              {/* Description */}
+              <p className="text-slate-500 mb-6 text-sm md:text-base leading-relaxed">
+                Are you sure you want to delete the coupon <span className="font-bold text-slate-800">"{couponToDelete.code}"</span>? This action cannot be undone.
+              </p>
+
+              {/* Buttons */}
+              <div className="flex gap-3 w-full">
+                <button
+                  onClick={() => setIsDeleteModalOpen(false)}
+                  disabled={isDeleting}
+                  className="flex-1 px-4 py-2.5 border border-slate-200 text-slate-600 rounded-xl font-bold hover:bg-slate-50 transition disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDeleteCoupon}
+                  disabled={isDeleting}
+                  className="flex-1 px-4 py-2.5 text-white rounded-xl font-bold transition shadow-md disabled:opacity-70 disabled:cursor-not-allowed flex justify-center items-center bg-red-600 hover:bg-red-700 shadow-red-200"
+                >
+                  {isDeleting ? (
+                    <Loader2 size={20} className="animate-spin" />
+                  ) : (
+                    "Yes, Delete"
+                  )}
+                </button>
+              </div>
+            </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
+
     </div>
   );
 }

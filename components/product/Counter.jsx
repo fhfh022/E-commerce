@@ -1,31 +1,35 @@
 "use client";
 import { addToCart, removeFromCart } from "@/lib/features/cart/cartSlice";
 import { useDispatch, useSelector } from "react-redux";
-import { supabase } from "@/lib/supabase"; // [เพิ่ม] นำเข้า supabase client
+import { supabase } from "@/lib/supabase";
 import { toast } from "react-hot-toast";
 
-const Counter = ({ productId }) => {
+const Counter = ({ productId, stock }) => { // ✅ 1. รับ prop 'stock' เพิ่ม
   const { cartItems } = useSelector((state) => state.cart);
-  const user = useSelector((state) => state.auth.user); // [เพิ่ม] ดึงข้อมูล user เพื่อใช้ระบุเจ้าของตะกร้า
+  const user = useSelector((state) => state.auth.user);
   const dispatch = useDispatch();
 
   const currentQuantity = cartItems[productId] || 0;
 
-  // ✅ ฟังก์ชันจัดการการเปลี่ยนแปลงจำนวนสินค้า
   const handleUpdateQuantity = async (type) => {
     try {
       let newQuantity = currentQuantity;
 
       if (type === "add") {
+        // ✅ 2. เช็คสต็อกก่อนบวกเพิ่ม
+        if (currentQuantity >= stock) {
+            toast.error(`Max stock reached! Only ${stock} items available.`);
+            return;
+        }
         newQuantity += 1;
         dispatch(addToCart({ productId }));
       } else {
-        if (currentQuantity <= 1) return; // ป้องกันไม่ให้ลดจนต่ำกว่า 1 ในหน้านี้ (ใช้ปุ่มลบทิ้งแทน)
+        if (currentQuantity <= 1) return;
         newQuantity -= 1;
         dispatch(removeFromCart({ productId }));
       }
 
-      // ถ้าผู้ใช้ Login อยู่ ให้ซิงค์ข้อมูลไปที่ Database
+      // Sync Database
       if (user) {
         const { error } = await supabase.from("cart").upsert(
           {
@@ -34,7 +38,7 @@ const Counter = ({ productId }) => {
             quantity: newQuantity,
           },
           { onConflict: "user_id, product_id" }
-        ); // อัปเดตแถวเดิมถ้ามีอยู่แล้ว
+        );
 
         if (error) throw error;
       }
@@ -45,7 +49,8 @@ const Counter = ({ productId }) => {
   };
 
   return (
-    <div className="inline-flex items-center gap-1 sm:gap-3 px-3 py-1 rounded border border-slate-200 max-sm:text-sm text-slate-600 bg-white shadow-sm">
+    // ✅ 3. ปรับ UI ให้สวยงามและปิดปุ่มบวกถ้าของหมดสต็อก
+    <div className="inline-flex items-center gap-1 sm:gap-3 px-3 py-1 rounded border border-slate-200 max-sm:text-sm text-slate-600 bg-white shadow-sm h-[50px]">
       <button
         onClick={() => handleUpdateQuantity("remove")}
         className="p-1 select-none hover:text-red-500 transition-colors w-6"
@@ -60,7 +65,13 @@ const Counter = ({ productId }) => {
 
       <button
         onClick={() => handleUpdateQuantity("add")}
-        className="p-1 select-none hover:text-green-600 transition-colors w-6"
+        // ✅ 4. ปิดปุ่มและเปลี่ยนสีถ้าถึงลิมิตสต็อก
+        className={`p-1 select-none w-6 transition-colors ${
+            currentQuantity >= stock 
+            ? "text-slate-300 cursor-not-allowed" 
+            : "hover:text-green-600"
+        }`}
+        disabled={currentQuantity >= stock}
       >
         +
       </button>

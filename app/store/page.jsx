@@ -1,7 +1,15 @@
 'use client'
 import Loading from "@/components/layout/Loading"
-import { supabase } from "@/lib/supabase" // ✅ อย่าลืม import supabase
-import { CircleDollarSignIcon, ShoppingBasketIcon, StarIcon, TagsIcon } from "lucide-react"
+import { supabase } from "@/lib/supabase"
+import { 
+    CircleDollarSignIcon, 
+    ShoppingBasketIcon, 
+    StarIcon, 
+    TagsIcon, 
+    Trash2Icon, 
+    AlertTriangle, 
+    X 
+} from "lucide-react"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
@@ -17,13 +25,18 @@ export default function Dashboard() {
         totalProducts: 0,
         totalEarnings: 0,
         totalOrders: 0,
-        totalRatingsCount: 0, // แยกตัวแปรนับจำนวนรีวิว
+        totalRatingsCount: 0,
         ratings: [],
     })
 
+    // ✅ State สำหรับ Modal
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+    const [reviewToDelete, setReviewToDelete] = useState(null)
+    const [isDeleting, setIsDeleting] = useState(false)
+
     const dashboardCardsData = [
         { title: 'Total Products', value: dashboardData.totalProducts, icon: ShoppingBasketIcon },
-        { title: 'Total Earnings', value: currency + dashboardData.totalEarnings.toLocaleString(), icon: CircleDollarSignIcon }, // ✅ ใส่ toLocaleString() ให้สวยงาม
+        { title: 'Total Earnings', value: currency + dashboardData.totalEarnings.toLocaleString(), icon: CircleDollarSignIcon },
         { title: 'Total Orders', value: dashboardData.totalOrders, icon: TagsIcon },
         { title: 'Total Ratings', value: dashboardData.totalRatingsCount, icon: StarIcon },
     ]
@@ -32,25 +45,25 @@ export default function Dashboard() {
         try {
             setLoading(true)
 
-            // 1. หาจำนวนสินค้าทั้งหมด (Products Count)
+            // 1. Count Products
             const { count: productsCount, error: productError } = await supabase
                 .from('products')
-                .select('*', { count: 'exact', head: true }) // head: true คือโหลดแค่ header เพื่อนับจำนวน (ประหยัด resource)
+                .select('*', { count: 'exact', head: true })
 
-            // 2. หาจำนวนออเดอร์ทั้งหมด (Orders Count)
+            // 2. Count Orders
             const { count: ordersCount, error: orderError } = await supabase
                 .from('orders')
                 .select('*', { count: 'exact', head: true })
 
-            // 3. หา Earnings (ยอดขายรวมเฉพาะที่จ่ายเงินแล้ว)
+            // 3. Calculate Earnings
             const { data: paidOrders, error: earningsError } = await supabase
                 .from('orders')
                 .select('total_amount')
-                .eq('payment_status', 'paid') // ✅ นับเฉพาะที่จ่ายเงินแล้ว
+                .eq('payment_status', 'paid')
 
             const totalEarnings = paidOrders?.reduce((acc, order) => acc + (order.total_amount || 0), 0) || 0
 
-            // 4. ดึงข้อมูลรีวิว (Ratings List & Count)
+            // 4. Fetch Reviews
             const { data: reviews, count: ratingsCount, error: reviewError } = await supabase
                 .from('reviews')
                 .select(`
@@ -58,7 +71,7 @@ export default function Dashboard() {
                     user:users(name, avatar), 
                     product:products(id, name, category)
                 `, { count: 'exact' })
-                .order('created_at', { ascending: false }) // เรียงจากใหม่ไปเก่า
+                .order('created_at', { ascending: false })
 
             if (productError || orderError || earningsError || reviewError) throw new Error("Failed to fetch data")
 
@@ -82,12 +95,51 @@ export default function Dashboard() {
         fetchDashboardData()
     }, [])
 
+    // ✅ 1. เปิด Modal เพื่อยืนยัน
+    const openDeleteModal = (review) => {
+        setReviewToDelete(review)
+        setIsDeleteModalOpen(true)
+    }
+
+    // ✅ 2. สั่งลบข้อมูลจริงๆ เมื่อกดยืนยันใน Modal
+    const handleDeleteConfirm = async () => {
+        if (!reviewToDelete) return
+
+        setIsDeleting(true)
+        try {
+            const { error } = await supabase
+                .from('reviews')
+                .delete()
+                .eq('id', reviewToDelete.id)
+
+            if (error) throw error
+
+            // อัปเดต UI ทันทีโดยไม่ต้องโหลดใหม่
+            setDashboardData(prev => ({
+                ...prev,
+                totalRatingsCount: prev.totalRatingsCount - 1,
+                ratings: prev.ratings.filter(r => r.id !== reviewToDelete.id)
+            }))
+
+            toast.success("Review deleted successfully")
+            setIsDeleteModalOpen(false)
+            setReviewToDelete(null)
+
+        } catch (error) {
+            console.error("Delete Error:", error)
+            toast.error("Failed to delete review")
+        } finally {
+            setIsDeleting(false)
+        }
+    }
+
     if (loading) return <Loading />
 
     return (
-        <div className=" text-slate-500 mb-28">
+        <div className="text-slate-500 mb-28 relative">
             <h1 className="text-2xl">Seller <span className="text-slate-800 font-medium">Dashboard</span></h1>
 
+            {/* Dashboard Stats Cards */}
             <div className="flex flex-wrap gap-5 my-10 mt-4">
                 {
                     dashboardCardsData.map((card, index) => (
@@ -109,10 +161,19 @@ export default function Dashboard() {
                      <div className="text-center py-10 bg-slate-50 rounded-lg text-slate-400">No reviews yet</div>
                 ) : (
                     dashboardData.ratings.map((review, index) => (
-                        <div key={index} className="flex max-sm:flex-col gap-5 sm:items-center justify-between p-6 border border-slate-200 rounded-xl bg-white shadow-sm hover:border-blue-200 transition-colors max-w-4xl">
+                        <div key={index} className="relative group flex max-sm:flex-col gap-5 sm:items-center justify-between p-6 border border-slate-200 rounded-xl bg-white shadow-sm hover:border-red-200 transition-colors max-w-4xl">
+                            
+                            {/* ✅ ปุ่มลบ (เรียก Modal) */}
+                            <button 
+                                onClick={() => openDeleteModal(review)}
+                                className="absolute -top-2 -right-2 p-2 bg-white border border-red-100 text-red-500 rounded-full shadow-sm hover:bg-red-50 hover:scale-110 transition-all opacity-0 group-hover:opacity-100 z-10"
+                                title="Delete Review"
+                            >
+                                <Trash2Icon size={16} />
+                            </button>
+
                             <div>
                                 <div className="flex gap-3 items-center">
-                                    {/* ✅ แสดงรูป Avatar ที่ถูกต้อง */}
                                     {review.user?.avatar ? (
                                         <Image 
                                             src={review.user.avatar} 
@@ -129,11 +190,9 @@ export default function Dashboard() {
                                     
                                     <div>
                                         <p className="font-medium text-slate-800">{review.user?.name || "Anonymous"}</p>
-                                        {/* ✅ แก้ไข field วันที่ */}
                                         <p className="font-light text-xs text-slate-400">{new Date(review.created_at).toLocaleDateString()}</p>
                                     </div>
                                 </div>
-                                {/* ✅ แก้ไข field comment */}
                                 <p className="mt-3 text-slate-600 max-w-lg text-sm leading-relaxed">{review.comment}</p>
                             </div>
 
@@ -142,11 +201,11 @@ export default function Dashboard() {
                                     <p className="text-xs text-slate-400 uppercase tracking-wide">{review.product?.category}</p>
                                     <p className="font-bold text-slate-700 text-sm mb-1">{review.product?.name}</p>
                                     <div className='flex items-center gap-0.5'>
-                                        {Array(5).fill('').map((_, index) => (
+                                        {Array(5).fill('').map((_, idx) => (
                                             <StarIcon 
-                                                key={index} 
+                                                key={idx} 
                                                 size={16} 
-                                                className={index < review.rating ? "fill-green-400 text-green-400" : "fill-slate-200 text-slate-200"} 
+                                                className={idx < review.rating ? "fill-green-400 text-green-400" : "fill-slate-200 text-slate-200"} 
                                             />
                                         ))}
                                     </div>
@@ -162,6 +221,54 @@ export default function Dashboard() {
                     ))
                 )}
             </div>
+
+            {/* ✅ Delete Confirmation Modal */}
+            {isDeleteModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200 relative">
+                        
+                        <button 
+                            onClick={() => setIsDeleteModalOpen(false)} 
+                            className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition"
+                        >
+                            <X size={20} />
+                        </button>
+
+                        <div className="flex flex-col items-center text-center">
+                            <div className="size-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-4">
+                                <AlertTriangle size={32} />
+                            </div>
+                            <h3 className="text-xl font-bold text-slate-900">Delete Review?</h3>
+                            <p className="text-sm text-slate-500 mt-2 mb-6">
+                                Are you sure you want to delete this review from <span className="font-bold text-slate-800">{reviewToDelete?.user?.name}</span>? This action cannot be undone.
+                            </p>
+                            
+                            <div className="flex gap-3 w-full">
+                                <button 
+                                    onClick={() => setIsDeleteModalOpen(false)} 
+                                    className="flex-1 py-2.5 bg-white border border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-50 transition"
+                                    disabled={isDeleting}
+                                >
+                                    Cancel
+                                </button>
+                                <button 
+                                    onClick={handleDeleteConfirm} 
+                                    className="flex-1 py-2.5 bg-red-500 text-white font-bold rounded-xl hover:bg-red-600 shadow-lg shadow-red-100 transition flex justify-center items-center gap-2 disabled:opacity-70"
+                                    disabled={isDeleting}
+                                >
+                                    {isDeleting ? (
+                                        <>Deleting...</>
+                                    ) : (
+                                        <>
+                                            <Trash2Icon size={16} /> Delete
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

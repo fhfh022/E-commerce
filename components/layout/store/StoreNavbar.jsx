@@ -12,9 +12,6 @@ const StoreNavbar = () => {
                     Store
                 </p>
             </Link>
-            <div className="flex items-center gap-3">
-                <p>Hi, Seller</p>
-            </div>
         </div>
     )
 }

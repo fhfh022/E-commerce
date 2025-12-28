@@ -1,5 +1,5 @@
 "use client";
-import { StarIcon, Heart } from "lucide-react";
+import { Heart } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import React from "react";
@@ -13,11 +13,9 @@ import {
 import { toast } from "react-hot-toast";
 import { useClerk } from "@clerk/nextjs";
 
-// ✅ [แก้ไข 1] รับ prop 'hideLikeButton' เพิ่ม (default = false คือให้โชว์ปกติ)
 const ProductCard = ({
   product,
   hideLikeButton = false,
-  hideRating = false,
 }) => {
   const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || "$";
   const { openSignIn } = useClerk();
@@ -29,6 +27,7 @@ const ProductCard = ({
 
   const toggleFavorite = async (e) => {
     e.preventDefault();
+    e.stopPropagation();
 
     if (!user) {
       openSignIn();
@@ -59,21 +58,34 @@ const ProductCard = ({
     }
   };
 
-  const rating = 4;
-  const mainImage =
-    product.images?.[0] || assets.upload_area || "/placeholder.png";
+  const mainImage = product.images?.[0] || assets.upload_area || "/placeholder.png";
+
+  // Logic คำนวณส่วนลด
+  const isOnSale = product.sale_price && product.sale_price > 0 && product.sale_price < product.price;
+  const discountPercent = isOnSale 
+    ? Math.round(((product.price - product.sale_price) / product.price) * 100) 
+    : 0;
 
   return (
     <Link
       href={`/product/${product.id}`}
-      className="group max-xl:mx-auto relative block"
+      className="group relative block w-full h-full" // ✅ เปลี่ยนเป็น w-full h-full เพื่อให้ยืดเต็ม Grid
     >
-      <div className="bg-[#F5F5F5] h-40 sm:w-60 sm:h-68 rounded-lg flex items-center justify-center overflow-hidden relative">
-        {/* ✅ [แก้ไข 2] เช็คเงื่อนไข: ถ้า hideLikeButton เป็น false ถึงจะแสดงปุ่ม */}
+      {/* --- ส่วนรูปภาพ --- */}
+      <div className="bg-[#F8F9FA] w-full aspect-square rounded-xl flex items-center justify-center overflow-hidden relative border border-transparent group-hover:border-slate-200 transition-all">
+        
+        {/* ป้าย SALE */}
+        {isOnSale && (
+            <span className="absolute top-2 left-2 z-10 bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded shadow-sm">
+                -{discountPercent}%
+            </span>
+        )}
+
+        {/* ปุ่ม Favorite */}
         {!hideLikeButton && (
           <button
             onClick={toggleFavorite}
-            className="absolute top-3 right-3 z-10 p-2 bg-white/80 backdrop-blur-sm rounded-full shadow-sm hover:scale-110 transition active:scale-95 group/btn"
+            className="absolute top-2 right-2 z-20 p-2 bg-white/80 backdrop-blur-sm rounded-full shadow-sm hover:scale-110 transition active:scale-95 group/btn opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 duration-200"
           >
             <Heart
               size={18}
@@ -89,51 +101,41 @@ const ProductCard = ({
         <Image
           width={500}
           height={500}
-          className="max-h-30 sm:max-h-40 w-auto group-hover:scale-110 transition duration-300 object-contain p-4"
+          className="w-full h-full object-contain p-6 group-hover:scale-105 transition duration-500 ease-in-out" // เพิ่ม padding ในรูปไม่ให้ชิดขอบ
           src={mainImage}
           alt={product.name || "Product Image"}
         />
       </div>
 
-      {/* ... (ส่วน Details ด้านล่างเหมือนเดิม) ... */}
-      <div className="flex justify-between gap-3 text-sm text-slate-800 pt-3 max-w-60">
-        <div className="flex-1 overflow-hidden">
-          <p className="font-medium truncate pr-2">
-            {product.name}
-            {product.model && (
-              <span className="text-slate-500 font-normal ml-1.5 text-xs uppercase">
-                {product.model}
-              </span>
-            )}
-          </p>
+      {/* --- ส่วนรายละเอียด (แก้ตามรูป) --- */}
+      <div className="pt-3 px-1 flex flex-col gap-1">
+        {/* 1. ชื่อสินค้า */}
+        <h3 className="font-bold text-slate-900 text-sm truncate" title={product.name}>
+          {product.name}
+        </h3>
 
-          {product.specs?.processor && (
-            <p className="text-xs text-slate-500 truncate mt-0.5">
-              {product.specs.processor}
-            </p>
-          )}
-          {!hideRating && (
-            <div className="flex items-center gap-1 mt-1">
-              <div className="flex">
-                {Array(5)
-                  .fill("")
-                  .map((_, index) => (
-                    <StarIcon
-                      key={index}
-                      size={14}
-                      className="mt-0.5"
-                      fill={rating >= index + 1 ? "#00C950" : "#E5E7EB"}
-                      color={rating >= index + 1 ? "#00C950" : "#D1D5DB"}
-                    />
-                  ))}
-              </div>
-            </div>
-          )}
-        </div>
-        <p className="font-semibold whitespace-nowrap text-slate-900">
-          {currency}
-          {Number(product.price).toLocaleString()}
+        {/* 2. รายละเอียดสเปค (Description) [Cite: image_f0a2a5.png] */}
+        <p className="text-xs text-slate-500 leading-relaxed line-clamp-2 min-h-[2.5em]">
+          {product.description || product.model || "No description available"}
         </p>
+
+        {/* 3. ราคา (อยู่ล่างสุด) */}
+        <div className="mt-auto flex items-center gap-2">
+            {isOnSale ? (
+                <>
+                    <span className="font-bold text-red-600 text-base">
+                        {currency}{Number(product.sale_price).toLocaleString()}
+                    </span>
+                    <span className="text-xs text-slate-400 line-through decoration-slate-400">
+                        {currency}{Number(product.price).toLocaleString()}
+                    </span>
+                </>
+            ) : (
+                <span className="font-bold text-slate-900 text-base">
+                    {currency}{Number(product.price).toLocaleString()}
+                </span>
+            )}
+        </div>
       </div>
     </Link>
   );

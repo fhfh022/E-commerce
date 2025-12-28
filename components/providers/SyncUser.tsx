@@ -41,7 +41,6 @@ export default function SyncUser() {
         }
 
         if (userData) {
-          console.log("User Synced:", userData); // เช็คว่าข้อมูลมาจริงไหม
           dispatch(setUser(userData));
 
           // 2. ดึง Favorites

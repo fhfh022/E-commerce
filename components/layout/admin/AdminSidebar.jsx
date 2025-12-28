@@ -1,7 +1,7 @@
 'use client'
 
 import { usePathname } from "next/navigation"
-import { HomeIcon, TicketPercentIcon, Users } from "lucide-react"
+import { HomeIcon, TicketPercentIcon, Users ,ListOrdered} from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { assets } from "@/assets/assets"
@@ -15,7 +15,9 @@ const AdminSidebar = () => {
    
     const sidebarLinks = [
         { name: 'Dashboard', href: '/admin', icon: HomeIcon },
+        { name: 'Orders', href: '/admin/orders', icon: ListOrdered },
         { name: 'Coupons', href: '/admin/coupons', icon: TicketPercentIcon  },
+
     ]
 
     if (role === 'master_admin') {

@@ -20,18 +20,20 @@ const LatestProducts = () => {
                 href='/shop' 
             />
             
-            <div className='mt-12 grid grid-cols-2 sm:flex flex-wrap gap-6 justify-between'>
+            {/* ✅ ปรับจาก flex-wrap เป็น Grid System เพื่อควบคุมขนาดการ์ด */}
+            <div className='mt-12 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 lg:gap-8'>
                 {availableProducts
                     .slice()
                     .sort((a, b) => new Date(b.created_at || b.createdAt) - new Date(a.created_at || a.createdAt))
                     .slice(0, displayQuantity)
                     .map((product, index) => (
-                        <ProductCard 
-                            key={product.id || index} 
-                            product={product} 
-                            hideLikeButton={true} // ✅ [ใส่ตรงนี้] เพื่อซ่อนปุ่มหัวใจในหน้า Home
-                            hideRating={true}
-                        />
+                        <div key={product.id || index} className="flex justify-center">
+                            <ProductCard 
+                                product={product} 
+                                hideLikeButton={true} 
+                                hideRating={true}
+                            />
+                        </div>
                     ))
                 }
             </div>

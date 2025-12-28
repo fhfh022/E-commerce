@@ -8,11 +8,12 @@ import {
   ClipboardList,
   Package2,
   Heart,
+  Loader2, // เพิ่ม Loader icon
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { useSelector } from "react-redux"; // ✅ ใช้ useSelector ดึง Role
+import { useState, useMemo } from "react"; // ✅ เพิ่ม useMemo
+import { useSelector } from "react-redux";
 import Banner from "./Banner";
 import { useUser, useClerk, UserButton } from "@clerk/nextjs";
 
@@ -21,39 +22,37 @@ const Navbar = () => {
   const { openSignIn } = useClerk();
   const router = useRouter();
 
-  // ❌ ลบส่วนนี้ออก (เพราะมันไม่อัปเดตตาม Supabase)
-  // const role = user?.publicMetadata?.role;
-  
-  // ✅ เปลี่ยนมาใช้ Role จาก Redux Store (ที่ดึงมาจาก Supabase จริงๆ)
-  const role = useSelector((state) => state.user?.role); 
+  // Redux Selectors
+  const role = useSelector((state) => state.user?.role);
   const isAdmin = role === "master_admin" || role === "admin";
+  const cartItems = useSelector((state) => state?.cart?.cartItems) || {};
+  const favoriteItems = useSelector((state) => state?.favorite?.items) || [];
+  const products = useSelector((state) => state?.product?.list) || [];
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
-  // ... (ส่วนที่เหลือของไฟล์เหมือนเดิม ไม่ต้องแก้) ...
-  // ตรวจสอบให้แน่ใจว่า code ด้านล่างยังคงเดิม
-  
-  const cartItems = useSelector((state) => state?.cart?.cartItems) || {};
-  const favoriteItems = useSelector((state) => state?.favorite?.items) || [];
-  const products = useSelector((state) => state?.product?.list) || [];
+  // ✅ OPTIMIZATION 1: ใช้ useMemo คำนวณตัวเลข เพื่อไม่ให้คำนวณใหม่ทุกครั้งที่ Re-render
+  const itemCount = useMemo(() => {
+    return Object.keys(cartItems).length > 0
+      ? Object.values(cartItems).reduce((total, qty) => total + (Number(qty) || 0), 0)
+      : 0;
+  }, [cartItems]);
 
-  const itemCount = Object.keys(cartItems).length > 0
-    ? Object.values(cartItems).reduce((total, qty) => total + (Number(qty) || 0), 0)
-    : 0;
+  const favoriteCount = useMemo(() => {
+    return Array.isArray(favoriteItems) ? favoriteItems.length : 0;
+  }, [favoriteItems]);
 
-  const favoriteCount = Array.isArray(favoriteItems) ? favoriteItems.length : 0;
-
-  const getSuggestions = () => {
+  // ✅ OPTIMIZATION 2: ใช้ useMemo กับ Search Logic
+  const searchSuggestions = useMemo(() => {
     if (!search || search.length < 2) return [];
     return products
       .filter((product) =>
         product.name.toLowerCase().includes(search.toLowerCase())
       )
       .slice(0, 5);
-  };
-  const searchSuggestions = getSuggestions();
+  }, [search, products]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -68,7 +67,7 @@ const Navbar = () => {
     router.push(`/shop?search=${productName}`);
   };
 
-  if (!isLoaded) return null;
+  // ❌ ลบ if (!isLoaded) return null; ออก เพื่อให้ Navbar แสดงผลทันที
 
   return (
     <header>
@@ -76,6 +75,7 @@ const Navbar = () => {
       <nav className="sticky top-0 z-50 bg-white shadow-sm">
         <div className="mx-6">
           <div className="flex items-center justify-between max-w-7xl mx-auto py-4 transition-all">
+            {/* Logo - แสดงผลทันที */}
             <Link
               href="/"
               className="relative text-4xl font-semibold text-slate-700"
@@ -84,9 +84,9 @@ const Navbar = () => {
                 Store
               </p>
               <span className="text-green-600">PR</span>T
-              <span className="text-green-600 text-5xl leading-0"></span>
             </Link>
 
+            {/* Desktop Menu */}
             <section
               id="desktop-menu"
               className="hidden items-center gap-4 text-slate-600 md:flex lg:gap-8"
@@ -104,6 +104,7 @@ const Navbar = () => {
                 Promotions
               </Link>
 
+              {/* Search Bar */}
               <div className="relative hidden xl:block">
                 <form
                   onSubmit={handleSearch}
@@ -118,7 +119,6 @@ const Navbar = () => {
                     onFocus={() => setIsSearchOpen(true)}
                     onBlur={() => setTimeout(() => setIsSearchOpen(false), 200)}
                     onChange={(e) => setSearch(e.target.value)}
-                    required
                   />
                 </form>
 
@@ -146,23 +146,16 @@ const Navbar = () => {
                         onMouseDown={handleSearch}
                         className="px-4 py-2 text-center text-xs bg-slate-50 text-slate-600 border-t hover:bg-slate-100 rounded-b-lg cursor-pointer transition"
                       >
-                        ดูผลลัพธ์ทั้งหมด ({products.length} รายการ)
+                        See all ({products.length})
                       </div>
-                    </div>
-                  )}
-
-                {isSearchOpen &&
-                  search.length >= 2 &&
-                  searchSuggestions.length === 0 && (
-                    <div className="absolute top-full left-0 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg z-50 p-3 text-sm text-slate-500">
-                      ไม่พบสินค้าที่ตรงกับ "{search}"
                     </div>
                   )}
               </div>
 
+              {/* Icons Group */}
               <button
                 onClick={() => {
-                  if (!user) {
+                  if (!user && isLoaded) {
                     openSignIn();
                   } else {
                     router.push("/favorites");
@@ -191,7 +184,11 @@ const Navbar = () => {
                 )}
               </Link>
 
-              {!user ? (
+              {/* ✅ OPTIMIZATION 3: Skeleton Loading for Auth Button */}
+              {!isLoaded ? (
+                // Skeleton Loader (แสดงขณะรอ Clerk Load)
+                <div className="w-[88px] h-[40px] bg-slate-100 rounded-full animate-pulse"></div>
+              ) : !user ? (
                 <button
                   onClick={openSignIn}
                   className="px-8 py-2 bg-indigo-500 rounded-full text-white transition hover:bg-indigo-600"
@@ -206,8 +203,6 @@ const Navbar = () => {
                       label="My Orders"
                       onClick={() => router.push("/orders")}
                     />
-
-                    {/* ✅ ส่วนนี้จะแสดงถูกต้องแล้วเพราะ isAdmin มาจาก Redux */}
                     {isAdmin && (
                       <UserButton.Action
                         labelIcon={<ClipboardList size={16} />}
@@ -215,7 +210,6 @@ const Navbar = () => {
                         onClick={() => router.push("/admin")}
                       />
                     )}
-
                     {isAdmin && (
                       <UserButton.Action
                         labelIcon={<Package2 size={16} />}
@@ -228,6 +222,7 @@ const Navbar = () => {
               )}
             </section>
 
+            {/* Mobile Controls */}
             <section
               id="mobile-controls"
               className="flex items-center gap-4 md:hidden"
@@ -257,45 +252,29 @@ const Navbar = () => {
           </div>
         </div>
 
+        {/* Mobile Dropdown */}
         <section
           id="mobile-dropdown"
           className={`
             absolute top-full left-0 w-full bg-white shadow-xl overflow-hidden transition-all duration-300 ease-in-out md:hidden
-            ${isMenuOpen ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"}
+            ${isMenuOpen ? "max-h-[600px] opacity-100" : "max-h-0 opacity-0"}
           `}
         >
           <div className="flex flex-col gap-4 px-6 py-6 border-t border-gray-100 text-slate-600 font-medium">
-            <Link
-              href="/"
-              onClick={() => setIsMenuOpen(false)}
-              className="transition hover:text-green-600"
-            >
+            <Link href="/" onClick={() => setIsMenuOpen(false)} className="transition hover:text-green-600">
               Home
             </Link>
-            <Link
-              href="/shop"
-              onClick={() => setIsMenuOpen(false)}
-              className="transition hover:text-green-600"
-            >
+            <Link href="/shop" onClick={() => setIsMenuOpen(false)} className="transition hover:text-green-600">
               Shop
             </Link>
-            <Link
-              href="/favorites"
-              onClick={() => setIsMenuOpen(false)}
-              className="flex items-center gap-2 transition hover:text-green-600"
-            >
-              <Heart size={18} /> Favorites
-              {favoriteCount > 0 && (
-                <span className="text-xs text-red-500 font-semibold">
-                  ({favoriteCount})
-                </span>
-              )}
+            <Link href="/promotions" onClick={() => setIsMenuOpen(false)} className="transition hover:text-green-600">
+              Promotions
+            </Link>
+            <Link href="/favorites" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-2 transition hover:text-green-600">
+              <Heart size={18} /> Favorites {favoriteCount > 0 && <span className="text-xs text-red-500 font-semibold">({favoriteCount})</span>}
             </Link>
 
-            <form
-              onSubmit={handleSearch}
-              className="flex items-center gap-2 bg-slate-100 px-4 py-3 rounded-full mt-2"
-            >
+            <form onSubmit={handleSearch} className="flex items-center gap-2 bg-slate-100 px-4 py-3 rounded-full mt-2">
               <Search size={18} className="text-slate-600" />
               <input
                 className="w-full bg-transparent outline-none placeholder-slate-600"
@@ -306,7 +285,10 @@ const Navbar = () => {
               />
             </form>
 
-            {!user ? (
+            {/* Mobile Auth Loading State */}
+            {!isLoaded ? (
+               <div className="w-full h-[48px] bg-slate-100 rounded-full animate-pulse mt-2"></div>
+            ) : !user ? (
               <button
                 onClick={openSignIn}
                 className="w-full py-3 bg-indigo-500 rounded-full text-white text-center mt-2 transition hover:bg-indigo-600"
@@ -315,46 +297,22 @@ const Navbar = () => {
               </button>
             ) : (
               <div className="mt-2 pt-2 border-t border-slate-100">
-                <div className="flex items-center justify-between text-sm text-slate-500 mb-2">
-                  <div className="flex items-center gap-3">
-                    <UserButton afterSignOutUrl="/" />
-                    <span className="font-semibold text-slate-700">
-                      {user.username || user.fullName}
-                    </span>
-                  </div>
+                <div className="flex items-center gap-3 mb-4">
+                   <UserButton afterSignOutUrl="/" />
+                   <span className="font-semibold text-slate-700">{user.fullName || user.username}</span>
                 </div>
 
-                <Link
-                  href="/cart"
-                  onClick={() => setIsMenuOpen(false)}
-                  className="flex items-center gap-3 py-2 px-3 text-slate-600 hover:bg-slate-50 rounded-lg transition"
-                >
-                  <ShoppingCart size={18} /> Cart
-                </Link>
-                <Link
-                  href="/orders"
-                  onClick={() => setIsMenuOpen(false)}
-                  className="flex items-center gap-3 py-2 px-3 text-slate-600 hover:bg-slate-50 rounded-lg transition"
-                >
+                <Link href="/orders" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 py-2 px-3 text-slate-600 hover:bg-slate-50 rounded-lg transition">
                   <PackageIcon size={18} /> My Orders
                 </Link>
 
                 {isAdmin && (
-                  <Link
-                    href="/admin"
-                    onClick={() => setIsMenuOpen(false)}
-                    className="flex items-center gap-3 py-2 px-3 text-slate-600 hover:bg-slate-50 rounded-lg transition"
-                  >
+                  <Link href="/admin" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 py-2 px-3 text-slate-600 hover:bg-slate-50 rounded-lg transition">
                     <ClipboardList size={18} /> Admin Dashboard
                   </Link>
                 )}
-
                 {isAdmin && (
-                  <Link
-                    href="/store"
-                    onClick={() => setIsMenuOpen(false)}
-                    className="flex items-center gap-3 py-2 px-3 text-slate-600 hover:bg-slate-50 rounded-lg transition"
-                  >
+                  <Link href="/store" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 py-2 px-3 text-slate-600 hover:bg-slate-50 rounded-lg transition">
                     <Package2 size={18} /> Store Dashboard
                   </Link>
                 )}

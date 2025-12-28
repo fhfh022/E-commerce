@@ -6,9 +6,18 @@ import Loading from "@/components/layout/Loading";
 import { useDispatch, useSelector } from "react-redux";
 import { supabase } from "@/lib/supabase";
 import { setProduct } from "@/lib/features/product/productSlice";
-import { Trash2Icon, AlertTriangle, Edit3Icon, X, Package, Check } from "lucide-react";
+import { 
+  Trash2Icon, 
+  AlertTriangle, 
+  Edit3Icon, 
+  X, 
+  Package, 
+  Search, 
+  ChevronLeft, 
+  ChevronRight 
+} from "lucide-react";
+import Link from "next/link";
 
-// ✅ ตัวเลือก Dropdown
 const CATEGORIES = [
   { label: "Ultrabook", value: "ultrabook" },
   { label: "Gaming", value: "gaming" },
@@ -30,7 +39,11 @@ export default function StoreManageProducts() {
   const products = useSelector((state) => state.product.list);
   const [loading, setLoading] = useState(products.length === 0);
 
-  // States: Modals
+  // States
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -39,7 +52,6 @@ export default function StoreManageProducts() {
   const [editingProduct, setEditingProduct] = useState(null);
   const [isUpdating, setIsUpdating] = useState(false);
 
-  // 1. Fetch Products
   const fetchProductsFromDB = async () => {
     try {
       const { data, error } = await supabase
@@ -64,23 +76,62 @@ export default function StoreManageProducts() {
     }
   }, []);
 
-  // 2. Toggle Stock
-  const toggleStock = async (productId, currentStatus) => {
-    const newStatus = !currentStatus;
+  // ✅ 1. Filter & Sort Logic (ปรับปรุงใหม่)
+  const handleSearch = (e) => {
+    setSearchTerm(e.target.value);
+    setCurrentPage(1); // รีเซ็ตหน้าเมื่อค้นหา
+  };
+
+  const filteredAndSortedProducts = products
+    .filter((product) =>
+      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.brand?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.model?.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .sort((a, b) => {
+      // เช็คว่าสินค้าไหนลดราคา (Sale)
+      const aOnSale = a.sale_price && a.sale_price > 0 && a.sale_price < a.price;
+      const bOnSale = b.sale_price && b.sale_price > 0 && b.sale_price < b.price;
+
+      // เอาสินค้าลดราคาขึ้นก่อน
+      if (aOnSale && !bOnSale) return -1;
+      if (!aOnSale && bOnSale) return 1;
+      
+      // ถ้าสถานะเหมือนกัน ให้เรียงตาม created_at (ใหม่สุดขึ้นก่อน)
+      return new Date(b.created_at) - new Date(a.created_at);
+    });
+
+  // ✅ 2. Pagination Logic (ใช้ตัวแปรที่เรียงแล้ว)
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentProducts = filteredAndSortedProducts.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredAndSortedProducts.length / itemsPerPage);
+
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
+  // Toggle Stock Logic
+  const toggleStock = async (product) => {
+    const newStatus = !product.in_stock;
+
+    if (newStatus && (product.stock || 0) <= 0) {
+        toast.error("Cannot enable: Out of stock! Please update quantity first.");
+        return; 
+    }
+
     try {
-      const { error } = await supabase.from("products").update({ in_stock: newStatus }).eq("id", productId);
+      const { error } = await supabase.from("products").update({ in_stock: newStatus }).eq("id", product.id);
       if (error) throw error;
+      
       const updatedProducts = products.map((item) =>
-        item.id === productId ? { ...item, in_stock: newStatus } : item
+        item.id === product.id ? { ...item, in_stock: newStatus } : item
       );
       dispatch(setProduct(updatedProducts));
-      return "Stock updated";
     } catch (error) {
-      throw new Error("Failed to update");
+      toast.error("Failed to update status");
     }
   };
 
-  // 3. Delete Logic
+  // Delete Logic
   const openDeleteModal = (product) => {
     setProductToDelete(product);
     setIsDeleteModalOpen(true);
@@ -104,7 +155,7 @@ export default function StoreManageProducts() {
     }
   };
 
-  // 4. Edit Logic
+  // Edit Logic
   const openEditModal = (product) => {
     setEditingProduct(product);
     setIsEditModalOpen(true);
@@ -115,9 +166,13 @@ export default function StoreManageProducts() {
     setIsUpdating(true);
     
     const formData = new FormData(e.target);
-    const inStock = formData.get("in_stock") === "on";
+    const stockQuantity = parseInt(formData.get("stock")) || 0;
+    
+    let inStockCheckbox = formData.get("in_stock") === "on";
+    if (stockQuantity <= 0) {
+        inStockCheckbox = false; 
+    }
 
-    // ✅ รวบรวมข้อมูล Specs (JSON)
     const specsData = {
         processor: formData.get("processor"),
         graphics: formData.get("graphics"),
@@ -133,15 +188,15 @@ export default function StoreManageProducts() {
         weight: formData.get("weight"),
     };
 
-    // ✅ รวบรวมข้อมูลหลัก
     const updatedData = {
         name: formData.get("name"),
-        brand: formData.get("brand"), // ค่าจาก Select
+        brand: formData.get("brand"),
         model: formData.get("model"),
-        category: formData.get("category"), // ค่าจาก Select
+        category: formData.get("category"),
         price: parseFloat(formData.get("price")),
-        in_stock: inStock,
-        specs: specsData // ส่ง JSON เข้าไปใน column specs
+        in_stock: inStockCheckbox,
+        stock: stockQuantity,
+        specs: specsData
     };
 
     try {
@@ -152,7 +207,6 @@ export default function StoreManageProducts() {
 
       if (error) throw error;
 
-      // Update Redux
       const updatedList = products.map((p) =>
         p.id === editingProduct.id ? { ...p, ...updatedData } : p
       );
@@ -172,106 +226,138 @@ export default function StoreManageProducts() {
   return (
     <div className="max-w-7xl mx-auto py-6 sm:py-8 px-4 sm:px-6 animate-in fade-in duration-500">
       
-      {/* Header */}
+      {/* Header & Search */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-        <h1 className="text-2xl font-bold text-slate-800">
-          Manage <span className="text-slate-500 font-normal">Products</span>
-        </h1>
-       
+        <div>
+            <h1 className="text-2xl font-bold text-slate-800">
+            Manage <span className="text-slate-500 font-normal">Products</span>
+            </h1>
+            <p className="text-sm text-slate-400 mt-1">Total {filteredAndSortedProducts.length} items found</p>
+        </div>
+
+        <div className="relative w-full sm:w-72">
+            <input 
+                type="text" 
+                placeholder="Search by name, brand..." 
+                value={searchTerm}
+                onChange={handleSearch}
+                className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-blue-400 outline-none text-sm transition-all shadow-sm"
+            />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+        </div>
       </div>
 
-      {/* Mobile View (Cards) */}
-      <div className="grid grid-cols-1 gap-4 lg:hidden">
-        {products.map((product) => (
-          <div key={product.id} className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex flex-col gap-4">
-            <div className="flex gap-4">
-              <div className="relative size-20 bg-[#F5F5F5] rounded-xl flex-shrink-0 p-2">
-                <Image fill className="object-contain p-1" src={product.images?.[0] || "/placeholder.png"} alt={product.name} />
-              </div>
-              <div className="min-w-0 flex-1">
-                <h3 className="font-bold text-slate-900 truncate pr-2">{product.name}</h3>
-                <p className="text-xs text-slate-500 uppercase mt-1">{product.brand} | {product.model}</p>
-                <p className="text-blue-600 font-bold mt-2">{currency}{Number(product.price).toLocaleString()}</p>
-              </div>
-            </div>
-            <div className="h-px bg-slate-50 w-full"></div>
-            <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3 bg-slate-50 px-3 py-2 rounded-lg">
-                    <span className="text-xs font-bold text-slate-500 uppercase">Stock</span>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" className="sr-only peer" onChange={() => toast.promise(toggleStock(product.id, product.in_stock), { loading: "Updating...", success: (msg) => msg, error: (err) => err.message })} checked={product.in_stock} />
-                        <div className="w-9 h-5 bg-slate-300 rounded-full peer peer-checked:bg-green-500 transition-all after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4"></div>
-                    </label>
-                </div>
-                <div className="flex items-center gap-2">
-                    <button onClick={() => openEditModal(product)} className="p-2 text-slate-400 hover:text-blue-600 bg-white border border-slate-100 rounded-lg shadow-sm active:scale-95 transition"><Edit3Icon size={18} /></button>
-                    <button onClick={() => openDeleteModal(product)} className="p-2 text-red-500 hover:text-red-600 bg-red-50 border border-red-100 rounded-lg shadow-sm active:scale-95 transition"><Trash2Icon size={18} /></button>
-                </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Desktop View (Table) */}
+      {/* Table View */}
       <div className="hidden lg:block bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm border-collapse">
             <thead className="bg-slate-50/80 border-b border-slate-200">
               <tr>
-                <th className="px-6 py-4 font-semibold text-slate-700 w-[35%]">Product</th>
-                <th className="px-6 py-4 font-semibold text-slate-700">Category & Model</th>
-                <th className="px-6 py-4 font-semibold text-slate-700">Specs</th>
-                <th className="px-6 py-4 font-semibold text-slate-700">Price</th>
-                <th className="px-6 py-4 font-semibold text-slate-700 text-center">In Stock</th>
+                <th className="px-6 py-4 font-semibold text-slate-700 w-[30%]">Product</th>
+                <th className="px-6 py-4 font-semibold text-slate-700">Category</th>
+                <th className="px-6 py-4 font-semibold text-slate-700 text-center">Price</th>
+                <th className="px-6 py-4 font-semibold text-slate-700 text-center">Stock</th>
+                <th className="px-6 py-4 font-semibold text-slate-700 text-center">Active</th>
                 <th className="px-6 py-4 font-semibold text-slate-700 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {products.map((product) => (
-                <tr key={product.id} className="hover:bg-slate-50/50 transition-colors">
-                  <td className="px-6 py-4">
-                    <div className="flex gap-4 items-center">
-                      <div className="relative flex-shrink-0 size-12 bg-slate-50 rounded-lg border border-slate-100 p-1">
-                        <Image fill className="object-contain p-1" src={product.images?.[0] || "/placeholder.png"} alt={product.name} />
-                      </div>
-                      <div className="min-w-0">
-                         <p className="font-medium text-slate-900 truncate max-w-[200px]">{product.name}</p>
-                         <p className="text-[10px] text-slate-400 uppercase">{product.brand}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-slate-600">
-                    <span className="capitalize font-medium text-slate-700 block">{product.category}</span>
-                    <span className="text-xs uppercase text-slate-400">{product.model}</span>
-                  </td>
-                  <td className="px-6 py-4 text-xs text-slate-500 max-w-[150px] truncate">
-                    {product.specs?.processor || "-"} / {product.specs?.ram || "-"}
-                  </td>
-                  <td className="px-6 py-4 font-semibold text-slate-900">{currency}{Number(product.price).toLocaleString()}</td>
-                  <td className="px-6 py-4 text-center">
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input type="checkbox" className="sr-only peer" onChange={() => toast.promise(toggleStock(product.id, product.in_stock), { loading: "Updating...", success: (msg) => msg, error: (err) => err.message })} checked={product.in_stock} />
-                      <div className="w-9 h-5 bg-slate-200 rounded-full peer peer-checked:bg-green-500 transition-all after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4"></div>
-                    </label>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex justify-end gap-2">
-                      <button onClick={() => openEditModal(product)} className="p-2 text-slate-400 hover:text-blue-600 transition rounded-lg hover:bg-slate-100"><Edit3Icon size={18} /></button>
-                      <button onClick={() => openDeleteModal(product)} className="p-2 text-slate-400 hover:text-red-500 transition rounded-lg hover:bg-red-50"><Trash2Icon size={18} /></button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {currentProducts.length > 0 ? (
+                  currentProducts.map((product) => {
+                    const isOnSale = product.sale_price && product.sale_price > 0 && product.sale_price < product.price;
+                    
+                    return (
+                    <tr key={product.id} className={`transition-colors ${isOnSale ? 'bg-red-50/30 hover:bg-red-50/50' : 'hover:bg-slate-50/50'}`}>
+                      <td className="px-6 py-4">
+                        <div className="flex gap-4 items-center">
+                          <div className="relative flex-shrink-0 size-12 bg-slate-50 rounded-lg border border-slate-100 p-1">
+                            <Image fill className="object-contain p-1" src={product.images?.[0] || "/placeholder.png"} alt={product.name} />
+                            {isOnSale && (
+                                <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                  <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                                </span>
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                             <Link href={`/product/${product.id}`} className="font-medium text-slate-900 truncate max-w-[200px] block hover:text-blue-600 hover:underline transition-colors">
+                                {product.name}
+                             </Link>
+                             <p className="text-[10px] text-slate-400 uppercase">{product.brand} • {product.model}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-slate-600">
+                        <span className="capitalize font-medium text-slate-700 block">{product.category}</span>
+                      </td>
+                      
+                      {/* ✅ แสดงราคาลด */}
+                      <td className="px-6 py-4 text-center">
+                        {isOnSale ? (
+                            <div className="flex flex-col items-center leading-tight">
+                                <span className="font-bold text-red-600">{currency}{Number(product.sale_price).toLocaleString()}</span>
+                                <span className="text-xs text-slate-400 line-through">{currency}{Number(product.price).toLocaleString()}</span>
+                            </div>
+                        ) : (
+                            <span className="font-semibold text-slate-900">{currency}{Number(product.price).toLocaleString()}</span>
+                        )}
+                      </td>
+                      
+                      <td className="px-6 py-4 text-center">
+                        <span className={`inline-block px-2 py-1 rounded text-xs font-bold ${
+                            (product.stock || 0) > 0 ? 'bg-blue-50 text-blue-700' : 'bg-red-50 text-red-700'
+                        }`}>
+                            {product.stock || 0}
+                        </span>
+                      </td>
+    
+                      <td className="px-6 py-4 text-center">
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input 
+                            type="checkbox" 
+                            className="sr-only peer" 
+                            onChange={() => toggleStock(product)}
+                            checked={product.in_stock} 
+                          />
+                          <div className={`w-9 h-5 bg-slate-200 rounded-full peer transition-all after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4 
+                            ${product.in_stock ? 'peer-checked:bg-green-500' : ''}
+                          `}></div>
+                        </label>
+                      </td>
+                      
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex justify-end gap-2">
+                          <button onClick={() => openEditModal(product)} className="p-2 text-slate-400 hover:text-blue-600 transition rounded-lg hover:bg-slate-100"><Edit3Icon size={18} /></button>
+                          <button onClick={() => openDeleteModal(product)} className="p-2 text-slate-400 hover:text-red-500 transition rounded-lg hover:bg-red-50"><Trash2Icon size={18} /></button>
+                        </div>
+                      </td>
+                    </tr>
+                  )})
+              ) : (
+                  <tr>
+                      <td colSpan="6" className="px-6 py-8 text-center text-slate-400">
+                          No products found matching "{searchTerm}"
+                      </td>
+                  </tr>
+              )}
             </tbody>
           </table>
         </div>
       </div>
 
+      {/* Pagination Controls */}
+      {filteredAndSortedProducts.length > itemsPerPage && (
+        <div className="flex justify-center items-center gap-2 mt-8">
+            <button onClick={() => paginate(currentPage - 1)} disabled={currentPage === 1} className="p-2 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-50"><ChevronLeft size={20} /></button>
+            <span className="text-sm font-medium text-slate-600 px-2">Page {currentPage} of {totalPages}</span>
+            <button onClick={() => paginate(currentPage + 1)} disabled={currentPage === totalPages} className="p-2 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-50"><ChevronRight size={20} /></button>
+        </div>
+      )}
+
       {/* Delete Modal */}
       {isDeleteModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white rounded-[32px] p-8 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200">
-             {/* ... (เนื้อหา Delete Modal เหมือนเดิม) ... */}
              <div className="flex flex-col items-center text-center">
               <div className="size-20 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-6"><AlertTriangle size={36} /></div>
               <h3 className="text-2xl font-black text-slate-900">Delete Product?</h3>
@@ -285,7 +371,7 @@ export default function StoreManageProducts() {
         </div>
       )}
 
-      {/* ✅ Edit Modal (Complete Fields) */}
+      {/* Edit Modal */}
       {isEditModalOpen && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300 overflow-y-auto">
             <div className="bg-white w-full max-w-4xl rounded-[32px] shadow-2xl p-6 sm:p-8 animate-in zoom-in-95 duration-200 relative my-auto">
@@ -299,8 +385,7 @@ export default function StoreManageProducts() {
                     </div>
                 </div>
 
-                <form onSubmit={handleUpdateProduct} className="space-y-6">
-                    {/* Main Info */}
+                <form key={editingProduct?.id} onSubmit={handleUpdateProduct} className="space-y-6">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                         <div className="sm:col-span-2">
                             <label className="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1">Product Name</label>
@@ -326,70 +411,69 @@ export default function StoreManageProducts() {
                             <label className="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1">Price ({currency})</label>
                             <input name="price" type="number" defaultValue={editingProduct?.price} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-medium text-slate-800" required />
                         </div>
+                        <div>
+                            <label className="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1">Stock Quantity</label>
+                            <input name="stock" type="number" min="0" defaultValue={editingProduct?.stock || 0} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-medium text-slate-800" required />
+                        </div>
+                        
+                        <div className="flex items-center gap-3 mt-6 sm:col-span-2 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                             <input name="in_stock" type="checkbox" defaultChecked={editingProduct?.in_stock} className="size-5 accent-blue-600 cursor-pointer"/>
+                             <div>
+                                <label className="font-bold text-slate-700 block">Available for Sale?</label>
+                                <p className="text-xs text-slate-400">If stock is 0, this will be automatically disabled.</p>
+                             </div>
+                        </div>
                     </div>
 
-                    {/* Divider */}
                     <div className="border-t border-slate-100 my-4 pt-4">
                         <p className="text-sm font-bold text-slate-900 mb-4 flex items-center gap-2">
                              <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span> Technical Specifications
                         </p>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                            {/* Processor */}
                             <div>
                                 <label className="block text-xs font-bold text-slate-400 uppercase mb-2 ml-1">Processor</label>
-                                <input name="processor" defaultValue={editingProduct?.specs?.processor} placeholder="e.g. Intel Core i9" className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none text-sm" />
+                                <input name="processor" defaultValue={editingProduct?.specs?.processor} className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none text-sm" />
                             </div>
-                             {/* Graphics */}
-                             <div>
+                            <div>
                                 <label className="block text-xs font-bold text-slate-400 uppercase mb-2 ml-1">Graphics Card</label>
-                                <input name="graphics" defaultValue={editingProduct?.specs?.graphics} placeholder="e.g. RTX 4080" className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none text-sm" />
+                                <input name="graphics" defaultValue={editingProduct?.specs?.graphics} className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none text-sm" />
                             </div>
-                            {/* RAM */}
                             <div>
                                 <label className="block text-xs font-bold text-slate-400 uppercase mb-2 ml-1">RAM</label>
-                                <input name="ram" defaultValue={editingProduct?.specs?.ram} placeholder="e.g. 32GB DDR5" className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none text-sm" />
+                                <input name="ram" defaultValue={editingProduct?.specs?.ram} className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none text-sm" />
                             </div>
-                            {/* Storage */}
                             <div>
                                 <label className="block text-xs font-bold text-slate-400 uppercase mb-2 ml-1">Storage</label>
-                                <input name="storage" defaultValue={editingProduct?.specs?.storage} placeholder="e.g. 1TB SSD" className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none text-sm" />
+                                <input name="storage" defaultValue={editingProduct?.specs?.storage} className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none text-sm" />
                             </div>
-                            {/* Display */}
                             <div>
                                 <label className="block text-xs font-bold text-slate-400 uppercase mb-2 ml-1">Display</label>
-                                <input name="display" defaultValue={editingProduct?.specs?.display} placeholder="e.g. 16-inch OLED" className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none text-sm" />
+                                <input name="display" defaultValue={editingProduct?.specs?.display} className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none text-sm" />
                             </div>
-                            {/* OS */}
                             <div>
                                 <label className="block text-xs font-bold text-slate-400 uppercase mb-2 ml-1">OS</label>
-                                <input name="os" defaultValue={editingProduct?.specs?.os} placeholder="e.g. Windows 11" className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none text-sm" />
+                                <input name="os" defaultValue={editingProduct?.specs?.os} className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none text-sm" />
                             </div>
-                            {/* Ports */}
                             <div>
                                 <label className="block text-xs font-bold text-slate-400 uppercase mb-2 ml-1">Ports</label>
                                 <input name="ports" defaultValue={editingProduct?.specs?.ports} className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none text-sm" />
                             </div>
-                             {/* Wireless */}
                              <div>
                                 <label className="block text-xs font-bold text-slate-400 uppercase mb-2 ml-1">Wireless</label>
                                 <input name="wireless" defaultValue={editingProduct?.specs?.wireless} className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none text-sm" />
                             </div>
-                             {/* Bluetooth */}
                              <div>
                                 <label className="block text-xs font-bold text-slate-400 uppercase mb-2 ml-1">Bluetooth</label>
                                 <input name="bluetooth" defaultValue={editingProduct?.specs?.bluetooth} className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none text-sm" />
                             </div>
-                             {/* Battery */}
                              <div>
                                 <label className="block text-xs font-bold text-slate-400 uppercase mb-2 ml-1">Battery</label>
                                 <input name="battery" defaultValue={editingProduct?.specs?.battery} className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none text-sm" />
                             </div>
-                            {/* Weight */}
                              <div>
                                 <label className="block text-xs font-bold text-slate-400 uppercase mb-2 ml-1">Weight</label>
                                 <input name="weight" defaultValue={editingProduct?.specs?.weight} className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none text-sm" />
                             </div>
-                             {/* Network */}
                              <div>
                                 <label className="block text-xs font-bold text-slate-400 uppercase mb-2 ml-1">Network</label>
                                 <input name="network" defaultValue={editingProduct?.specs?.network} className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none text-sm" />
@@ -398,7 +482,6 @@ export default function StoreManageProducts() {
                     </div>
 
                     <div className="pt-6 flex gap-3 mt-4 border-t border-slate-100">
-                        
                         <div className="flex flex-[2] gap-3">
                             <button type="submit" disabled={isUpdating} className="flex-1 py-4 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-2xl shadow-lg shadow-slate-200 transition active:scale-95 disabled:opacity-70">
                                 {isUpdating ? "Saving..." : "Save Update"}

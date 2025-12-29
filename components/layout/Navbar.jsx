@@ -8,11 +8,13 @@ import {
   ClipboardList,
   Package2,
   Heart,
-  Loader2, // เพิ่ม Loader icon
+  Loader2,
+  Sparkles,
+  MessageCircleMore
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useMemo } from "react"; // ✅ เพิ่ม useMemo
+import { useState, useMemo } from "react";
 import { useSelector } from "react-redux";
 import Banner from "./Banner";
 import { useUser, useClerk, UserButton } from "@clerk/nextjs";
@@ -33,10 +35,13 @@ const Navbar = () => {
   const [search, setSearch] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
-  // ✅ OPTIMIZATION 1: ใช้ useMemo คำนวณตัวเลข เพื่อไม่ให้คำนวณใหม่ทุกครั้งที่ Re-render
+  // ✅ OPTIMIZATION 1: ใช้ useMemo คำนวณตัวเลข
   const itemCount = useMemo(() => {
     return Object.keys(cartItems).length > 0
-      ? Object.values(cartItems).reduce((total, qty) => total + (Number(qty) || 0), 0)
+      ? Object.values(cartItems).reduce(
+          (total, qty) => total + (Number(qty) || 0),
+          0
+        )
       : 0;
   }, [cartItems]);
 
@@ -67,7 +72,15 @@ const Navbar = () => {
     router.push(`/shop?search=${productName}`);
   };
 
-  // ❌ ลบ if (!isLoaded) return null; ออก เพื่อให้ Navbar แสดงผลทันที
+  // ✅ ฟังก์ชันจัดการคลิกปุ่ม AI (ถ้าไม่ login ให้เด้ง login)
+  const handleAIClick = () => {
+    if (!user) {
+      openSignIn();
+    } else {
+      router.push("/ai-search");
+    }
+    setIsMenuOpen(false); // ปิดเมนูมือถือถ้าเปิดอยู่
+  };
 
   return (
     <header>
@@ -75,7 +88,7 @@ const Navbar = () => {
       <nav className="sticky top-0 z-50 bg-white shadow-sm">
         <div className="mx-6">
           <div className="flex items-center justify-between max-w-7xl mx-auto py-4 transition-all">
-            {/* Logo - แสดงผลทันที */}
+            {/* Logo */}
             <Link
               href="/"
               className="relative text-4xl font-semibold text-slate-700"
@@ -103,6 +116,18 @@ const Navbar = () => {
               >
                 Promotions
               </Link>
+              
+              {/* ✅ AI Button (Desktop): เปลี่ยนจาก Link เป็น button */}
+              <button
+                onClick={handleAIClick}
+                className="group flex items-center gap-0 hover:gap-2 px-3 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-full text-xs font-bold shadow-lg hover:shadow-indigo-200 transition-all duration-300 active:scale-95 animate-pulse hover:animate-none"
+              >
+                <Sparkles size={14} />
+                <span className="max-w-0 overflow-hidden whitespace-nowrap transition-all duration-300 group-hover:max-w-xs group-hover:ml-1">
+                  PRT Assistant
+                </span>
+              </button>
+
 
               {/* Search Bar */}
               <div className="relative hidden xl:block">
@@ -184,9 +209,8 @@ const Navbar = () => {
                 )}
               </Link>
 
-              {/* ✅ OPTIMIZATION 3: Skeleton Loading for Auth Button */}
+              {/* Auth Button */}
               {!isLoaded ? (
-                // Skeleton Loader (แสดงขณะรอ Clerk Load)
                 <div className="w-[88px] h-[40px] bg-slate-100 rounded-full animate-pulse"></div>
               ) : !user ? (
                 <button
@@ -203,6 +227,12 @@ const Navbar = () => {
                       label="My Orders"
                       onClick={() => router.push("/orders")}
                     />
+                    <UserButton.Action  
+                      labelIcon={<MessageCircleMore size={16} />}
+                      label="Chat"
+                      onClick={() => router.push("/chat")}
+                    />
+
                     {isAdmin && (
                       <UserButton.Action
                         labelIcon={<ClipboardList size={16} />}
@@ -261,20 +291,55 @@ const Navbar = () => {
           `}
         >
           <div className="flex flex-col gap-4 px-6 py-6 border-t border-gray-100 text-slate-600 font-medium">
-            <Link href="/" onClick={() => setIsMenuOpen(false)} className="transition hover:text-green-600">
+            <Link
+              href="/"
+              onClick={() => setIsMenuOpen(false)}
+              className="transition hover:text-green-600"
+            >
               Home
             </Link>
-            <Link href="/shop" onClick={() => setIsMenuOpen(false)} className="transition hover:text-green-600">
+            <Link
+              href="/products"
+              onClick={() => setIsMenuOpen(false)}
+              className="transition hover:text-green-600"
+            >
               Shop
             </Link>
-            <Link href="/promotions" onClick={() => setIsMenuOpen(false)} className="transition hover:text-green-600">
+            <Link
+              href="/promotions"
+              onClick={() => setIsMenuOpen(false)}
+              className="transition hover:text-green-600"
+            >
               Promotions
             </Link>
-            <Link href="/favorites" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-2 transition hover:text-green-600">
-              <Heart size={18} /> Favorites {favoriteCount > 0 && <span className="text-xs text-red-500 font-semibold">({favoriteCount})</span>}
+            <Link
+              href="/favorites"
+              onClick={() => setIsMenuOpen(false)}
+              className="flex items-center gap-2 transition hover:text-green-600"
+            >
+              <Heart size={18} /> Favorites{" "}
+              {favoriteCount > 0 && (
+                <span className="text-xs text-red-500 font-semibold">
+                  ({favoriteCount})
+                </span>
+              )}
             </Link>
+            
+            {/* ✅ AI Button (Mobile): เปลี่ยนจาก Link เป็น button */}
+            <button
+              onClick={handleAIClick}
+              className="group flex items-center w-fit px-3 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-full text-xs font-bold shadow-lg hover:shadow-indigo-200 transition-all duration-300 active:scale-95 animate-pulse hover:animate-none"
+            >
+              <Sparkles size={14} className="flex-shrink-0" />
+              <span className="max-w-0 overflow-hidden whitespace-nowrap opacity-0 transition-all duration-300 group-hover:max-w-[100px] group-hover:ml-2 group-hover:opacity-100">
+                PRT Assistant
+              </span>
+            </button>
 
-            <form onSubmit={handleSearch} className="flex items-center gap-2 bg-slate-100 px-4 py-3 rounded-full mt-2">
+            <form
+              onSubmit={handleSearch}
+              className="flex items-center gap-2 bg-slate-100 px-4 py-3 rounded-full mt-2"
+            >
               <Search size={18} className="text-slate-600" />
               <input
                 className="w-full bg-transparent outline-none placeholder-slate-600"
@@ -287,7 +352,7 @@ const Navbar = () => {
 
             {/* Mobile Auth Loading State */}
             {!isLoaded ? (
-               <div className="w-full h-[48px] bg-slate-100 rounded-full animate-pulse mt-2"></div>
+              <div className="w-full h-[48px] bg-slate-100 rounded-full animate-pulse mt-2"></div>
             ) : !user ? (
               <button
                 onClick={openSignIn}
@@ -298,21 +363,43 @@ const Navbar = () => {
             ) : (
               <div className="mt-2 pt-2 border-t border-slate-100">
                 <div className="flex items-center gap-3 mb-4">
-                   <UserButton afterSignOutUrl="/" />
-                   <span className="font-semibold text-slate-700">{user.fullName || user.username}</span>
+                  <UserButton afterSignOutUrl="/" />
+                  <span className="font-semibold text-slate-700">
+                    {user.fullName || user.username}
+                  </span>
                 </div>
 
-                <Link href="/orders" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 py-2 px-3 text-slate-600 hover:bg-slate-50 rounded-lg transition">
+                <Link
+                  href="/orders"
+                  onClick={() => setIsMenuOpen(false)}
+                  className="flex items-center gap-3 py-2 px-3 text-slate-600 hover:bg-slate-50 rounded-lg transition"
+                >
                   <PackageIcon size={18} /> My Orders
                 </Link>
 
+                <Link
+                  href="/chat"
+                  onClick={() => setIsMenuOpen(false)}
+                  className="flex items-center gap-3 py-2 px-3 text-slate-600 hover:bg-slate-50 rounded-lg transition"
+                >
+                  <MessageCircleMore size={18} /> My Chat
+                </Link>
+
                 {isAdmin && (
-                  <Link href="/admin" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 py-2 px-3 text-slate-600 hover:bg-slate-50 rounded-lg transition">
+                  <Link
+                    href="/admin"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="flex items-center gap-3 py-2 px-3 text-slate-600 hover:bg-slate-50 rounded-lg transition"
+                  >
                     <ClipboardList size={18} /> Admin Dashboard
                   </Link>
                 )}
                 {isAdmin && (
-                  <Link href="/store" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-3 py-2 px-3 text-slate-600 hover:bg-slate-50 rounded-lg transition">
+                  <Link
+                    href="/store"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="flex items-center gap-3 py-2 px-3 text-slate-600 hover:bg-slate-50 rounded-lg transition"
+                  >
                     <Package2 size={18} /> Store Dashboard
                   </Link>
                 )}

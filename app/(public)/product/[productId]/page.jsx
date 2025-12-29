@@ -9,12 +9,12 @@ export async function generateMetadata({ params }) {
    // ดึงข้อมูลสินค้าเพื่อมาทำชื่อ Tab
    const { data: product } = await supabase
      .from('products')
-     .select('name')
+     .select('name,model')
      .eq('id', productId)
      .single();
 
    return {
-     title: product ? `${product.name} | PRT. Store` : 'Product Detail',
+     title: product ? `${product.name} ${product.model} | PRT. Store` : 'Product Detail',
    }
 }
 

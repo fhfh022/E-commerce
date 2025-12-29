@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@clerk/nextjs": "^6.36.1",
+    "@google/generative-ai": "^0.24.1",
     "@prisma/adapter-pg": "^7.1.0",
     "@reduxjs/toolkit": "^2.8.2",
     "@supabase/supabase-js": "^2.87.1",

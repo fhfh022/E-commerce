@@ -1,12 +1,16 @@
 "use client";
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import ProductCard from "@/components/product/ProductCard"; 
 import Loading from "@/components/layout/Loading";
 import { TicketPercent, Tag } from "lucide-react";
 import toast from "react-hot-toast";
+import { useUser } from "@clerk/nextjs";
+import { useSelector } from "react-redux";
 
 export default function PromotionsPage() {
+  const { user } = useUser();
+  const role = useSelector((state) => state.user?.role)
   const [coupons, setCoupons] = useState([]);
   const [saleProducts, setSaleProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -78,9 +82,11 @@ export default function PromotionsPage() {
                     <p className="text-slate-300 text-sm mb-6">{coupon.description}</p>
                     <div className="bg-white/10 backdrop-blur-sm rounded-xl p-1 flex justify-between items-center pl-4 border border-white/10">
                         <span className="font-mono font-bold tracking-widest">{coupon.code}</span>
+                        
                         <button 
                             onClick={() => copyCoupon(coupon.code)}
                             className="bg-white text-slate-900 px-4 py-2 rounded-lg text-sm font-bold hover:bg-yellow-400 transition"
+                            disabled={!user ? true : false}
                         >
                             COPY
                         </button>

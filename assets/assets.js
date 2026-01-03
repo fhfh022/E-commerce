@@ -245,9 +245,24 @@ export const productDummyData = [
 ];
 
 export const ourSpecsData = [
-    { title: "Free Shipping", description: "Enjoy fast, free delivery on every order no conditions, just reliable doorstep.", icon: SendIcon, accent: '#05DF72' },
-    { title: "7 Days easy Return", description: "Change your mind? No worries. Return any item within 7 days.", icon: ClockFadingIcon, accent: '#FF8904' },
-    { title: "24/7 Customer Support", description: "We're here for you. Get expert help with our customer support.", icon: HeadsetIcon, accent: '#A684FF' }
+    { 
+        title: "จัดส่งฟรีทั่วประเทศ", 
+        description: "สั่งซื้อสินค้าวันนี้ รับสิทธิ์จัดส่งฟรีถึงหน้าบ้าน รวดเร็ว ทันใจ ไม่มีขั้นต่ำ", 
+        icon: SendIcon, 
+        accent: '#05DF72' 
+    },
+    { 
+        title: "การันตีคืนสินค้าใน 7 วัน", 
+        description: "ช้อปได้อย่างสบายใจ หากเปลี่ยนใจหรือสินค้ามีปัญหา ยินดีรับคืนภายใน 7 วัน", 
+        icon: ClockFadingIcon, 
+        accent: '#FF8904' 
+    },
+    { 
+        title: "ดูแลคุณตลอด 24 ชั่วโมง", 
+        description: "ทีมงานมืออาชีพพร้อมให้คำปรึกษาและแก้ไขปัญหาให้คุณทุกเวลา ไม่เว้นวันหยุด", 
+        icon: HeadsetIcon, 
+        accent: '#A684FF' 
+    }
 ]
 
 export const addressDummyData = {

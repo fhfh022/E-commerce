@@ -76,10 +76,10 @@ export default function StoreManageProducts() {
     }
   }, []);
 
-  // ✅ 1. Filter & Sort Logic (ปรับปรุงใหม่)
+  // ✅ 1. Filter & Sort Logic
   const handleSearch = (e) => {
     setSearchTerm(e.target.value);
-    setCurrentPage(1); // รีเซ็ตหน้าเมื่อค้นหา
+    setCurrentPage(1);
   };
 
   const filteredAndSortedProducts = products
@@ -89,19 +89,16 @@ export default function StoreManageProducts() {
       product.model?.toLowerCase().includes(searchTerm.toLowerCase())
     )
     .sort((a, b) => {
-      // เช็คว่าสินค้าไหนลดราคา (Sale)
       const aOnSale = a.sale_price && a.sale_price > 0 && a.sale_price < a.price;
       const bOnSale = b.sale_price && b.sale_price > 0 && b.sale_price < b.price;
 
-      // เอาสินค้าลดราคาขึ้นก่อน
       if (aOnSale && !bOnSale) return -1;
       if (!aOnSale && bOnSale) return 1;
       
-      // ถ้าสถานะเหมือนกัน ให้เรียงตาม created_at (ใหม่สุดขึ้นก่อน)
       return new Date(b.created_at) - new Date(a.created_at);
     });
 
-  // ✅ 2. Pagination Logic (ใช้ตัวแปรที่เรียงแล้ว)
+  // ✅ 2. Pagination Logic
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentProducts = filteredAndSortedProducts.slice(indexOfFirstItem, indexOfLastItem);
@@ -173,10 +170,13 @@ export default function StoreManageProducts() {
         inStockCheckbox = false; 
     }
 
+    // ✅ แก้ไข: รับค่า specs แบบใหม่ (Detail & Size)
     const specsData = {
         processor: formData.get("processor"),
+        processor_detail: formData.get("processor_detail"), // 🆕
         graphics: formData.get("graphics"),
-        display: formData.get("display"),
+        display_size: formData.get("display_size"),         // 🆕
+        display_specs: formData.get("display_specs"),       // 🆕 เปลี่ยนจาก display
         ram: formData.get("ram"),
         storage: formData.get("storage"),
         ports: formData.get("ports"),
@@ -291,7 +291,6 @@ export default function StoreManageProducts() {
                         <span className="capitalize font-medium text-slate-700 block">{product.category}</span>
                       </td>
                       
-                      {/* ✅ แสดงราคาลด */}
                       <td className="px-6 py-4 text-center">
                         {isOnSale ? (
                             <div className="flex flex-col items-center leading-tight">
@@ -386,6 +385,7 @@ export default function StoreManageProducts() {
                 </div>
 
                 <form key={editingProduct?.id} onSubmit={handleUpdateProduct} className="space-y-6">
+                    {/* Basic Info */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                         <div className="sm:col-span-2">
                             <label className="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1">Product Name</label>
@@ -425,19 +425,42 @@ export default function StoreManageProducts() {
                         </div>
                     </div>
 
+                    {/* Technical Specs */}
                     <div className="border-t border-slate-100 my-4 pt-4">
                         <p className="text-sm font-bold text-slate-900 mb-4 flex items-center gap-2">
                              <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span> Technical Specifications
                         </p>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                            {/* Processor */}
                             <div>
-                                <label className="block text-xs font-bold text-slate-400 uppercase mb-2 ml-1">Processor</label>
-                                <input name="processor" defaultValue={editingProduct?.specs?.processor} className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none text-sm" />
+                                <label className="block text-xs font-bold text-slate-400 uppercase mb-2 ml-1">CPU Model</label>
+                                <input name="processor" defaultValue={editingProduct?.specs?.processor}  className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none text-sm" />
                             </div>
-                            <div>
+                            {/* ✅ เพิ่มช่อง CPU Detail */}
+                            <div className="sm:col-span-2">
+                                <label className="block text-xs font-bold text-slate-400 uppercase mb-2 ml-1">CPU Detail</label>
+                                <input name="processor_detail" defaultValue={editingProduct?.specs?.processor_detail}  className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none text-sm" />
+                            </div>
+
+                            {/* Graphics */}
+                            <div className="sm:col-span-3">
                                 <label className="block text-xs font-bold text-slate-400 uppercase mb-2 ml-1">Graphics Card</label>
                                 <input name="graphics" defaultValue={editingProduct?.specs?.graphics} className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none text-sm" />
                             </div>
+
+                            {/* Display */}
+                             {/* ✅ เพิ่มช่อง Display Size */}
+                             <div>
+                                <label className="block text-xs font-bold text-slate-400 uppercase mb-2 ml-1">Display Size</label>
+                                <input name="display_size" defaultValue={editingProduct?.specs?.display_size}  className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none text-sm" />
+                            </div>
+                             {/* ✅ แก้ชื่อช่อง Display Specs และ Fallback ค่าเก่า */}
+                            <div className="sm:col-span-2">
+                                <label className="block text-xs font-bold text-slate-400 uppercase mb-2 ml-1">Display Specs</label>
+                                <input name="display_specs" defaultValue={editingProduct?.specs?.display_specs || editingProduct?.specs?.display}  className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none text-sm" />
+                            </div>
+
+                            {/* Other Specs (คงเดิม) */}
                             <div>
                                 <label className="block text-xs font-bold text-slate-400 uppercase mb-2 ml-1">RAM</label>
                                 <input name="ram" defaultValue={editingProduct?.specs?.ram} className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none text-sm" />
@@ -445,10 +468,6 @@ export default function StoreManageProducts() {
                             <div>
                                 <label className="block text-xs font-bold text-slate-400 uppercase mb-2 ml-1">Storage</label>
                                 <input name="storage" defaultValue={editingProduct?.specs?.storage} className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none text-sm" />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-bold text-slate-400 uppercase mb-2 ml-1">Display</label>
-                                <input name="display" defaultValue={editingProduct?.specs?.display} className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none text-sm" />
                             </div>
                             <div>
                                 <label className="block text-xs font-bold text-slate-400 uppercase mb-2 ml-1">OS</label>

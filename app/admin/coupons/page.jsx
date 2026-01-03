@@ -4,7 +4,7 @@ import { format } from "date-fns";
 import toast from "react-hot-toast";
 import { Trash2Icon, TicketPercent, AlertTriangle, Loader2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import PageTitle from "@/components/layout/PageTitle"; // สมมติว่ามี Component นี้
+import PageTitle from "@/components/layout/PageTitle"; 
 
 export default function AdminCoupons() {
   const [coupons, setCoupons] = useState([]);
@@ -69,8 +69,8 @@ export default function AdminCoupons() {
         description: newCoupon.description,
         discount_type: newCoupon.discount_type,
         
-        discount_value: discountVal, // ✅ ค่าใหม่ที่เราใช้จริง
-        discount_percent: discountVal, // ✅ [เพิ่มบรรทัดนี้] ใส่ค่าเดิมกัน Error (เพื่อผ่าน Not Null ใน DB)
+        discount_value: discountVal, 
+        discount_percent: discountVal, // ใส่ค่าเดิมกัน Error
         
         quantity: quantityVal,
         used_count: 0,
@@ -150,7 +150,6 @@ export default function AdminCoupons() {
     <div className="max-w-7xl mx-auto px-6 pt-10 pb-20 text-slate-500 animate-in fade-in duration-500">
       <PageTitle heading="Coupon Management" text="Create and manage discount codes" />
       
-      {/* ✅ Layout หลัก: ใช้ Flexbox จัดเรียงแนวนอนบนจอใหญ่ */}
       <div className="mt-8 flex flex-col lg:flex-row items-start gap-8">
         
         {/* ---- ส่วนที่ 1: Add Coupon Form (ด้านซ้าย) ---- */}
@@ -185,7 +184,6 @@ export default function AdminCoupons() {
                    onChange={handleChange}
                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-blue-500 transition"
                  >  
-    
                    <option value="percentage">Percent (%)</option>
                    <option value="fixed">Fixed Amount (฿)</option>
                  </select>
@@ -275,7 +273,6 @@ export default function AdminCoupons() {
                 <Loader2 size={20} className="animate-spin" /> Loading coupons...
             </div>
           ) : (
-            // เพิ่ม max-w เพื่อให้ scroll แนวนอนทำงานได้ถูกต้องเมื่ออยู่คู่กับ form
             <div className="max-w-[calc(100vw-3rem)] lg:max-w-none bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm whitespace-nowrap">
@@ -296,33 +293,63 @@ export default function AdminCoupons() {
                             <td colSpan="7" className="text-center py-8 text-slate-400">No coupons created yet.</td>
                         </tr>
                     ) : (
-                        coupons.map((coupon) => (
-                        <tr key={coupon.id} className="hover:bg-slate-50/50 transition">
-                            <td className="py-4 px-6 font-bold text-slate-800 font-mono tracking-wide">{coupon.code}</td>
-                            <td className="py-4 px-6 text-slate-600 max-w-[200px] truncate" title={coupon.description}>{coupon.description}</td>
-                            <td className="py-4 px-6 text-center font-bold text-green-600">
-                            {coupon.discount_type === 'percentage' ? `${coupon.discount_value}%` : `฿${coupon.discount_value.toLocaleString()}`}
-                            </td>
-                            <td className="py-4 px-6 text-center text-slate-600">
-                            <span className={coupon.used_count >= coupon.quantity ? "text-red-500 font-bold" : ""}>
-                                {coupon.used_count}
-                            </span> 
-                            / {coupon.quantity}
-                            </td>
-                            <td className="py-4 px-6 text-slate-500">{format(new Date(coupon.expiry_date), "dd MMM yyyy")}</td>
-                            <td className="py-4 px-6 text-center">
-                            <span className={`px-2 py-1 rounded-full text-xs font-bold ${coupon.is_active ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-500"}`}>
-                                {coupon.is_active ? "Active" : "Inactive"}
-                            </span>
-                            </td>
-                            <td className="py-4 px-6 text-right">
-                            {/* ✅ เปลี่ยนปุ่มลบให้เปิด Modal */}
-                            <button onClick={() => openDeleteModal(coupon)} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition" title="Delete Coupon">
-                                <Trash2Icon size={18} />
-                            </button>
-                            </td>
-                        </tr>
-                        ))
+                        coupons.map((coupon) => {
+                          // --- Logic คำนวณสถานะใหม่ ---
+                          const today = new Date();
+                          today.setHours(0, 0, 0, 0); // ตัดเวลาออก เอาแค่วันที่
+                          
+                          const expiryDate = new Date(coupon.expiry_date);
+                          // ถ้าวันนี้ > วันหมดอายุ = หมดอายุแล้ว
+                          const isExpired = today > expiryDate;
+                          const isSoldOut = coupon.used_count >= coupon.quantity;
+
+                          let statusLabel = "Active";
+                          let statusColor = "bg-green-100 text-green-700";
+
+                          // เรียงลำดับความสำคัญของสถานะ
+                          if (!coupon.is_active) {
+                            statusLabel = "Inactive";
+                            statusColor = "bg-slate-100 text-slate-500";
+                          } else if (isExpired) {
+                            statusLabel = "Expired";
+                            statusColor = "bg-red-100 text-red-600";
+                          } else if (isSoldOut) {
+                            statusLabel = "Sold Out";
+                            statusColor = "bg-orange-100 text-orange-600";
+                          }
+                          // ---------------------------
+
+                          return (
+                            <tr key={coupon.id} className="hover:bg-slate-50/50 transition">
+                                <td className="py-4 px-6 font-bold text-slate-800 font-mono tracking-wide">{coupon.code}</td>
+                                <td className="py-4 px-6 text-slate-600 max-w-[200px] truncate" title={coupon.description}>{coupon.description}</td>
+                                <td className="py-4 px-6 text-center font-bold text-green-600">
+                                {coupon.discount_type === 'percentage' ? `${coupon.discount_value}%` : `฿${coupon.discount_value.toLocaleString()}`}
+                                </td>
+                                <td className="py-4 px-6 text-center text-slate-600">
+                                <span className={isSoldOut ? "text-red-500 font-bold" : ""}>
+                                    {coupon.used_count}
+                                </span> 
+                                / {coupon.quantity}
+                                </td>
+                                <td className={`py-4 px-6 ${isExpired ? "text-red-500 font-medium" : "text-slate-500"}`}>
+                                {new Date(coupon.expiry_date).toLocaleDateString('th-TH', {
+                                    day: '2-digit',
+                                    month: 'short',
+                                    year: 'numeric'})}</td>
+                                <td className="py-4 px-6 text-center">
+                                <span className={`px-2 py-1 rounded-full text-xs font-bold ${statusColor}`}>
+                                    {statusLabel}
+                                </span>
+                                </td>
+                                <td className="py-4 px-6 text-right">
+                                <button onClick={() => openDeleteModal(coupon)} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition" title="Delete Coupon">
+                                    <Trash2Icon size={18} />
+                                </button>
+                                </td>
+                            </tr>
+                          );
+                        })
                     )}
                   </tbody>
                 </table>
@@ -338,22 +365,18 @@ export default function AdminCoupons() {
           <div className="bg-white p-6 md:p-8 rounded-2xl shadow-2xl max-w-sm w-full transform transition-all scale-100 animate-in zoom-in-95">
             <div className="flex flex-col items-center text-center">
               
-              {/* Icon */}
               <div className="p-4 rounded-full mb-4 bg-red-100 text-red-600">
                 <AlertTriangle size={32} />
               </div>
 
-              {/* Title */}
               <h3 className="text-xl font-bold text-slate-900 mb-2">
                 Delete Coupon?
               </h3>
 
-              {/* Description */}
               <p className="text-slate-500 mb-6 text-sm md:text-base leading-relaxed">
                 Are you sure you want to delete the coupon <span className="font-bold text-slate-800">"{couponToDelete.code}"</span>? This action cannot be undone.
               </p>
 
-              {/* Buttons */}
               <div className="flex gap-3 w-full">
                 <button
                   onClick={() => setIsDeleteModalOpen(false)}

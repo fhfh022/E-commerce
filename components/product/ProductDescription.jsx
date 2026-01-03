@@ -1,25 +1,32 @@
 'use client'
 import { useState, useEffect } from "react"
-import { Star, UserCircle } from "lucide-react" // ใช้ icon สวยๆ
+import { Star, UserCircle } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 
 const ProductDescription = ({ product }) => {
 
-    // เพิ่ม Tab 'Specifications' เข้าไปใน Array
     const [selectedTab, setSelectedTab] = useState('Specifications')
     const [reviews, setReviews] = useState([]);
     const tabs = ['Specifications', 'Reviews']; 
 
-    // ดึงข้อมูล Specs (กัน Error ถ้าเป็น null)
     const specs = product.specs || {};
 
-    // กำหนด Mapping ข้อมูลที่จะแสดงในตาราง
+    // ✅ ฟังก์ชันช่วยรวมข้อความ Display (รองรับทั้งแบบเก่าและใหม่)
+    const getDisplayString = () => {
+        const size = specs.display_size || "";
+        const detail = specs.display_specs || specs.display || ""; // fallback หา display เดิม
+        // ถ้ามีทั้งคู่ ให้เว้นวรรค ถ้ามีแค่อย่างใดอย่างหนึ่งก็แสดงอันนั้น
+        return [size, detail].filter(Boolean).join(" ");
+    };
+
+    // ✅ ปรับ specList ให้รองรับ Field ใหม่
     const specList = [
         { label: "Brand", value: product.brand },
         { label: "Model", value: product.model },
         { label: "Processor", value: specs.processor },
+        { label: "Processor Detail", value: specs.processor_detail }, // 🆕 เพิ่มบรรทัดนี้
         { label: "Graphics", value: specs.graphics },
-        { label: "Display Screen", value: specs.display },
+        { label: "Display Screen", value: getDisplayString() },       // 🆕 ใช้ฟังก์ชันรวมคำ
         { label: "Main Memory", value: specs.ram },
         { label: "Storage", value: specs.storage },
         { label: "Network", value: specs.network },
@@ -31,7 +38,6 @@ const ProductDescription = ({ product }) => {
         { label: "Weight", value: specs.weight },
     ];
 
-    // ดึงรีวิวเมื่อเลือกแท็บ Reviews หรือเมื่อโหลดหน้า
     useEffect(() => {
         const fetchReviews = async () => {
             const { data } = await supabase
@@ -39,7 +45,7 @@ const ProductDescription = ({ product }) => {
                 .select(`
                     *,
                     user:users(name, avatar) 
-                `) // จอยกับตาราง users เพื่อเอาชื่อ (ถ้าตาราง users มี field name)
+                `)
                 .eq('product_id', product.id)
                 .order('created_at', { ascending: false });
             
@@ -73,6 +79,7 @@ const ProductDescription = ({ product }) => {
                 <div className="animate-fade-in">
                     <div className="border rounded-lg overflow-hidden max-w-3xl">
                         {specList.map((item, index) => (
+                            // เช็คว่ามี value ไหม ถ้าไม่มีไม่แสดง (Clean UI)
                             item.value ? (
                                 <div key={index} className={`flex flex-col sm:flex-row border-b last:border-b-0 ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50'}`}>
                                     <div className="sm:w-1/3 p-4 font-medium text-slate-700 sm:border-r">
@@ -102,9 +109,9 @@ const ProductDescription = ({ product }) => {
                     ) : (
                         reviews.map((item, index) => (
                             <div key={index} className="flex gap-4 p-6 border border-slate-100 rounded-xl bg-white shadow-sm">
-                                {/* Avatar Section */}
+                                {/* Avatar */}
                               <div className="flex-shrink-0">
-                                    {item.user?.avatar ? ( // ✅ เปลี่ยนจาก .image เป็น .avatar
+                                    {item.user?.avatar ? (
                                         <img 
                                             src={item.user.avatar} 
                                             alt={item.user.name} 
@@ -146,8 +153,6 @@ const ProductDescription = ({ product }) => {
                     )}
                 </div>
             )}
-
-           
         </div>
     )
 }

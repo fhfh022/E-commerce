@@ -10,7 +10,7 @@ import {
   Heart,
   Loader2,
   Sparkles,
-  MessageCircleMore
+  MessageCircleMore,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -72,20 +72,23 @@ const Navbar = () => {
     router.push(`/shop?search=${productName}`);
   };
 
-  // ✅ ฟังก์ชันจัดการคลิกปุ่ม AI (ถ้าไม่ login ให้เด้ง login)
+  // ✅ ฟังก์ชันจัดการคลิกปุ่ม AI
   const handleAIClick = () => {
     if (!user) {
       openSignIn();
     } else {
       router.push("/ai-search");
     }
-    setIsMenuOpen(false); // ปิดเมนูมือถือถ้าเปิดอยู่
+    setIsMenuOpen(false);
   };
 
   return (
-    <header>
+    <>
+      {/* 🚀 Banner อยู่แยกด้านบน เลื่อนหายไปได้ปกติ */}
       <Banner />
-      <nav className="sticky top-0 z-50 bg-white shadow-sm">
+
+      {/* 🚀 Nav จะ Sticky เกาะติดขอบจอ เพราะไม่มี Parent มาจำกัดความสูงแล้ว */}
+      <nav className="sticky top-0 z-50 bg-white shadow-sm border-b border-slate-100/50 backdrop-blur-md">
         <div className="mx-6">
           <div className="flex items-center justify-between max-w-7xl mx-auto py-4 transition-all">
             {/* Logo */}
@@ -116,8 +119,8 @@ const Navbar = () => {
               >
                 Promotions
               </Link>
-              
-              {/* ✅ AI Button (Desktop): เปลี่ยนจาก Link เป็น button */}
+
+              {/* ✅ AI Button */}
               <button
                 onClick={handleAIClick}
                 className="group flex items-center gap-0 hover:gap-2 px-3 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-full text-xs font-bold shadow-lg hover:shadow-indigo-200 transition-all duration-300 active:scale-95 animate-pulse hover:animate-none"
@@ -128,12 +131,11 @@ const Navbar = () => {
                 </span>
               </button>
 
-
               {/* Search Bar */}
               <div className="relative hidden xl:block">
                 <form
                   onSubmit={handleSearch}
-                  className="flex items-center w-64 gap-2 bg-slate-100 px-4 py-3 rounded-full text-sm"
+                  className="flex items-center w-64 gap-2 bg-slate-100 px-4 py-3 rounded-full text-sm focus-within:ring-2 focus-within:ring-green-100 transition-all"
                 >
                   <Search size={18} className="text-slate-600" />
                   <input
@@ -150,7 +152,7 @@ const Navbar = () => {
                 {isSearchOpen &&
                   search.length >= 2 &&
                   searchSuggestions.length > 0 && (
-                    <div className="absolute top-full left-0 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                    <div className="absolute top-full left-0 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg z-50 animate-in fade-in zoom-in-95 duration-200">
                       <ul className="py-1">
                         {searchSuggestions.map((product) => (
                           <li
@@ -158,10 +160,12 @@ const Navbar = () => {
                             onMouseDown={() =>
                               handleSuggestionClick(product.name)
                             }
-                            className="flex items-center justify-between px-4 py-2 cursor-pointer hover:bg-slate-100 text-slate-700 text-sm transition"
+                            className="flex items-center justify-between px-4 py-2 cursor-pointer hover:bg-slate-50 text-slate-700 text-sm transition"
                           >
-                            <span className="truncate">{product.name}</span>
-                            <span className="text-xs text-green-600 font-semibold">
+                            <span className="truncate font-medium">
+                              {product.name}
+                            </span>
+                            <span className="text-xs text-green-600 font-bold bg-green-50 px-2 py-1 rounded-full">
                               ${product.price}
                             </span>
                           </li>
@@ -169,9 +173,9 @@ const Navbar = () => {
                       </ul>
                       <div
                         onMouseDown={handleSearch}
-                        className="px-4 py-2 text-center text-xs bg-slate-50 text-slate-600 border-t hover:bg-slate-100 rounded-b-lg cursor-pointer transition"
+                        className="px-4 py-2 text-center text-xs bg-slate-50 text-slate-500 border-t hover:bg-slate-100 rounded-b-lg cursor-pointer transition font-medium"
                       >
-                        See all ({products.length})
+                        View all results ({products.length})
                       </div>
                     </div>
                   )}
@@ -186,12 +190,12 @@ const Navbar = () => {
                     router.push("/favorites");
                   }
                 }}
-                className="relative text-slate-600 transition hover:text-green-600 focus:outline-none"
+                className="relative text-slate-600 transition hover:text-green-600 focus:outline-none hover:bg-slate-50 p-2 rounded-full"
                 title="My Favorites"
               >
                 <Heart size={22} />
                 {favoriteCount > 0 && (
-                  <span className="absolute -top-1 -right-1 flex items-center justify-center size-3.5 bg-red-500 rounded-full text-[8px] text-white font-bold">
+                  <span className="absolute top-0 right-0 flex items-center justify-center size-4 bg-red-500 rounded-full text-[9px] text-white font-bold border-2 border-white">
                     {favoriteCount}
                   </span>
                 )}
@@ -199,11 +203,11 @@ const Navbar = () => {
 
               <Link
                 href="/cart"
-                className="relative text-slate-600 transition hover:text-green-600 focus:outline-none"
+                className="relative text-slate-600 transition hover:text-green-600 focus:outline-none hover:bg-slate-50 p-2 rounded-full"
               >
                 <ShoppingCart size={24} />
                 {itemCount > 0 && (
-                  <span className="absolute -top-1 -right-1 flex items-center justify-center size-3.5 bg-red-500 rounded-full text-[8px] text-white font-bold">
+                  <span className="absolute top-0 right-0 flex items-center justify-center size-4 bg-red-500 rounded-full text-[9px] text-white font-bold border-2 border-white">
                     {itemCount > 99 ? "99+" : itemCount}
                   </span>
                 )}
@@ -215,7 +219,7 @@ const Navbar = () => {
               ) : !user ? (
                 <button
                   onClick={openSignIn}
-                  className="px-8 py-2 bg-indigo-500 rounded-full text-white transition hover:bg-indigo-600"
+                  className="px-6 py-2 bg-indigo-500 rounded-full text-white text-sm font-medium transition hover:bg-indigo-600 shadow-md hover:shadow-lg active:scale-95"
                 >
                   Login
                 </button>
@@ -227,7 +231,7 @@ const Navbar = () => {
                       label="My Orders"
                       onClick={() => router.push("/orders")}
                     />
-                    <UserButton.Action  
+                    <UserButton.Action
                       labelIcon={<MessageCircleMore size={16} />}
                       label="Chat"
                       onClick={() => router.push("/chat")}
@@ -255,12 +259,12 @@ const Navbar = () => {
             {/* Mobile Controls */}
             <section
               id="mobile-controls"
-              className="flex items-center gap-4 md:hidden"
+              className="flex items-center gap-3 md:hidden"
             >
-              <Link href="/cart" className="relative text-slate-600">
+              <Link href="/cart" className="relative text-slate-600 p-2">
                 <ShoppingCart size={22} />
                 {itemCount > 0 && (
-                  <span className="absolute -top-2 -right-2 flex items-center justify-center size-4 bg-red-500 rounded-full text-[8px] text-white">
+                  <span className="absolute top-0 right-0 flex items-center justify-center size-4 bg-red-500 rounded-full text-[9px] text-white font-bold border-2 border-white">
                     {itemCount > 99 ? "99+" : itemCount}
                   </span>
                 )}
@@ -268,11 +272,11 @@ const Navbar = () => {
 
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="text-slate-600 focus:outline-none"
+                className="text-slate-600 focus:outline-none p-1"
               >
                 <div
                   className={`transition-all duration-300 ${
-                    isMenuOpen ? "rotate-90" : "rotate-0"
+                    isMenuOpen ? "rotate-90 text-indigo-600" : "rotate-0"
                   }`}
                 >
                   {isMenuOpen ? <X size={28} /> : <Menu size={28} />}
@@ -286,131 +290,136 @@ const Navbar = () => {
         <section
           id="mobile-dropdown"
           className={`
-            absolute top-full left-0 w-full bg-white shadow-xl overflow-hidden transition-all duration-300 ease-in-out md:hidden
-            ${isMenuOpen ? "max-h-[600px] opacity-100" : "max-h-0 opacity-0"}
+            absolute top-full left-0 w-full bg-white/95 backdrop-blur-md shadow-xl overflow-hidden transition-all duration-300 ease-in-out md:hidden border-t border-slate-100
+            ${isMenuOpen ? "max-h-[80vh] opacity-100" : "max-h-0 opacity-0"}
           `}
         >
-          <div className="flex flex-col gap-4 px-6 py-6 border-t border-gray-100 text-slate-600 font-medium">
+          <div className="flex flex-col gap-4 px-6 py-6 text-slate-600 font-medium overflow-y-auto max-h-[75vh]">
             <Link
               href="/"
               onClick={() => setIsMenuOpen(false)}
-              className="transition hover:text-green-600"
+              className="transition hover:text-green-600 py-2 border-b border-slate-50"
             >
               Home
             </Link>
             <Link
-              href="/products"
+              href="/shop"
               onClick={() => setIsMenuOpen(false)}
-              className="transition hover:text-green-600"
+              className="transition hover:text-green-600 py-2 border-b border-slate-50"
             >
               Shop
             </Link>
             <Link
               href="/promotions"
               onClick={() => setIsMenuOpen(false)}
-              className="transition hover:text-green-600"
+              className="transition hover:text-green-600 py-2 border-b border-slate-50"
             >
               Promotions
             </Link>
             <Link
               href="/favorites"
               onClick={() => setIsMenuOpen(false)}
-              className="flex items-center gap-2 transition hover:text-green-600"
+              className="flex items-center gap-2 transition hover:text-green-600 py-2 border-b border-slate-50"
             >
               <Heart size={18} /> Favorites{" "}
               {favoriteCount > 0 && (
-                <span className="text-xs text-red-500 font-semibold">
-                  ({favoriteCount})
+                <span className="text-xs text-red-500 font-semibold bg-red-50 px-2 py-0.5 rounded-full">
+                  {favoriteCount} items
                 </span>
               )}
             </Link>
-            
-            {/* ✅ AI Button (Mobile): เปลี่ยนจาก Link เป็น button */}
+
+            {/* ✅ AI Button (Mobile) */}
             <button
               onClick={handleAIClick}
-              className="group flex items-center w-fit px-3 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-full text-xs font-bold shadow-lg hover:shadow-indigo-200 transition-all duration-300 active:scale-95 animate-pulse hover:animate-none"
+              className="group flex items-center justify-center w-full gap-2 px-3 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-xl text-sm font-bold shadow-md active:scale-95 transition-all mt-2 hover:shadow-indigo-200 animate-pulse hover:animate-none"
             >
-              <Sparkles size={14} className="flex-shrink-0" />
-              <span className="max-w-0 overflow-hidden whitespace-nowrap opacity-0 transition-all duration-300 group-hover:max-w-[100px] group-hover:ml-2 group-hover:opacity-100">
-                PRT Assistant
-              </span>
+              <Sparkles size={18} />
+              Ask PRT Assistant
             </button>
 
             <form
               onSubmit={handleSearch}
-              className="flex items-center gap-2 bg-slate-100 px-4 py-3 rounded-full mt-2"
+              className="flex items-center gap-2 bg-slate-100 px-4 py-3 rounded-xl mt-2 focus-within:ring-2 focus-within:ring-indigo-100 transition-all"
             >
-              <Search size={18} className="text-slate-600" />
+              <Search size={18} className="text-slate-500" />
               <input
-                className="w-full bg-transparent outline-none placeholder-slate-600"
+                className="w-full bg-transparent outline-none placeholder-slate-500 text-sm"
                 type="text"
-                placeholder="Search products"
+                placeholder="Search products..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
             </form>
 
-            {/* Mobile Auth Loading State */}
+            {/* Mobile Auth */}
             {!isLoaded ? (
-              <div className="w-full h-[48px] bg-slate-100 rounded-full animate-pulse mt-2"></div>
+              <div className="w-full h-[48px] bg-slate-100 rounded-xl animate-pulse mt-2"></div>
             ) : !user ? (
               <button
                 onClick={openSignIn}
-                className="w-full py-3 bg-indigo-500 rounded-full text-white text-center mt-2 transition hover:bg-indigo-600"
+                className="w-full py-3 bg-indigo-500 rounded-xl text-white text-center mt-2 transition hover:bg-indigo-600 font-medium shadow-md"
               >
-                Login
+                Login / Sign Up
               </button>
             ) : (
-              <div className="mt-2 pt-2 border-t border-slate-100">
-                <div className="flex items-center gap-3 mb-4">
+              <div className="mt-2 pt-4 border-t border-slate-100">
+                <div className="flex items-center gap-3 mb-4 bg-slate-50 p-3 rounded-xl">
                   <UserButton afterSignOutUrl="/" />
-                  <span className="font-semibold text-slate-700">
-                    {user.fullName || user.username}
-                  </span>
+                  <div className="flex flex-col">
+                    <span className="font-bold text-slate-800 text-sm">
+                      {user.fullName || user.username}
+                    </span>
+                    <span className="text-xs text-slate-400">View Account</span>
+                  </div>
                 </div>
 
-                <Link
-                  href="/orders"
-                  onClick={() => setIsMenuOpen(false)}
-                  className="flex items-center gap-3 py-2 px-3 text-slate-600 hover:bg-slate-50 rounded-lg transition"
-                >
-                  <PackageIcon size={18} /> My Orders
-                </Link>
-
-                <Link
-                  href="/chat"
-                  onClick={() => setIsMenuOpen(false)}
-                  className="flex items-center gap-3 py-2 px-3 text-slate-600 hover:bg-slate-50 rounded-lg transition"
-                >
-                  <MessageCircleMore size={18} /> My Chat
-                </Link>
-
-                {isAdmin && (
+                <div className="grid grid-cols-2 gap-2">
                   <Link
-                    href="/admin"
+                    href="/orders"
                     onClick={() => setIsMenuOpen(false)}
-                    className="flex items-center gap-3 py-2 px-3 text-slate-600 hover:bg-slate-50 rounded-lg transition"
+                    className="flex flex-col items-center justify-center gap-1 py-3 px-2 bg-white border border-slate-100 rounded-xl shadow-sm hover:border-indigo-100 hover:text-indigo-600 transition"
                   >
-                    <ClipboardList size={18} /> Admin Dashboard
+                    <PackageIcon size={20} />{" "}
+                    <span className="text-xs font-medium">Orders</span>
                   </Link>
-                )}
-                {isAdmin && (
+
                   <Link
-                    href="/store"
+                    href="/chat"
                     onClick={() => setIsMenuOpen(false)}
-                    className="flex items-center gap-3 py-2 px-3 text-slate-600 hover:bg-slate-50 rounded-lg transition"
+                    className="flex flex-col items-center justify-center gap-1 py-3 px-2 bg-white border border-slate-100 rounded-xl shadow-sm hover:border-indigo-100 hover:text-indigo-600 transition"
                   >
-                    <Package2 size={18} /> Store Dashboard
+                    <MessageCircleMore size={20} />{" "}
+                    <span className="text-xs font-medium">Chat</span>
                   </Link>
-                )}
+
+                  {isAdmin && (
+                    <Link
+                      href="/admin"
+                      onClick={() => setIsMenuOpen(false)}
+                      className="flex flex-col items-center justify-center gap-1 py-3 px-2 bg-indigo-50 border border-indigo-100 text-indigo-700 rounded-xl shadow-sm transition col-span-2"
+                    >
+                      <ClipboardList size={20} />{" "}
+                      <span className="text-xs font-bold">Admin Dashboard</span>
+                    </Link>
+                  )}
+                  {isAdmin && (
+                    <Link
+                      href="/store"
+                      onClick={() => setIsMenuOpen(false)}
+                      className="flex flex-col items-center justify-center gap-1 py-3 px-2 bg-indigo-50 border border-indigo-100 text-indigo-700 rounded-xl shadow-sm transition col-span-2"
+                    >
+                      <Package2 size={20} />{" "}
+                      <span className="text-xs font-bold">Store Dashboard</span>
+                    </Link>
+                  )}
+                </div>
               </div>
             )}
           </div>
         </section>
-
-        <hr className="border-gray-300" />
       </nav>
-    </header>
+    </>
   );
 };
 

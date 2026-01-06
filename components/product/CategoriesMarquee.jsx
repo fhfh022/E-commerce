@@ -2,7 +2,7 @@ import React from 'react';
 
 // รายชื่อแบรนด์ (พี่ชายสามารถเพิ่ม/ลบตรงนี้ได้เลย)
 const BRANDS = [
-    "ACER", "ASUS", "LENOVO", "HP", "MSI", "GIGABYTE"];
+    "ACER", "ASUS", "LENOVO", "HP", "DELL","MSI", "GIGABYTE"];
 
 const CategoriesMarquee = () => {
     return (

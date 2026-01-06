@@ -11,28 +11,47 @@ const ProductDescription = ({ product }) => {
 
     const specs = product.specs || {};
 
-    // ✅ ฟังก์ชันช่วยรวมข้อความ Display (รองรับทั้งแบบเก่าและใหม่)
+    // ฟังก์ชันช่วยรวมข้อความ Display
     const getDisplayString = () => {
         const size = specs.display_size || "";
-        const detail = specs.display_specs || specs.display || ""; // fallback หา display เดิม
-        // ถ้ามีทั้งคู่ ให้เว้นวรรค ถ้ามีแค่อย่างใดอย่างหนึ่งก็แสดงอันนั้น
+        const detail = specs.display_specs || specs.display || "";
         return [size, detail].filter(Boolean).join(" ");
     };
 
-    // ✅ ปรับ specList ให้รองรับ Field ใหม่
+    // ✅ NEW: ฟังก์ชันจัด Format Ports ให้ขึ้นบรรทัดใหม่เมื่อเจอ 1x, 2x
+    const formatPorts = (value) => {
+        if (!value) return "-";
+        // Regex: หาช่องว่าง (หรือ comma) ที่ตามด้วย "ตัวเลข+x" (เช่น " 1x", ", 2x")
+        // (?=\d+x) คือ Lookahead เช็คว่าข้างหน้าเป็น 1x, 2x ไหม แต่ไม่ตัดคำนั้นทิ้ง
+        const parts = value.split(/(?:,?\s+)(?=\d+x)/g);
+
+        if (parts.length <= 1) return value; // ถ้ามีบรรทัดเดียวก็คืนค่าเดิม
+
+        return (
+            <div className="flex flex-col gap-1">
+                {parts.map((part, index) => (
+                    <span key={index} className="block">
+                        {part.trim()}
+                    </span>
+                ))}
+            </div>
+        );
+    };
+
+    // ✅ ปรับ specList ให้ใช้ formatPorts ตรงช่อง Ports
     const specList = [
         { label: "Brand", value: product.brand },
         { label: "Model", value: product.model },
         { label: "Processor", value: specs.processor },
-        { label: "Processor Detail", value: specs.processor_detail }, // 🆕 เพิ่มบรรทัดนี้
+        { label: "Processor Detail", value: specs.processor_detail },
         { label: "Graphics", value: specs.graphics },
-        { label: "Display Screen", value: getDisplayString() },       // 🆕 ใช้ฟังก์ชันรวมคำ
+        { label: "Display Screen", value: getDisplayString() },
         { label: "Main Memory", value: specs.ram },
         { label: "Storage", value: specs.storage },
         { label: "Network", value: specs.network },
         { label: "Wireless", value: specs.wireless },
         { label: "Bluetooth", value: specs.bluetooth },
-        { label: "Ports", value: specs.ports },
+        { label: "Ports", value: formatPorts(specs.ports) }, // 👈 เรียกใช้ฟังก์ชันตรงนี้
         { label: "Battery", value: specs.battery },
         { label: "OS", value: specs.os },
         { label: "Weight", value: specs.weight },

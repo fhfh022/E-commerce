@@ -57,7 +57,9 @@ const ProductCard = ({ product, hideLikeButton = false }) => {
 
   const mainImage = product.images?.[0] || assets.upload_area || "/placeholder.png";
 
-  const isOnSale = product.sale_price && product.sale_price > 0 && product.sale_price < product.price;
+  // ✅ FIX: แก้ Bug เลข 0 โผล่ โดยการเช็ค > 0 โดยตรงเพื่อให้ได้ค่า Boolean
+  const isOnSale = product.sale_price > 0 && product.sale_price < product.price;
+  
   const discountPercent = isOnSale
     ? Math.round(((product.price - product.sale_price) / product.price) * 100)
     : 0;
@@ -86,6 +88,7 @@ const ProductCard = ({ product, hideLikeButton = false }) => {
         {/* --- ส่วนรูปภาพ --- */}
         <div className="relative w-full aspect-square bg-slate-50 flex items-center justify-center overflow-hidden p-6">
           
+          {/* ✅ เงื่อนไข isOnSale ตอนนี้เป็น Boolean แล้ว เลข 0 จะไม่หลุดมาตรงนี้แน่นอนครับ */}
           {isOnSale && (
             <span className="absolute top-3 left-3 z-10 bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded shadow-md">
               -{discountPercent}%
@@ -118,7 +121,6 @@ const ProductCard = ({ product, hideLikeButton = false }) => {
         </div>
 
         {/* --- ส่วนเนื้อหา --- */}
-        {/* ใช้ gap-2 เพื่อระยะห่างที่สวยงาม */}
         <div className="p-4 flex flex-col flex-1 gap-2"> 
           
           {/* Brand */}
@@ -127,10 +129,6 @@ const ProductCard = ({ product, hideLikeButton = false }) => {
           </p>
 
           {/* ชื่อสินค้า + Model */}
-          {/* ✅ แก้ไขจุดนี้: 
-              1. ลบ line-clamp-2 และ h-[3rem] ออก เพื่อให้ชื่อยาวแค่ไหนก็แสดงหมด
-              2. แยก Model (สีเทา) ออกมาเป็นอีก span เพื่อความชัดเจน 
-          */}
           <div className="mb-1">
             <h3 
                 className="font-bold text-slate-800 text-sm sm:text-base leading-tight" 
@@ -139,7 +137,6 @@ const ProductCard = ({ product, hideLikeButton = false }) => {
                 {product.name}
             </h3>
             
-            {/* Model Name แสดงแยกบรรทัดชัดเจน */}
             {product.model && (
                 <span className="block text-xs font-semibold text-slate-500 mt-1">
                     {product.model}
@@ -147,12 +144,12 @@ const ProductCard = ({ product, hideLikeButton = false }) => {
             )}
           </div>
 
-          {/* Spec String (โชว์เต็ม ไม่ตัดคำ) */}
+          {/* Spec String */}
           <p className="text-xs text-slate-500 leading-relaxed">
             {specString || product.description || "View details for specifications"}
           </p>
 
-          {/* ราคา (ดันลงล่างสุดเสมอ) */}
+          {/* ราคา */}
           <div className="mt-auto  border-t border-slate-50 flex items-center gap-2 flex-wrap">
             {isOnSale ? (
               <>

@@ -6,6 +6,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import SyncUser from "@/components/providers/SyncUser";
 import RoleInitializer from "@/components/providers/RoleInitializer";
 import AppInitializer from "../components/providers/AppInitializer";
+import CookieConsent from '@/components/layout/CookieConsent';
 
 const prompt = Prompt({ 
   subsets: ["latin", "thai"], 
@@ -28,6 +29,7 @@ export default function RootLayout({ children }) {
               <Toaster />
               <SyncUser />
               <RoleInitializer />
+              <CookieConsent />
               {children}
             </AppInitializer>
           </StoreProvider>

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Gamepad2 ,Laptop } from "lucide-react";  
 
 const Footer = () => {
 
@@ -14,15 +15,15 @@ const Footer = () => {
         {
             title: "PRODUCTS",
             links: [
-                { text: "Ultrabook", path: '/', icon: null },
-                { text: "Gaming", path: '/', icon: null },
+                { text: "Ultrabook", path: '/', icon: Laptop },
+                { text: "Gaming", path: '/', icon: Gamepad2 },
             ]
         },
         {
             title: "WEBSITE",
             links: [
-                { text: "Home", path: '/', icon: null },
-                { text: "Privacy Policy", path: '/', icon: null },
+                { text: "Home", path: '/' },
+                { text: "Privacy Policy", path: '/privacy-policy'},
             ]
                
         },

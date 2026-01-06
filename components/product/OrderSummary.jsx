@@ -28,7 +28,7 @@ const OrderSummary = ({ totalPrice, items }) => {
   const [isProcessing, setIsProcessing] = useState(false);
 
   const [couponCodeInput, setCouponCodeInput] = useState("");
-  const [coupon, setCoupon] = useState(null); // เปลี่ยน default เป็น null
+  const [coupon, setCoupon] = useState(null);
 
   useEffect(() => {
       const fetchAddresses = async () => {
@@ -79,22 +79,22 @@ const OrderSummary = ({ totalPrice, items }) => {
       }
   };
 
-  // ✅ 1. Logic การคำนวณส่วนลดใหม่
+  // ✅ คำนวณส่วนลดและปัดเศษให้เป็นจำนวนเต็ม
   const discountAmount = coupon
-    ? coupon.type === "percentage"
-      ? (coupon.value / 100) * totalPrice
-      : coupon.value // ถ้าเป็น Fixed ก็ลดตามจำนวนเลย
+    ? Math.round(
+        coupon.type === "percentage"
+          ? (coupon.value / 100) * totalPrice
+          : coupon.value
+      )
     : 0;
   
-  const finalTotal = Math.max(0, totalPrice - discountAmount); // กันติดลบ
+  const finalTotal = Math.max(0, totalPrice - discountAmount);
 
-  // ✅ 2. Logic การเช็คคูปอง
   const handleCouponCode = async (event) => {
       event.preventDefault();
       if (!couponCodeInput) return;
   
       try {
-        // ดึง discount_value, type, quantity, used_count
         const { data, error } = await supabase
           .from("coupons")
           .select("*")
@@ -107,13 +107,11 @@ const OrderSummary = ({ totalPrice, items }) => {
           return;
         }
 
-        // เช็ควันหมดอายุ
         if (data.expiry_date && new Date(data.expiry_date) < new Date()) {
           toast.error("This coupon has expired");
           return;
         }
 
-        // ✅ เช็คจำนวนสิทธิ์ (Quantity Check)
         if (data.used_count >= data.quantity) {
           toast.error("This coupon is fully redeemed (Out of stock)");
           return;
@@ -121,8 +119,8 @@ const OrderSummary = ({ totalPrice, items }) => {
   
         setCoupon({
           code: data.code,
-          value: data.discount_value, // ใช้ discount_value
-          type: data.discount_type,   // เก็บประเภทไว้คำนวณ
+          value: data.discount_value,
+          type: data.discount_type,
           description: data.description,
         });
   
@@ -152,14 +150,19 @@ const OrderSummary = ({ totalPrice, items }) => {
     const selectedAddress = addressList[selectedAddressIndex];
 
     try {
+      // ✅ ปัดเศษทั้ง totalPrice และ discountAmount ให้เป็นจำนวนเต็ม
+      const roundedTotal = Math.round(totalPrice);
+      const roundedDiscount = Math.round(discountAmount);
+      const roundedFinal = Math.max(0, roundedTotal - roundedDiscount);
+
       const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
             items: items, 
             userEmail: user.email,
-            discountAmount: discountAmount,
-            // ✅ ส่งข้อมูลคูปองไปด้วย เพื่อให้ API ไปตัดจำนวน (Increment Used Count)
+            totalAmount: roundedFinal, // ✅ ส่งเป็น integer
+            discountAmount: roundedDiscount, // ✅ ส่งเป็น integer
             couponCode: coupon ? coupon.code : null, 
             addressId: selectedAddress?.id,
             onlyCreateOrder: true 
@@ -187,72 +190,135 @@ const OrderSummary = ({ totalPrice, items }) => {
   };
 
   return (
-    <div className="w-full max-w-lg lg:max-w-[340px] bg-white border border-slate-200 text-slate-500 text-sm rounded-2xl p-7 shadow-sm">
+    <div className="w-full max-w-lg mx-auto lg:mx-0 lg:max-w-[340px] bg-white border border-slate-200 text-slate-500 text-sm rounded-2xl p-7 shadow-sm">
       <h2 className="text-xl font-bold text-slate-800 mb-6">Order Summary</h2>
 
+      {/* Payment Method Section */}
       <div className="space-y-3 mb-6">
         <p className="text-gray-500 text-xs font-bold uppercase tracking-wider">Payment Method</p>
-        <label className={`flex gap-3 items-center p-3 border rounded-xl cursor-not-allowed transition-all ${paymentMethod === "COD" ? "border-blue-500 bg-blue-50/50" : "border-slate-200 hover:border-slate-300"}`}>
-          <input type="radio" name="payment" onChange={() => setPaymentMethod("COD")} checked={paymentMethod === "COD"} className="accent-blue-600 size-4 cursor-not-allowed" disabled />
-          <span className="font-medium text-gray-700 opacity-50">Cash on Delivery (Not Available)</span>
+        
+        <label className={`flex gap-3 items-center p-3 border rounded-xl cursor-not-allowed transition-all ${
+          paymentMethod === "COD" ? "border-blue-500 bg-blue-50/50" : "border-slate-200 hover:border-slate-300"
+        }`}>
+          <input 
+            type="radio" 
+            name="payment" 
+            onChange={() => setPaymentMethod("COD")} 
+            checked={paymentMethod === "COD"} 
+            className="accent-blue-600 size-4 cursor-not-allowed" 
+            disabled 
+          />
+          <span className="font-medium text-gray-700 opacity-50">
+            Cash on Delivery (Not Available)
+          </span>
         </label>
-        <label className={`flex gap-3 items-center p-3 border rounded-xl cursor-pointer transition-all ${paymentMethod === "STRIPE" ? "border-blue-500 bg-blue-50/50" : "border-slate-200 hover:border-slate-300"}`}>
-          <input type="radio" name="payment" onChange={() => setPaymentMethod("STRIPE")} checked={paymentMethod === "STRIPE"} className="accent-blue-600 size-4" />
+
+        <label className={`flex gap-3 items-center p-3 border rounded-xl cursor-pointer transition-all ${
+          paymentMethod === "STRIPE" ? "border-blue-500 bg-blue-50/50" : "border-slate-200 hover:border-slate-300"
+        }`}>
+          <input 
+            type="radio" 
+            name="payment" 
+            onChange={() => setPaymentMethod("STRIPE")} 
+            checked={paymentMethod === "STRIPE"} 
+            className="accent-blue-600 size-4" 
+          />
           <span className="font-medium text-slate-700">Stripe Payment</span>
         </label>
       </div>
 
+      {/* Shipping Address Section */}
       <div className="my-6 py-6 border-y border-slate-100">
-          <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-3">Shipping Address</p>
-          {addressList.length > 0 ? (
-            <div className="space-y-3">
-              <select className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-blue-500 transition text-slate-700 font-medium appearance-none cursor-pointer" onChange={(e) => setSelectedAddressIndex(e.target.value)} value={selectedAddressIndex}>
-                <option value="" disabled>-- Select Delivery Address --</option>
-                {addressList.map((addr, index) => (
-                  <option key={addr.id} value={index}>{addr.receiver_name} - {addr.province}</option>
-                ))}
-              </select>
-              {selectedAddressIndex !== "" && addressList[selectedAddressIndex] && (
-                <div className="text-xs text-slate-500 bg-slate-50 p-3 rounded-lg border border-slate-100 leading-relaxed relative group animate-in fade-in slide-in-from-top-2">
-                    <p><span className="font-bold">To:</span> {addressList[selectedAddressIndex].receiver_name}</p>
-                    <p><span className="font-bold">Tel:</span> {addressList[selectedAddressIndex].phone_number}</p>
-                    <p className="mt-1 mb-2 pr-10">{addressList[selectedAddressIndex].detail}, {addressList[selectedAddressIndex].sub_district}, {addressList[selectedAddressIndex].province}, {addressList[selectedAddressIndex].postal_code}</p>
-                    <div className="flex gap-3 mt-2 border-t border-slate-200 pt-2">
-                      <button onClick={() => handleEditAddress(addressList[selectedAddressIndex])} className="flex items-center gap-1 text-slate-400 hover:text-blue-600 font-medium transition"><Edit2Icon size={14} /> Edit</button>
-                      <button onClick={() => requestDeleteAddress(addressList[selectedAddressIndex].id)} className="flex items-center gap-1 text-slate-400 hover:text-red-500 font-medium transition"><Trash2Icon size={14} /> Delete</button>
-                    </div>
+        <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-3">
+          Shipping Address
+        </p>
+
+        {addressList.length > 0 ? (
+          <div className="space-y-3">
+            <select 
+              className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-blue-500 transition text-slate-700 font-medium appearance-none cursor-pointer" 
+              onChange={(e) => setSelectedAddressIndex(e.target.value)} 
+              value={selectedAddressIndex}
+            >
+              <option value="" disabled>-- Select Delivery Address --</option>
+              {addressList.map((addr, index) => (
+                <option key={addr.id} value={index}>
+                  {addr.receiver_name} - {addr.province}
+                </option>
+              ))}
+            </select>
+
+            {selectedAddressIndex !== "" && addressList[selectedAddressIndex] && (
+              <div className="text-xs text-slate-500 bg-slate-50 p-3 rounded-lg border border-slate-100 leading-relaxed relative group animate-in fade-in slide-in-from-top-2">
+                <p><span className="font-bold">To:</span> {addressList[selectedAddressIndex].receiver_name}</p>
+                <p><span className="font-bold">Tel:</span> {addressList[selectedAddressIndex].phone_number}</p>
+                <p className="mt-1 mb-2 pr-10">
+                  {addressList[selectedAddressIndex].detail}, {addressList[selectedAddressIndex].sub_district}, {addressList[selectedAddressIndex].province}, {addressList[selectedAddressIndex].postal_code}
+                </p>
+
+                <div className="flex gap-3 mt-2 border-t border-slate-200 pt-2">
+                  <button 
+                    onClick={() => handleEditAddress(addressList[selectedAddressIndex])} 
+                    className="flex items-center gap-1 text-slate-400 hover:text-blue-600 font-medium transition"
+                  >
+                    <Edit2Icon size={14} /> Edit
+                  </button>
+                  <button 
+                    onClick={() => requestDeleteAddress(addressList[selectedAddressIndex].id)} 
+                    className="flex items-center gap-1 text-slate-400 hover:text-red-500 font-medium transition"
+                  >
+                    <Trash2Icon size={14} /> Delete
+                  </button>
                 </div>
-              )}
-            </div>
-          ) : (
-            <p className="text-xs text-slate-400 italic mb-2">No address found. Please add one.</p>
-          )}
-          <button className="flex items-center justify-center gap-2 w-full mt-3 py-2.5 border border-dashed border-slate-300 rounded-xl text-slate-500 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50 transition font-medium" onClick={() => { setAddressToEdit(null); setShowAddressModal(true); }}>
-            <PlusIcon size={16} /> Add New Address
-          </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <p className="text-xs text-slate-400 italic mb-2">No address found. Please add one.</p>
+        )}
+
+        <button 
+          className="flex items-center justify-center gap-2 w-full mt-3 py-2.5 border border-dashed border-slate-300 rounded-xl text-slate-500 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50 transition font-medium" 
+          onClick={() => { 
+            setAddressToEdit(null); 
+            setShowAddressModal(true); 
+          }}
+        >
+          <PlusIcon size={16} /> Add New Address
+        </button>
       </div>
 
+      {/* Cost Breakdown */}
       <div className="space-y-3 pb-6 border-b border-slate-100">
-          <div className="flex justify-between text-slate-500">
-            <span>Subtotal</span>
-            <span className="font-medium text-slate-700">{currency}{totalPrice.toLocaleString()}</span>
+        <div className="flex justify-between text-slate-500">
+          <span>Subtotal</span>
+          <span className="font-medium text-slate-700">{currency}{totalPrice.toFixed(2)}</span>
+        </div>
+        <div className="flex justify-between text-slate-500">
+          <span>Shipping</span>
+          <span className="text-green-600 font-medium">Free</span>
+        </div>
+        {coupon && (
+          <div className="flex justify-between text-blue-600">
+            <span>Coupon ({coupon.code})</span>
+            <span>-{currency}{discountAmount.toFixed(2)}</span>
           </div>
-          <div className="flex justify-between text-slate-500">
-            <span>Shipping</span>
-            <span className="text-green-600 font-medium">Free</span>
-          </div>
-          {coupon && (
-            <div className="flex justify-between text-blue-600">
-              <span>Coupon ({coupon.code})</span>
-              <span>-{currency}{discountAmount.toLocaleString()}</span>
-            </div>
-          )}
+        )}
       </div>
 
+      {/* Coupon Section */}
       {!coupon ? (
         <form onSubmit={handleCouponCode} className="flex gap-2 mt-6">
-          <input onChange={(e) => setCouponCodeInput(e.target.value)} value={couponCodeInput} type="text" placeholder="Promo Code" className="flex-1 border border-slate-200 p-2.5 px-3 rounded-xl outline-none focus:border-blue-500 transition text-sm" />
-          <button className="bg-slate-800 text-white px-4 rounded-xl hover:bg-slate-900 active:scale-95 transition-all font-medium">Apply</button>
+          <input 
+            onChange={(e) => setCouponCodeInput(e.target.value)} 
+            value={couponCodeInput} 
+            type="text" 
+            placeholder="Promo Code" 
+            className="flex-1 border border-slate-200 p-2.5 px-3 rounded-xl outline-none focus:border-blue-500 transition text-sm" 
+          />
+          <button className="bg-slate-800 text-white px-4 rounded-xl hover:bg-slate-900 active:scale-95 transition-all font-medium">
+            Apply
+          </button>
         </form>
       ) : (
         <div className="mt-6 bg-blue-50 border border-blue-100 p-3 rounded-xl flex items-center justify-between">
@@ -260,51 +326,102 @@ const OrderSummary = ({ totalPrice, items }) => {
             <span className="text-xs font-bold text-blue-600">COUPON APPLIED</span>
             <span className="text-xs text-blue-400">{coupon.description}</span>
           </div>
-          <button onClick={() => setCoupon(null)} className="text-xs text-red-500 hover:underline">Remove</button>
+          <button 
+            onClick={() => setCoupon(null)} 
+            className="text-xs text-red-500 hover:underline"
+          >
+            Remove
+          </button>
         </div>
       )}
 
+      {/* Total */}
       <div className="flex justify-between items-center py-6">
-          <span className="font-bold text-slate-800 text-lg">Total</span>
-          <span className="font-black text-slate-900 text-xl">{currency}{finalTotal.toLocaleString()}</span>
+        <span className="font-bold text-slate-800 text-lg">Total</span>
+        <span className="font-black text-slate-900 text-xl">{currency}{finalTotal.toFixed(2)}</span>
       </div>
 
-      <button onClick={handlePlaceOrderClick} className="w-full bg-slate-900 text-white py-4 rounded-2xl font-bold text-lg hover:bg-slate-800 active:scale-95 transition-all shadow-lg shadow-slate-200">Place Order</button>
+      {/* Place Order Button */}
+      <button 
+        onClick={handlePlaceOrderClick} 
+        className="w-full bg-slate-900 text-white py-4 rounded-2xl font-bold text-lg hover:bg-slate-800 active:scale-95 transition-all shadow-lg shadow-slate-200"
+      >
+        Place Order
+      </button>
 
-      {/* Modals for Confirm and Address - Same as before */}
+      {/* Confirm Order Modal */}
       {showConfirmModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white rounded-[32px] p-8 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200">
             <div className="flex flex-col items-center text-center">
-              <div className="size-20 bg-green-50 text-green-500 rounded-full flex items-center justify-center mb-6"><CheckCircle size={36} /></div>
+              <div className="size-20 bg-green-50 text-green-500 rounded-full flex items-center justify-center mb-6">
+                <CheckCircle size={36} />
+              </div>
               <h3 className="text-2xl font-black text-slate-900">Confirm Order?</h3>
-              <p className="text-slate-500 mt-2 leading-relaxed text-sm">You are about to place an order. You can pay immediately or later from the 'My Orders' page.</p>
+              <p className="text-slate-500 mt-2 leading-relaxed text-sm">
+                You are about to place an order. You can pay immediately or later from the 'My Orders' page.
+              </p>
               <div className="grid grid-cols-1 gap-3 w-full mt-8">
-                <button disabled={isProcessing} onClick={confirmPlaceOrder} className="w-full py-3.5 bg-green-500 hover:bg-green-600 text-white font-bold rounded-2xl shadow-lg shadow-green-100 active:scale-95 disabled:opacity-70 transition-all">
+                <button 
+                  disabled={isProcessing} 
+                  onClick={confirmPlaceOrder} 
+                  className="w-full py-3.5 bg-green-500 hover:bg-green-600 text-white font-bold rounded-2xl shadow-lg shadow-green-100 active:scale-95 disabled:opacity-70 transition-all"
+                >
                   {isProcessing ? "Processing..." : "Confirm & Place Order"}
                 </button>
-                <button disabled={isProcessing} onClick={() => setShowConfirmModal(false)} className="w-full py-3.5 bg-white text-slate-400 font-bold rounded-2xl hover:text-slate-600 active:scale-95 transition-all">Cancel</button>
+                <button 
+                  disabled={isProcessing} 
+                  onClick={() => setShowConfirmModal(false)} 
+                  className="w-full py-3.5 bg-white text-slate-400 font-bold rounded-2xl hover:text-slate-600 active:scale-95 transition-all"
+                >
+                  Cancel
+                </button>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {showAddressModal && <AddressModal setShowAddressModal={setShowAddressModal} addressToEdit={addressToEdit} setAddressToEdit={setAddressToEdit} />}
+      {/* Address Modal */}
+      {showAddressModal && (
+        <AddressModal 
+          setShowAddressModal={setShowAddressModal} 
+          addressToEdit={addressToEdit} 
+          setAddressToEdit={setAddressToEdit} 
+        />
+      )}
+      
+      {/* Delete Address Modal */}
       {showDeleteModal && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white rounded-[32px] p-8 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200">
-              <div className="flex flex-col items-center text-center">
-                <div className="size-20 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-6"><AlertTriangle size={36} /></div>
-                <h3 className="text-2xl font-black text-slate-900">Delete Address?</h3>
-                <p className="text-slate-500 mt-2 leading-relaxed">Are you sure you want to remove this address? This action cannot be undone.</p>
-                <div className="grid grid-cols-1 gap-3 w-full mt-8">
-                  <button disabled={isProcessing} onClick={confirmDeleteAddress} className="w-full py-3.5 bg-red-500 hover:bg-red-600 text-white font-bold rounded-2xl shadow-lg shadow-red-100 active:scale-95 disabled:opacity-70 transition-all">{isProcessing ? "Deleting..." : "Yes, Delete it"}</button>
-                  <button disabled={isProcessing} onClick={() => setShowDeleteModal(false)} className="w-full py-3.5 bg-white text-slate-400 font-bold rounded-2xl hover:text-slate-600 active:scale-95 transition-all">Cancel</button>
-                </div>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-[32px] p-8 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="flex flex-col items-center text-center">
+              <div className="size-20 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-6">
+                <AlertTriangle size={36} />
+              </div>
+              <h3 className="text-2xl font-black text-slate-900">Delete Address?</h3>
+              <p className="text-slate-500 mt-2 leading-relaxed">
+                Are you sure you want to remove this address? This action cannot be undone.
+              </p>
+              <div className="grid grid-cols-1 gap-3 w-full mt-8">
+                <button 
+                  disabled={isProcessing} 
+                  onClick={confirmDeleteAddress} 
+                  className="w-full py-3.5 bg-red-500 hover:bg-red-600 text-white font-bold rounded-2xl shadow-lg shadow-red-100 active:scale-95 disabled:opacity-70 transition-all"
+                >
+                  {isProcessing ? "Deleting..." : "Yes, Delete it"}
+                </button>
+                <button 
+                  disabled={isProcessing} 
+                  onClick={() => setShowDeleteModal(false)} 
+                  className="w-full py-3.5 bg-white text-slate-400 font-bold rounded-2xl hover:text-slate-600 active:scale-95 transition-all"
+                >
+                  Cancel
+                </button>
               </div>
             </div>
           </div>
+        </div>
       )}
     </div>
   );

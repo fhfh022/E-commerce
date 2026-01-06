@@ -35,7 +35,7 @@ const Navbar = () => {
   const [search, setSearch] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
-  // ✅ OPTIMIZATION 1: ใช้ useMemo คำนวณตัวเลข
+  // ✅ OPTIMIZATION 1: คำนวณตัวเลข
   const itemCount = useMemo(() => {
     return Object.keys(cartItems).length > 0
       ? Object.values(cartItems).reduce(
@@ -49,12 +49,17 @@ const Navbar = () => {
     return Array.isArray(favoriteItems) ? favoriteItems.length : 0;
   }, [favoriteItems]);
 
-  // ✅ OPTIMIZATION 2: ใช้ useMemo กับ Search Logic
+  // ✅ OPTIMIZATION 2: Logic Search (Name, Brand, Model)
   const searchSuggestions = useMemo(() => {
     if (!search || search.length < 2) return [];
+    
+    const query = search.toLowerCase();
+
     return products
       .filter((product) =>
-        product.name.toLowerCase().includes(search.toLowerCase())
+        product.name?.toLowerCase().includes(query) ||
+        product.brand?.toLowerCase().includes(query) ||
+        product.model?.toLowerCase().includes(query)
       )
       .slice(0, 5);
   }, [search, products]);
@@ -72,7 +77,6 @@ const Navbar = () => {
     router.push(`/shop?search=${productName}`);
   };
 
-  // ✅ ฟังก์ชันจัดการคลิกปุ่ม AI
   const handleAIClick = () => {
     if (!user) {
       openSignIn();
@@ -84,10 +88,8 @@ const Navbar = () => {
 
   return (
     <>
-      {/* 🚀 Banner อยู่แยกด้านบน เลื่อนหายไปได้ปกติ */}
       <Banner />
 
-      {/* 🚀 Nav จะ Sticky เกาะติดขอบจอ เพราะไม่มี Parent มาจำกัดความสูงแล้ว */}
       <nav className="sticky top-0 z-50 bg-white shadow-sm border-b border-slate-100/50 backdrop-blur-md">
         <div className="mx-6">
           <div className="flex items-center justify-between max-w-7xl mx-auto py-4 transition-all">
@@ -120,7 +122,7 @@ const Navbar = () => {
                 Promotions
               </Link>
 
-              {/* ✅ AI Button */}
+              {/* AI Button */}
               <button
                 onClick={handleAIClick}
                 className="group flex items-center gap-0 hover:gap-2 px-3 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-full text-xs font-bold shadow-lg hover:shadow-indigo-200 transition-all duration-300 active:scale-95 animate-pulse hover:animate-none"
@@ -131,17 +133,18 @@ const Navbar = () => {
                 </span>
               </button>
 
-              {/* Search Bar */}
+              {/* ✅ Search Bar (ขยายขนาด) */}
               <div className="relative hidden xl:block">
                 <form
                   onSubmit={handleSearch}
-                  className="flex items-center w-64 gap-2 bg-slate-100 px-4 py-3 rounded-full text-sm focus-within:ring-2 focus-within:ring-green-100 transition-all"
+                  // เปลี่ยนจาก w-64 เป็น w-96 (กว้างขึ้นประมาณ 384px)
+                  className="flex items-center w-96 gap-2 bg-slate-100 px-4 py-3 rounded-full text-sm focus-within:ring-2 focus-within:ring-green-100 transition-all"
                 >
                   <Search size={18} className="text-slate-600" />
                   <input
                     className="w-full bg-transparent outline-none placeholder-slate-600"
                     type="text"
-                    placeholder="Search products"
+                    placeholder="Search name, brand, or model..." 
                     value={search}
                     onFocus={() => setIsSearchOpen(true)}
                     onBlur={() => setTimeout(() => setIsSearchOpen(false), 200)}
@@ -163,7 +166,7 @@ const Navbar = () => {
                             className="flex items-center justify-between px-4 py-2 cursor-pointer hover:bg-slate-50 text-slate-700 text-sm transition"
                           >
                             <span className="truncate font-medium">
-                              {product.name}
+                              {product.name} - {product.model}
                             </span>
                             <span className="text-xs text-green-600 font-bold bg-green-50 px-2 py-1 rounded-full">
                               ${product.price}
@@ -329,7 +332,7 @@ const Navbar = () => {
               )}
             </Link>
 
-            {/* ✅ AI Button (Mobile) */}
+            {/* Mobile AI Button */}
             <button
               onClick={handleAIClick}
               className="group flex items-center justify-center w-full gap-2 px-3 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-xl text-sm font-bold shadow-md active:scale-95 transition-all mt-2 hover:shadow-indigo-200 animate-pulse hover:animate-none"

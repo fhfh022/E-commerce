@@ -72,35 +72,33 @@ gocart-main/
 
 ### Installation
 
+To get started with the PRT e-commerce platform, follow these steps:
+
 1. Clone the repository:
-```bash
-git clone https://github.com/fhfh022/E-commerce.git
-cd prt-main
-```
-
+   ```bash
+   git clone https://github.com/yourusername/prt-main.git
+   cd prt-main
+   ```
 2. Install dependencies:
-```bash
-npm install
-```
-
+   ```bash
+   npm install
+   ```
 3. Set up environment variables:
-Create a `.env.local` file with:
-```env
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_key
-CLERK_SECRET_KEY=your_clerk_secret
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-STRIPE_SECRET_KEY=your_stripe_secret
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=your_stripe_publishable
-NEXT_PUBLIC_CURRENCY_SYMBOL=$
-```
-
+   Create a `.env.local` file in the root directory and add your configuration settings.
 4. Run the development server:
-```bash
-npm run dev
-```
+   ```bash
+   npm run dev
+   ```
+5. Open your browser and navigate to `http://localhost:3000` to see the application in action.
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+## 📄 Usage
+
+Once the application is running, you can:
+
+- Register a new account or log in with an existing account.
+- Browse products, add them to your cart, and place orders.
+- Access the admin dashboard to manage products and orders.
+
 
 ## 📜 Available Scripts
 

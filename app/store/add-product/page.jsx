@@ -60,8 +60,13 @@ export default function StoreAddProduct() {
   const onSubmitHandler = async (e) => {
     e.preventDefault();
     setLoading(true);
+
+    // ✅ CONFIG: เปลี่ยนชื่อ Bucket ที่ต้องการใช้ตรงนี้ครับ
+    // ถ้าอันเก่าเต็ม ก็สร้างอันใหม่ใน Supabase แล้วมาเปลี่ยนชื่อตรงนี้เป็น 'product-images-2' ได้เลย
+    const CURRENT_BUCKET = "product-images"; 
+
     try {
-      // 1. Insert Product Data
+      // 1. Insert Product Data (เหมือนเดิม)
       const { data: product, error: insertError } = await supabase
         .from("products")
         .insert({
@@ -70,31 +75,42 @@ export default function StoreAddProduct() {
           model: productInfo.model,
           price: Number(productInfo.price),
           category: productInfo.category,
-          specs: specs, // ส่ง JSON ก้อนใหม่ที่มี processor_detail ไปเก็บ
+          specs: specs,
         })
         .select().single();
 
       if (insertError) throw insertError;
 
-      // 2. Upload Images
+      // 2. Upload Images (แก้ไขให้ใช้ตัวแปร CURRENT_BUCKET)
       const imageUrls = [];
       for (const key of Object.keys(images)) {
         const file = images[key];
         if (!file) continue;
+        
         const filePath = `${product.id}/${key}.png`;
-        const { error: uploadError } = await supabase.storage.from("product-images").upload(filePath, file, { upsert: true });
+        
+        // ✅ Upload ไปยัง Bucket ที่กำหนด
+        const { error: uploadError } = await supabase.storage
+            .from(CURRENT_BUCKET) 
+            .upload(filePath, file, { upsert: true });
+            
         if (uploadError) throw uploadError;
-        const { data } = supabase.storage.from("product-images").getPublicUrl(filePath);
+        
+        // ✅ Get URL จาก Bucket เดียวกัน
+        const { data } = supabase.storage
+            .from(CURRENT_BUCKET)
+            .getPublicUrl(filePath);
+            
         imageUrls.push(data.publicUrl);
       }
 
-      // 3. Update Product with Image URLs
+      // 3. Update Product with Image URLs (เหมือนเดิม)
       const { error: updateError } = await supabase.from("products").update({ images: imageUrls }).eq("id", product.id);
       if (updateError) throw updateError;
 
       toast.success("Product added successfully");
 
-      // 4. Reset Form
+      // 4. Reset Form (เหมือนเดิม)
       setProductInfo({
         name: "", brand: "", model: "", price: "", category: "",
       });

@@ -34,10 +34,7 @@ const ProductDetails = ({ product }) => {
   const isFavorite = favorites.includes(productId);
 
   // ✅ Logic คำนวณส่วนลด
-  const isOnSale =
-    product.sale_price &&
-    product.sale_price > 0 &&
-    product.sale_price < product.price;
+  const isOnSale = product.sale_price > 0 && product.sale_price < product.price;
   const currentPrice = isOnSale ? product.sale_price : product.price;
 
   const [ratingStats, setRatingStats] = useState({

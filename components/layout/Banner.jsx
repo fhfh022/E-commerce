@@ -20,7 +20,7 @@ export default function Banner() {
                     const { data } = await supabase
                         .from('coupons')
                         .select('code, discount_percent')
-                        .eq('code', 'PRT20')
+                        .eq('code', 'WELCOME')
                         .eq('is_active', true)
                         .maybeSingle(); // ใช้ maybeSingle เพื่อป้องกัน error ถ้าไม่เจอข้อมูล
                     

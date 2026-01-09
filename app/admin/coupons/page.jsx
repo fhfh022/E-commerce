@@ -1,6 +1,5 @@
 "use client";
 import { useEffect, useState } from "react";
-import { format } from "date-fns";
 import toast from "react-hot-toast";
 import { Trash2Icon, TicketPercent, AlertTriangle, Loader2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -70,7 +69,7 @@ export default function AdminCoupons() {
         discount_type: newCoupon.discount_type,
         
         discount_value: discountVal, 
-        discount_percent: discountVal, // ใส่ค่าเดิมกัน Error
+        discount_percent: discountVal, // ใส่ค่าสำรองกัน Error
         
         quantity: quantityVal,
         used_count: 0,
@@ -146,6 +145,30 @@ export default function AdminCoupons() {
     }
   };
 
+  // ✅ ฟังก์ชันเปิด-ปิดสถานะคูปอง (Toggle Status)
+  const toggleStatus = async (id, currentStatus) => {
+    try {
+      const { error } = await supabase
+        .from("coupons")
+        .update({ is_active: !currentStatus }) // สลับค่า True/False
+        .eq("id", id);
+
+      if (error) throw error;
+
+      // อัปเดต State ทันทีเพื่อให้ UI เปลี่ยนไว
+      setCoupons(
+        coupons.map((c) =>
+          c.id === id ? { ...c, is_active: !currentStatus } : c
+        )
+      );
+      
+      toast.success(currentStatus ? "Coupon Deactivated" : "Coupon Activated");
+    } catch (error) {
+      console.error("Update error:", error);
+      toast.error("Failed to update status");
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-6 pt-10 pb-20 text-slate-500 animate-in fade-in duration-500">
       <PageTitle heading="Coupon Management" text="Create and manage discount codes" />
@@ -153,7 +176,7 @@ export default function AdminCoupons() {
       <div className="mt-8 flex flex-col lg:flex-row items-start gap-8">
         
         {/* ---- ส่วนที่ 1: Add Coupon Form (ด้านซ้าย) ---- */}
-        <div className="w-full lg:max-w-md bg-white p-6 rounded-2xl border border-slate-100 shadow-sm sticky top-8">
+        <div className="w-full lg:max-w-md bg-white p-6 rounded-2xl border border-slate-100 shadow-sm lg:sticky top-8">
           <div className="flex items-center gap-3 mb-6">
             <div className="bg-blue-50 p-2.5 rounded-xl text-blue-600">
               <TicketPercent size={24} />
@@ -294,12 +317,11 @@ export default function AdminCoupons() {
                         </tr>
                     ) : (
                         coupons.map((coupon) => {
-                          // --- Logic คำนวณสถานะใหม่ ---
+                          // --- Logic คำนวณสถานะ ---
                           const today = new Date();
                           today.setHours(0, 0, 0, 0); // ตัดเวลาออก เอาแค่วันที่
                           
                           const expiryDate = new Date(coupon.expiry_date);
-                          // ถ้าวันนี้ > วันหมดอายุ = หมดอายุแล้ว
                           const isExpired = today > expiryDate;
                           const isSoldOut = coupon.used_count >= coupon.quantity;
 
@@ -317,7 +339,6 @@ export default function AdminCoupons() {
                             statusLabel = "Sold Out";
                             statusColor = "bg-orange-100 text-orange-600";
                           }
-                          // ---------------------------
 
                           return (
                             <tr key={coupon.id} className="hover:bg-slate-50/50 transition">
@@ -337,11 +358,25 @@ export default function AdminCoupons() {
                                     day: '2-digit',
                                     month: 'short',
                                     year: 'numeric'})}</td>
+                                
+                                {/* ✅ ส่วน Switch + Badge Status */}
                                 <td className="py-4 px-6 text-center">
-                                <span className={`px-2 py-1 rounded-full text-xs font-bold ${statusColor}`}>
-                                    {statusLabel}
-                                </span>
+                                    <div className="flex flex-col items-center gap-2">
+                                        <span className={`px-2 py-1 rounded-full text-xs font-bold ${statusColor} min-w-[70px] inline-block`}>
+                                            {statusLabel}
+                                        </span>
+                                        <label className="relative inline-flex items-center cursor-pointer">
+                                            <input 
+                                                type="checkbox" 
+                                                className="sr-only peer" 
+                                                checked={coupon.is_active}
+                                                onChange={() => toggleStatus(coupon.id, coupon.is_active)}
+                                            />
+                                            <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+                                        </label>
+                                    </div>
                                 </td>
+
                                 <td className="py-4 px-6 text-right">
                                 <button onClick={() => openDeleteModal(coupon)} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition" title="Delete Coupon">
                                     <Trash2Icon size={18} />
@@ -359,7 +394,7 @@ export default function AdminCoupons() {
         </div>
       </div>
 
-      {/* ✅ Delete Confirmation Modal */}
+      {/* Delete Confirmation Modal */}
       {isDeleteModalOpen && couponToDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
           <div className="bg-white p-6 md:p-8 rounded-2xl shadow-2xl max-w-sm w-full transform transition-all scale-100 animate-in zoom-in-95">

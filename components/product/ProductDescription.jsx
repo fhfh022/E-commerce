@@ -123,7 +123,8 @@ const ProductDescription = ({ product }) => {
                 <div className="flex flex-col gap-6 mt-8 animate-in fade-in">
                     {reviews.length === 0 ? (
                         <div className="text-center py-10 bg-slate-50 rounded-xl text-slate-400">
-                            No reviews yet. Be the first to rate this product!
+                            {/* แก้เป็นภาษา */}
+                            ไม่มีรีวิวสำหรับสินค้านี้
                         </div>
                     ) : (
                         reviews.map((item, index) => (

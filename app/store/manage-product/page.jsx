@@ -76,7 +76,7 @@ export default function StoreManageProducts() {
     }
   }, []);
 
-  // ✅ 1. Filter & Sort Logic
+  // Filter & Sort Logic
   const handleSearch = (e) => {
     setSearchTerm(e.target.value);
     setCurrentPage(1);
@@ -90,10 +90,8 @@ export default function StoreManageProducts() {
         product.model?.toLowerCase().includes(searchTerm.toLowerCase())
     )
     .sort((a, b) => {
-      const aOnSale =
-        a.sale_price && a.sale_price > 0 && a.sale_price < a.price;
-      const bOnSale =
-        b.sale_price && b.sale_price > 0 && b.sale_price < b.price;
+      const aOnSale = a.sale_price > 0 && a.sale_price < a.price;
+      const bOnSale = b.sale_price > 0 && b.sale_price < b.price;
 
       if (aOnSale && !bOnSale) return -1;
       if (!aOnSale && bOnSale) return 1;
@@ -101,7 +99,7 @@ export default function StoreManageProducts() {
       return new Date(b.created_at) - new Date(a.created_at);
     });
 
-  // ✅ 2. Pagination Logic
+  // Pagination Logic
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentProducts = filteredAndSortedProducts.slice(
@@ -184,13 +182,12 @@ export default function StoreManageProducts() {
       inStockCheckbox = false;
     }
 
-    // ✅ แก้ไข: รับค่า specs แบบใหม่ (Detail & Size)
     const specsData = {
       processor: formData.get("processor"),
-      processor_detail: formData.get("processor_detail"), // 🆕
+      processor_detail: formData.get("processor_detail"),
       graphics: formData.get("graphics"),
-      display_size: formData.get("display_size"), // 🆕
-      display_specs: formData.get("display_specs"), // 🆕 เปลี่ยนจาก display
+      display_size: formData.get("display_size"),
+      display_specs: formData.get("display_specs"),
       ram: formData.get("ram"),
       storage: formData.get("storage"),
       ports: formData.get("ports"),
@@ -265,7 +262,101 @@ export default function StoreManageProducts() {
         </div>
       </div>
 
-      {/* Table View */}
+      {/* ✅ Mobile Card View (แสดงเฉพาะหน้าจอเล็ก) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:hidden">
+        {currentProducts.length > 0 ? (
+          currentProducts.map((product) => {
+            const isOnSale = product.sale_price > 0 && product.sale_price < product.price;
+            return (
+              <div key={product.id} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow relative">
+                
+                {/* Image & Title */}
+                <div className="flex gap-4 mb-4">
+                  <div className="relative size-20 bg-slate-50 rounded-lg border border-slate-100 flex-shrink-0 p-2">
+                    <Image
+                      fill
+                      className="object-contain"
+                      src={product.images?.[0] || "/placeholder.png"}
+                      alt={product.name}
+                    />
+                    {isOnSale && (
+                      <span className="absolute top-0 right-0 size-2.5 bg-red-500 rounded-full border border-white"></span>
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <Link href={`/product/${product.id}`} className="font-bold text-slate-800 text-sm line-clamp-2 hover:text-blue-600 mb-1">
+                      {product.name}
+                    </Link>
+                    <p className="text-xs text-slate-400 uppercase mb-1">{product.brand} • {product.model}</p>
+                    <span className="text-[10px] uppercase font-bold bg-slate-100 text-slate-500 px-2 py-0.5 rounded">{product.category}</span>
+                  </div>
+                </div>
+
+                {/* Info Grid */}
+                <div className="grid grid-cols-2 gap-2 text-sm bg-slate-50 p-3 rounded-lg border border-slate-100 mb-4">
+                  <div>
+                    <p className="text-xs text-slate-400">Price</p>
+                    {isOnSale ? (
+                      <div className="flex flex-col">
+                        <span className="font-bold text-red-600">{currency}{Number(product.sale_price).toLocaleString()}</span>
+                        <span className="text-[10px] text-slate-400 line-through">{currency}{Number(product.price).toLocaleString()}</span>
+                      </div>
+                    ) : (
+                      <span className="font-bold text-slate-800">{currency}{Number(product.price).toLocaleString()}</span>
+                    )}
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-slate-400">Stock</p>
+                    <span className={`font-bold ${ (product.stock || 0) > 0 ? "text-blue-600" : "text-red-500" }`}>
+                      {product.stock || 0}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center justify-between pt-2 border-t border-slate-50">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-medium text-slate-500">Active:</span>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        className="sr-only peer"
+                        onChange={() => toggleStock(product)}
+                        checked={product.in_stock}
+                      />
+                      <div className={`w-8 h-4 bg-slate-200 rounded-full peer transition-all after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:after:translate-x-4 
+                        ${product.in_stock ? "peer-checked:bg-green-500" : ""}
+                      `}></div>
+                    </label>
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => openEditModal(product)}
+                      className="p-2 bg-slate-50 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                    >
+                      <Edit3Icon size={18} />
+                    </button>
+                    <button
+                      onClick={() => openDeleteModal(product)}
+                      className="p-2 bg-slate-50 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                    >
+                      <Trash2Icon size={18} />
+                    </button>
+                  </div>
+                </div>
+
+              </div>
+            );
+          })
+        ) : (
+          <div className="col-span-full py-12 text-center text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-300">
+            No products found matching "{searchTerm}"
+          </div>
+        )}
+      </div>
+
+      {/* ✅ Desktop Table View (แสดงเฉพาะหน้าจอใหญ่) */}
       <div className="hidden lg:block bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm border-collapse">

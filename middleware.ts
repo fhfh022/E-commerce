@@ -61,13 +61,13 @@ export default clerkMiddleware(async (auth, req: NextRequest) => {
       // 4. ✅ เช็คสิทธิ์การเข้าถึง
       const hasPermission = userRole === "admin" || userRole === "master_admin";
 
-      console.log(`--- Middleware Check ---`);
-      console.log(`Path: ${pathname}`);
-      console.log(`User ID: ${userId}`);
-      console.log(`Role: ${userRole}`);
-      console.log(`Has Permission: ${hasPermission}`);
-      console.log(`Is Blocked: ${isBlocked}`);
-      console.log(`------------------------`);
+      // console.log(`--- Middleware Check ---`);
+      // console.log(`Path: ${pathname}`);
+      // console.log(`User ID: ${userId}`);
+      // console.log(`Role: ${userRole}`);
+      // console.log(`Has Permission: ${hasPermission}`);
+      // console.log(`Is Blocked: ${isBlocked}`);
+      // console.log(`------------------------`);
 
       // 5. ถ้าไม่มีสิทธิ์ ให้ดีดออก
       if (!hasPermission) {

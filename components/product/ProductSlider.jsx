@@ -24,20 +24,26 @@ const ProductSlider = ({ title, description, products, bgColor = "bg-white" }) =
     return (
         <div className={`py-16 ${bgColor}`}>
             <div className='max-w-7xl mx-auto px-6 relative group'>
-                <div className="mb-8 {}">
+                
+                {/* หัวข้อ (Title) */}
+                <div className="mb-8">
                     <Title title={title} description={description} visibleButton={true} href="/shop" />
                 </div>
 
-                {/* ปุ่มกด */}
+                {/* ✅ ปุ่มซ้าย (แสดงเฉพาะ Desktop + อยู่กึ่งกลางแนวตั้ง) */}
                 <button 
                     onClick={slideLeft} 
-                    className='hidden md:flex absolute top-[60%] -left-4 z-10 bg-white border border-slate-100 p-3 rounded-full shadow-lg text-slate-800 opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110 active:scale-95 disabled:opacity-30'
+                    className='hidden md:flex absolute top-1/2 -translate-y-1/2 -left-5 z-20 bg-white border border-slate-200 p-3 rounded-full shadow-lg text-slate-800 hover:bg-slate-50 hover:scale-110 transition-all duration-300 active:scale-95 disabled:opacity-50'
+                    aria-label="Slide Left"
                 >
                     <ChevronLeft size={24} />
                 </button>
+
+                {/* ✅ ปุ่มขวา (แสดงเฉพาะ Desktop + อยู่กึ่งกลางแนวตั้ง) */}
                 <button 
                     onClick={slideRight} 
-                    className='hidden md:flex absolute top-[60%] -right-4 z-10 bg-white border border-slate-100 p-3 rounded-full shadow-lg text-slate-800 opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110 active:scale-95'
+                    className='hidden md:flex absolute top-1/2 -translate-y-1/2 -right-5 z-20 bg-white border border-slate-200 p-3 rounded-full shadow-lg text-slate-800 hover:bg-slate-50 hover:scale-110 transition-all duration-300 active:scale-95 disabled:opacity-50'
+                    aria-label="Slide Right"
                 >
                     <ChevronRight size={24} />
                 </button>
@@ -45,13 +51,11 @@ const ProductSlider = ({ title, description, products, bgColor = "bg-white" }) =
                 {/* Slider Container */}
                 <div 
                     ref={sliderRef}
-                    // ✅ 1. เพิ่ม items-stretch เพื่อดึงให้ทุกการ์ดสูงเท่ากัน
                     className='flex gap-6 overflow-x-auto scroll-smooth no-scrollbar pb-10 -mx-6 px-6 md:mx-0 md:px-0 items-stretch' 
                     style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                 >
                     {products.map((product, index) => (
-                        // ✅ 2. เปลี่ยน min-w เป็น w-... (Fixed Width) เพื่อล็อคขนาดให้เท่ากันเป๊ะๆ
-                        // ✅ 3. ใส่ h-auto เพื่อให้ยืดตามเพื่อนตัวที่สูงที่สุด
+                        // ✅ ใช้ w-[...] Fixed Width เพื่อให้การ์ดเท่ากันทุกใบ
                         <div key={index} className='w-[280px] sm:w-[300px] flex-shrink-0 h-auto'>
                             <ProductCard product={product} />
                         </div>

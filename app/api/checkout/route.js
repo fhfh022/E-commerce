@@ -1,172 +1,229 @@
-import { stripe } from "@/lib/stripe";
 import { NextResponse } from "next/server";
+import { stripe } from "@/lib/stripe";
 import { createClient } from "@supabase/supabase-js";
 import { currentUser } from "@clerk/nextjs/server";
 
+// ✅ 1. ใช้ Service Role เพื่อให้มีสิทธิ์เข้าถึงข้อมูลทั้งหมด (เช่น คูปอง, สต็อก)
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-export async function POST(request) {
+export async function POST(req) {
   try {
     const user = await currentUser();
-    const { items, userEmail, discountAmount, orderId, addressId, onlyCreateOrder, couponCode } = await request.json();
-    const origin = request.headers.get('origin');
-
-    if (!user || !items || items.length === 0) {
-      return NextResponse.json({ error: "Invalid data" }, { status: 400 });
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { data: dbUser } = await supabaseAdmin.from("users").select("id").eq("clerk_id", user.id).single();
-    if (!dbUser) throw new Error("User not found in database");
-    const supabaseUserId = dbUser.id;
+    // รับข้อมูลจากหน้าบ้าน
+    // กรณี Pay Now: จะส่งมาแค่ { orderId, userEmail } หรือ { items, orderId, ... }
+    const { items, userEmail, couponCode, addressId, orderId } = await req.json();
+    const origin = req.headers.get("origin");
 
-    let targetOrderId = orderId;
+    // --- ส่วนเตรียมข้อมูลสำหรับ Stripe ---
+    let line_items_for_stripe = [];
+    let stripe_discount_id = undefined;
+    let final_order_id = orderId;
+    let dbUser = null;
 
-    // ==========================================
-    // 🟢 CASE 1: สร้างออเดอร์ใหม่ (New Checkout)
-    // ==========================================
-    if (!targetOrderId) {
-        // เตรียมตัวแปรสำหรับเก็บรายการสินค้าที่ตรวจสอบราคาแล้ว
-        let validatedItems = [];
-        let calculatedTotal = 0;
+    // หา User ID ใน DB ของเรา
+    const { data: userData, error: userError } = await supabaseAdmin
+      .from("users")
+      .select("id")
+      .eq("clerk_id", user.id)
+      .single();
 
-        // 1.1 วนลูปตรวจสอบสต็อกและราคาจริงจาก DB (เพื่อความปลอดภัย)
-        for (const item of items) {
-            const productId = item.product?.id || item.id;
-            
-            // ดึงข้อมูล price, sale_price, stock จาก DB
-            const { data: pd } = await supabaseAdmin
-                .from("products")
-                .select("price, sale_price, stock")
-                .eq("id", productId)
-                .single();
-
-            if (!pd || pd.stock < item.quantity) {
-                return NextResponse.json({ error: `Product out of stock` }, { status: 400 });
-            }
-
-            // ✅ Logic เลือกราคา: ถ้ามี sale_price และ > 0 ให้ใช้ sale_price
-            const isOnSale = pd.sale_price && pd.sale_price > 0 && pd.sale_price < pd.price;
-            const finalUnitPrice = isOnSale ? pd.sale_price : pd.price;
-
-            calculatedTotal += finalUnitPrice * item.quantity;
-            
-            validatedItems.push({
-                productId: productId,
-                quantity: item.quantity,
-                price: finalUnitPrice, // ราคานี้คือราคาที่ลดแล้ว (ถ้ามี)
-            });
-        }
-
-        // 1.2 คำนวณราคาสุทธิ (หักลบส่วนลดคูปองถ้ามี)
-        const finalAmount = Math.max(0, calculatedTotal - (discountAmount || 0));
-
-        // 1.3 สร้าง Order ลง Database
-        const { data: newOrder, error: orderError } = await supabaseAdmin.from("orders").insert({
-            user_id: supabaseUserId,
-            address_id: addressId || null,
-            total_amount: finalAmount,
-            discount_amount: discountAmount || 0,
-            payment_status: "pending",
-            status: "order_placed",
-            payment_method: "stripe", 
-        }).select().single();
-
-        if (orderError) throw orderError;
-        targetOrderId = newOrder.id;
-
-        // 1.4 บันทึก Order Items และตัดสต็อกสินค้า
-        for (const item of validatedItems) {
-            // Insert Item
-            await supabaseAdmin.from("order_items").insert({
-                order_id: targetOrderId, 
-                product_id: item.productId, 
-                quantity: item.quantity, 
-                price_at_time: item.price // ✅ บันทึกราคาที่ถูกต้อง (ลดแล้ว)
-            });
-
-            // Update Stock
-            const { data: pd } = await supabaseAdmin.from("products").select("stock").eq("id", item.productId).single();
-            await supabaseAdmin.from("products").update({ 
-                stock: Math.max(0, pd.stock - item.quantity) 
-            }).eq("id", item.productId);
-        }
-
-        // 1.5 ตัดจำนวนคูปอง
-        if (couponCode) {
-            const { error: couponError } = await supabaseAdmin.rpc('increment_coupon_usage', { 
-                code_input: couponCode 
-            });
-            if (couponError) console.error("Failed to update coupon usage:", couponError);
-        }
-
-        // 1.6 ลบตะกร้าสินค้า
-        await supabaseAdmin.from("cart").delete().eq("user_id", user.id);
+    if (userError || !userData) {
+      return NextResponse.json({ error: "User not found in database" }, { status: 404 });
     }
-
-    if (onlyCreateOrder) {
-        return NextResponse.json({ success: true, orderId: targetOrderId });
-    }
+    dbUser = userData;
 
     // ==========================================
-    // 💳 STEP 2: ส่งไป Stripe
+    // 🟢 CASE 1: จ่ายเงินออเดอร์เดิม (Pay Now)
     // ==========================================
-    // ต้องดึงข้อมูลล่าสุดจาก DB อีกรอบเพื่อให้แน่ใจ หรือใช้ validatedItems ถ้าอยู่ใน scope
-    // แต่เพื่อให้ง่าย ใช้ items จาก frontend แต่ mapping ราคาให้ถูกก็พอในขั้นตอนนี้ (เพราะ validate ไปแล้วข้างบน)
+    if (orderId) {
+      // 1. ดึงข้อมูลออเดอร์และรายการสินค้าจาก DB
+      const { data: orderData, error: orderFetchError } = await supabaseAdmin
+        .from("orders")
+        .select(`
+          *,
+          order_items (
+            quantity,
+            price_at_time,
+            product:products (name, images)
+          )
+        `)
+        .eq("id", orderId)
+        .eq("user_id", dbUser.id) // ต้องเป็นของ User คนนี้เท่านั้น
+        .single();
+
+      if (orderFetchError || !orderData) {
+        return NextResponse.json({ error: "Order not found" }, { status: 404 });
+      }
+
+      // 2. สร้าง Line Items จากข้อมูลใน DB (ใช้ราคาตอนที่สั่งซื้อ price_at_time)
+      line_items_for_stripe = orderData.order_items.map((item) => ({
+        price_data: {
+          currency: "thb",
+          product_data: {
+            name: item.product.name,
+            images: item.product.images ? [item.product.images[0]] : [],
+          },
+          unit_amount: Math.round(item.price_at_time * 100), // ใช้ราคาที่บันทึกไว้ตอนสั่ง
+        },
+        quantity: item.quantity,
+      }));
+
+      // 3. ✅ ดึงส่วนลดเดิมมาใช้ (ถ้ามี)
+      if (orderData.discount_amount > 0) {
+        const coupon = await stripe.coupons.create({
+          amount_off: Math.round(orderData.discount_amount * 100),
+          currency: "thb",
+          duration: "once",
+          name: "Discount from Order", // ชื่อที่จะโชว์ใน Stripe
+        });
+        stripe_discount_id = coupon.id;
+      }
+
+      final_order_id = orderData.id;
+    } 
     
-    // หมายเหตุ: Stripe session สร้างจาก items frontend, ควรระวังเรื่องราคาไม่ตรง
-    // เพื่อความชัวร์ เราควร query ราคาใหม่อีกรอบ หรือใช้ logic เดียวกัน
-    // แต่ในที่นี้ขออนุญาตใช้ logic ง่ายๆ คือเชื่อว่า DB update แล้ว และส่ง session ตามยอดที่คำนวณได้
-    
-    const line_items = await Promise.all(items.map(async (item) => {
-        const productId = item.product?.id || item.id;
-        // ดึงราคาอีกครั้งเพื่อส่งให้ Stripe (ป้องกัน Frontend แก้ราคาเอง)
-        const { data: pd } = await supabaseAdmin.from("products").select("price, sale_price, name").eq("id", productId).single();
-        
-        const isOnSale = pd.sale_price && pd.sale_price > 0 && pd.sale_price < pd.price;
-        const unitPrice = isOnSale ? pd.sale_price : pd.price;
+    // ==========================================
+    // 🔵 CASE 2: สั่งซื้อใหม่ (New Checkout)
+    // ==========================================
+    else {
+      if (!items || items.length === 0) {
+        return NextResponse.json({ error: "No items provided" }, { status: 400 });
+      }
+
+      // 1. ดึงข้อมูลสินค้าล่าสุดจาก DB เพื่อความปลอดภัย (กันแก้ราคาหน้าบ้าน)
+      const productIds = items.map((item) => item.id);
+      const { data: dbProducts } = await supabaseAdmin
+        .from("products")
+        .select("*")
+        .in("id", productIds);
+
+      // 2. คำนวณยอดและสร้าง Line Items
+      let subTotal = 0;
+      line_items_for_stripe = items.map((item) => {
+        const dbProduct = dbProducts.find((p) => p.id === item.id);
+        if (!dbProduct) throw new Error(`Product ID ${item.id} not found`);
+
+        const priceToUse = (dbProduct.sale_price > 0 && dbProduct.sale_price < dbProduct.price)
+          ? dbProduct.sale_price
+          : dbProduct.price;
+
+        subTotal += priceToUse * item.quantity;
 
         return {
-            price_data: {
-                currency: "thb",
-                product_data: {
-                    name: pd.name,
-                    images: item.product?.images ? [item.product.images[0]] : [],
-                },
-                unit_amount: Math.round(unitPrice * 100), // ส่งราคาจริงให้ Stripe
+          price_data: {
+            currency: "thb",
+            product_data: {
+              name: dbProduct.name,
+              images: dbProduct.images ? [dbProduct.images[0]] : [],
+              metadata: { productId: dbProduct.id }
             },
-            quantity: item.quantity,
+            unit_amount: Math.round(priceToUse * 100),
+          },
+          quantity: item.quantity,
         };
-    }));
+      });
 
-    let discounts = [];
-    if (discountAmount && discountAmount > 0) {
-        const coupon = await stripe.coupons.create({
-            amount_off: Math.round(discountAmount * 100),
-            currency: 'thb',
-            duration: 'once',
-            name: 'Discount Coupon',
-        });
-        discounts = [{ coupon: coupon.id }];
+      // 3. คำนวณส่วนลดคูปอง (ถ้ามี)
+      let discountAmount = 0;
+      let validCouponId = null;
+
+      if (couponCode) {
+        const { data: couponData } = await supabaseAdmin
+          .from("coupons")
+          .select("*")
+          .eq("code", couponCode)
+          .eq("is_active", true)
+          .single();
+
+        if (couponData) {
+          const isExpired = new Date(couponData.expiry_date) < new Date();
+          const isSoldOut = couponData.used_count >= couponData.quantity;
+
+          if (!isExpired && !isSoldOut) {
+            validCouponId = couponData.id;
+            if (couponData.discount_type === "percentage") {
+              discountAmount = Math.round((subTotal * couponData.discount_percent) / 100);
+            } else {
+              discountAmount = couponData.discount_value;
+            }
+
+            // สร้าง Stripe Coupon
+            if (discountAmount > 0) {
+              const stripeCoupon = await stripe.coupons.create({
+                amount_off: Math.round(discountAmount * 100),
+                currency: "thb",
+                duration: "once",
+                name: `CODE: ${couponCode}`,
+              });
+              stripe_discount_id = stripeCoupon.id;
+            }
+          }
+        }
+      }
+
+      // 4. บันทึก Order ลง DB (Status: Pending)
+      const { data: newOrder, error: orderError } = await supabaseAdmin
+        .from("orders")
+        .insert({
+          user_id: dbUser.id,
+          address_id: addressId,
+          coupon_id: validCouponId,
+          total_amount: Math.max(0, subTotal - discountAmount), // ยอดสุทธิ
+          discount_amount: discountAmount,
+          payment_method: "stripe",
+          payment_status: "pending",
+          status: "pending",
+        })
+        .select()
+        .single();
+
+      if (orderError) throw new Error("Failed to create order record");
+      
+      // บันทึก Order Items
+      const orderItemsData = items.map(item => {
+          const dbProduct = dbProducts.find((p) => p.id === item.id);
+          const priceToUse = (dbProduct.sale_price > 0 && dbProduct.sale_price < dbProduct.price) 
+              ? dbProduct.sale_price : dbProduct.price;
+          return {
+              order_id: newOrder.id,
+              product_id: item.id,
+              quantity: item.quantity,
+              price_at_time: priceToUse
+          };
+      });
+      await supabaseAdmin.from('order_items').insert(orderItemsData);
+
+      final_order_id = newOrder.id;
     }
 
+    // ==========================================
+    // 🚀 สร้าง Stripe Session (ใช้ร่วมกัน)
+    // ==========================================
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card", "promptpay"],
-      line_items,
+      line_items: line_items_for_stripe,
       mode: "payment",
-      discounts: discounts,
-      metadata: { orderId: targetOrderId },
+      discounts: stripe_discount_id ? [{ coupon: stripe_discount_id }] : [], // ✅ ใส่ส่วนลดตรงนี้
+      success_url: `${origin}/orders?success=true&orderId=${final_order_id}`,
+      cancel_url: `${origin}/orders?canceled=true`, // เปลี่ยนกลับมาหน้า Orders ดีกว่า
       customer_email: userEmail,
-      success_url: `${origin}/orders?success=true&orderId=${targetOrderId}`, 
-      cancel_url: `${origin}/orders?canceled=true`,
+      metadata: {
+        orderId: final_order_id,
+        userId: dbUser.id,
+      },
     });
 
     return NextResponse.json({ url: session.url });
 
-  } catch (err) {
-    console.error("Checkout API Error:", err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (error) {
+    console.error("[CHECKOUT_ERROR]", error);
+    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
   }
 }

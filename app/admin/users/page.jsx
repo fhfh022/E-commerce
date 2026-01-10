@@ -124,13 +124,11 @@ export default function UserManagement() {
   };
 
   // 2. Actual Block function (removed old confirm)
-  const toggleBlockStatus = async (userId, currentBlockStatus) => {
-    setModalProcessing(true); // Start loading in modal
+ const toggleBlockStatus = async (userId, currentBlockStatus) => {
+    setModalProcessing(true);
     try {
       const newStatus = !currentBlockStatus;
       
-      // *** Removed old confirm() because we use Modal now ***
-
       const targetUser = users.find((u) => u.id === userId);
       if (!targetUser?.clerk_id) {
         toast.error("Clerk ID not found for this user");
@@ -155,7 +153,13 @@ export default function UserManagement() {
         }),
       });
 
-      if (!response.ok) throw new Error("Failed to sync with Clerk");
+      // ✅ อ่าน Error จริงจากหลังบ้าน
+      const result = await response.json();
+
+      if (!response.ok) {
+        // เอาข้อความ error จาก API มาแสดง (เช่น "Forbidden: ...")
+        throw new Error(result.error || "Failed to sync with Clerk");
+      }
 
       // 3. Update UI
       setUsers(
@@ -167,12 +171,12 @@ export default function UserManagement() {
         newStatus ? "User blocked & kicked out!" : "User unblocked"
       );
       
-      // Close Modal when done
       setIsModalOpen(false); 
 
     } catch (error) {
       console.error("Block Error:", error);
-      toast.error(error.message || "Failed to update block status");
+      // ตอนนี้ Toast จะโชว์สาเหตุจริงๆ แล้ว
+      toast.error(error.message);
     } finally {
       setModalProcessing(false);
     }

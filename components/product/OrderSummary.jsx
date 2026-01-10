@@ -88,7 +88,7 @@ const OrderSummary = ({ totalPrice, items }) => {
       )
     : 0;
   
-  const finalTotal = Math.max(0, totalPrice - discountAmount);
+  const finalTotal = Math.max(0, Math.round(totalPrice) - discountAmount);
 
   const handleCouponCode = async (event) => {
       event.preventDefault();
@@ -292,7 +292,7 @@ const OrderSummary = ({ totalPrice, items }) => {
       <div className="space-y-3 pb-6 border-b border-slate-100">
         <div className="flex justify-between text-slate-500">
           <span>Subtotal</span>
-          <span className="font-medium text-slate-700">{currency}{totalPrice.toFixed(2)}</span>
+          <span className="font-medium text-slate-700">{currency}{Math.round(totalPrice)}</span>
         </div>
         <div className="flex justify-between text-slate-500">
           <span>Shipping</span>
@@ -301,7 +301,7 @@ const OrderSummary = ({ totalPrice, items }) => {
         {coupon && (
           <div className="flex justify-between text-blue-600">
             <span>Coupon ({coupon.code})</span>
-            <span>-{currency}{discountAmount.toFixed(2)}</span>
+            <span>-{currency}{discountAmount}</span>
           </div>
         )}
       </div>
@@ -338,7 +338,7 @@ const OrderSummary = ({ totalPrice, items }) => {
       {/* Total */}
       <div className="flex justify-between items-center py-6">
         <span className="font-bold text-slate-800 text-lg">Total</span>
-        <span className="font-black text-slate-900 text-xl">{currency}{finalTotal.toFixed(2)}</span>
+        <span className="font-black text-slate-900 text-xl">{currency}{finalTotal}</span>
       </div>
 
       {/* Place Order Button */}

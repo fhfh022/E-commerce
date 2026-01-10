@@ -1,7 +1,7 @@
 import FavoritesContent from "./FavoritesContent";
 
 export const metadata = {
-  title: "My Wishlist | PRT Store",
+  title: "My Favorites | PRT Store",
   robots: {
     index: false,
     follow: false,

@@ -1,99 +1,193 @@
-'use client'
+"use client";
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
+import { Star, X, Loader2 } from "lucide-react";
+import toast from "react-hot-toast";
+import Image from "next/image";
 
-import { Star, XIcon } from 'lucide-react';
-import React, { useState } from 'react'
-import toast from 'react-hot-toast';
-import { supabase } from '@/lib/supabase'; // import supabase
-import { useDispatch, useSelector } from 'react-redux';
-import { addRating } from '@/lib/features/rating/ratingSlice'; // import action
+export default function RatingModal({ 
+    isOpen, 
+    setRatingModal, 
+    product, 
+    orderId, 
+    userId,
+    existingReview, // ✅ รับ Props รีวิวเดิม
+    onReviewSaved   // ✅ รับ Props Callback
+}) {
+  const [rating, setRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [comment, setComment] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-const RatingModal = ({ ratingModal, setRatingModal }) => {
+  // ✅ เมื่อเปิด Modal ถ้ามีรีวิวเดิม ให้เอาค่ามาใส่รอไว้
+  useEffect(() => {
+    if (isOpen && existingReview) {
+        setRating(existingReview.rating);
+        setComment(existingReview.comment || "");
+    } else if (isOpen && !existingReview) {
+        // ถ้าไม่มีรีวิวเดิม (หรือกดสินค้าใหม่) ให้เคลียร์ค่า
+        setRating(0);
+        setComment("");
+    }
+  }, [isOpen, existingReview]);
 
-    const dispatch = useDispatch();
-    const user = useSelector(state => state.auth.user);
-    // ✅ ค้นหารีวิวเดิมที่มีอยู่ใน Redux
-    const existingReview = useSelector(state => 
-        state.rating.ratings.find(r => 
-            r.orderId === ratingModal.orderId && r.productId === ratingModal.productId
-        )
-    );
+  const handleClose = () => {
+    if (typeof setRatingModal === 'function') {
+      setRatingModal(false);
+    }
+  };
 
-    // ✅ กำหนด Initial State จากรีวิวเดิม (ถ้ามี)
-    const [rating, setRating] = useState(existingReview?.rating || 0);
-    const [review, setReview] = useState(existingReview?.comment || '');
-    const [isSubmitting, setIsSubmitting] = useState(false);
+  if (!isOpen) return null;
 
-    const handleSubmit = async () => {
-        if (rating === 0) return toast.error('Please select a rating');
-        setIsSubmitting(true);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-        try {
-            // ✅ ใช้ upsert เพื่อบันทึกหรืออัปเดตข้อมูลใน Supabase
-            const { error } = await supabase
-                .from('reviews')
-                .upsert({
-                    user_id: user.id,
-                    product_id: ratingModal.productId,
-                    order_id: ratingModal.orderId,
-                    rating: rating,
-                    comment: review
-                }, { onConflict: 'user_id, product_id, order_id' }); // อ้างอิง Unique Constraint ใน DB
-
-            if (error) throw error;
-
-            dispatch(addRating({
-                orderId: ratingModal.orderId,
-                productId: ratingModal.productId,
-                rating: rating,
-                comment: review
-            }));
-
-            toast.success(existingReview ? 'Review updated!' : 'Review submitted!');
-            setRatingModal(null);
-        } catch (error) {
-            toast.error('Failed to save review');
-        } finally {
-            setIsSubmitting(false);
-        }
+    if (rating === 0) {
+      toast.error("Please select a star rating");
+      return;
     }
 
-    return (
-        <div className='fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in'>
-            <div className='bg-white p-8 rounded-2xl shadow-2xl w-96 relative animate-in zoom-in-95'>
-                <button onClick={() => setRatingModal(null)} className='absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition'>
-                    <XIcon size={20} />
-                </button>
-                
-                <h2 className='text-xl font-bold text-slate-800 mb-6 text-center'>How was the product?</h2>
-                
-                <div className='flex items-center justify-center gap-2 mb-6'>
-                    {Array.from({ length: 5 }, (_, i) => (
-                        <Star
-                            key={i}
-                            className={`size-10 cursor-pointer transition-all hover:scale-110 ${rating > i ? "text-yellow-400 fill-yellow-400" : "text-slate-200"}`}
-                            onClick={() => setRating(i + 1)}
-                        />
-                    ))}
-                </div>
-                
-                <textarea
-                    className='w-full p-4 border border-slate-200 rounded-xl mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm resize-none'
-                    placeholder='Write your review here... (optional)'
-                    rows='4'
-                    value={review}
-                    onChange={(e) => setReview(e.target.value)}
-                ></textarea>
-                
-                <button 
-                    onClick={handleSubmit} 
-                    disabled={isSubmitting}
-                    className='w-full bg-slate-900 text-white py-3 rounded-xl font-bold hover:bg-slate-800 transition active:scale-95 disabled:opacity-70'
-                >
-                    {isSubmitting ? 'Submitting...' : 'Submit Review'}
-                </button>
+    setIsSubmitting(true);
+
+    try {
+      if (!userId || !product?.id || !orderId) {
+        throw new Error("Missing data.");
+      }
+
+      let error;
+
+      if (existingReview) {
+        // 🔄 กรณีแก้ไข (UPDATE)
+        const { error: updateError } = await supabase
+            .from("reviews")
+            .update({
+                rating: rating,
+                comment: comment,
+                // created_at: new Date().toISOString() // จะอัปเดตเวลาด้วยก็ได้
+            })
+            .eq("id", existingReview.id); // อ้างอิงจาก ID รีวิวเดิม
+        error = updateError;
+      } else {
+        // ➕ กรณีเพิ่มใหม่ (INSERT)
+        const { error: insertError } = await supabase
+            .from("reviews")
+            .insert({
+                user_id: userId,
+                product_id: product.id,
+                order_id: orderId,
+                rating: rating,
+                comment: comment,
+            });
+        error = insertError;
+      }
+
+      if (error) throw error;
+
+      toast.success(existingReview ? "Review updated!" : "Review submitted!");
+      
+      // ✅ แจ้ง Parent ว่าเซฟเสร็จแล้วนะ ให้ดึงข้อมูลใหม่ด้วย
+      if(onReviewSaved) onReviewSaved();
+      
+      handleClose();
+
+    } catch (error) {
+      console.error("Submit review error:", error);
+      toast.error(error.message || "Failed to submit review");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 relative animate-in zoom-in-95 duration-200">
+        
+        <div className="text-center mb-6">
+            <h3 className="text-xl font-bold text-slate-800">
+                {existingReview ? "Edit Review" : "Rate Product"}
+            </h3>
+            <p className="text-sm text-slate-500 mt-1">
+                {existingReview ? "Update your experience" : "How was your experience?"}
+            </p>
+        </div>
+
+        <div className="flex items-center gap-4 bg-slate-50 p-3 rounded-xl mb-6 border border-slate-100">
+            <div className="relative size-16 bg-white rounded-lg border border-slate-200 p-1 flex-shrink-0">
+                <Image 
+                    src={product?.images?.[0] || "/placeholder.png"} 
+                    alt={product?.name || "Product"} 
+                    fill 
+                    className="object-contain p-1"
+                />
+            </div>
+            <div className="min-w-0">
+                <p className="font-bold text-slate-700 truncate text-sm">{product?.name}</p>
+                <p className="text-xs text-slate-400 mt-0.5">{product?.model}</p>
             </div>
         </div>
-    )
-}
 
-export default RatingModal
+        <form onSubmit={handleSubmit}>
+            <div className="flex justify-center gap-2 mb-6">
+                {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                        key={star}
+                        type="button"
+                        className="transition-transform hover:scale-110 active:scale-95 focus:outline-none"
+                        onMouseEnter={() => setHoverRating(star)}
+                        onMouseLeave={() => setHoverRating(0)}
+                        onClick={() => setRating(star)}
+                    >
+                        <Star 
+                            size={32} 
+                            className={`transition-colors ${
+                                star <= (hoverRating || rating) 
+                                ? "fill-yellow-400 text-yellow-400" 
+                                : "text-slate-300 fill-slate-100"
+                            }`} 
+                        />
+                    </button>
+                ))}
+            </div>
+            
+            <div className="mb-6">
+                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Comment (Optional)</label>
+                <textarea
+                    rows="3"
+                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-400 transition text-sm resize-none"
+                    placeholder="Write your review here..."
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                ></textarea>
+            </div>
+
+            <div className="flex gap-3">
+                <button
+                    type="button"
+                    onClick={handleClose}
+                    disabled={isSubmitting}
+                    className="flex-1 py-2.5 border border-slate-200 text-slate-600 rounded-xl font-bold hover:bg-slate-50 transition text-sm"
+                >
+                    Cancel
+                </button>
+                <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="flex-1 py-2.5 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition text-sm shadow-lg shadow-slate-200 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                >
+                    {isSubmitting ? (
+                        <> <Loader2 size={16} className="animate-spin" /> {existingReview ? "Updating..." : "Submitting..."} </>
+                    ) : (
+                        existingReview ? "Update Review" : "Submit Review"
+                    )}
+                </button>
+            </div>
+        </form>
+
+        <button onClick={handleClose} className="absolute top-4 right-4 p-2 text-slate-400 hover:bg-slate-100 rounded-full transition">
+            <X size={20} />
+        </button>
+
+      </div>
+    </div>
+  );
+}

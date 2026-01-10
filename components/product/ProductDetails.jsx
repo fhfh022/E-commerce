@@ -13,10 +13,11 @@ import {
   UserIcon,
   Heart,
   AlertCircle,
+  Eye,
+  Truck
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import Image from "next/image";
 import Counter from "./Counter";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-hot-toast";
@@ -33,7 +34,7 @@ const ProductDetails = ({ product }) => {
   const favorites = useSelector((state) => state.favorite.items);
   const isFavorite = favorites.includes(productId);
 
-  // ✅ Logic คำนวณส่วนลด
+  // Logic คำนวณส่วนลด
   const isOnSale = product.sale_price > 0 && product.sale_price < product.price;
   const currentPrice = isOnSale ? product.sale_price : product.price;
 
@@ -41,8 +42,13 @@ const ProductDetails = ({ product }) => {
     average: 0,
     count: 0,
   });
+  
+  // 🔥 ลูกเล่น: สุ่มจำนวนคนดูเพื่อกระตุ้นความอยากซื้อ (Social Proof)
+  const [viewers, setViewers] = useState(3);
+  useEffect(() => {
+    setViewers(Math.floor(Math.random() * 10) + 5);
+  }, []);
 
-  // 1. ดึงคะแนนรีวิว
   useEffect(() => {
     const fetchRatingStats = async () => {
       try {
@@ -70,7 +76,6 @@ const ProductDetails = ({ product }) => {
     }
   }, [productId]);
 
-  // 2. Favorite Toggle
   const toggleFavoriteHandler = async () => {
     if (!user) return toast.error("Please login to favorite products");
 
@@ -100,12 +105,7 @@ const ProductDetails = ({ product }) => {
     }
   };
 
-  const imageList = product.images || [];
-  const [mainImage, setMainImage] = useState(imageList[0] || null);
-
   const currentQtyInCart = cart[productId] || 0;
-
-  // 3. Stock Logic
   const realStock = product.stock || 0;
   const isAvailable = product.in_stock && realStock > 0;
 
@@ -115,9 +115,6 @@ const ProductDetails = ({ product }) => {
     if (currentQtyInCart + 1 > realStock)
       return toast.error(`Sorry! Only ${realStock} items left in stock.`);
 
-    // ✅ Dispatch ข้อมูลลง Redux (CartSlice ของพี่น่าจะจัดการเรื่องราคาเอง หรือถ้าต้องการส่งราคาไปด้วย ให้เพิ่ม price: currentPrice ใน payload)
-    // ปกติ cartSlice จะเก็บแค่ productId, qty แต่ถ้าต้องการเซฟราคา ณ ตอนกดซื้อด้วยอาจต้องแก้ slice
-    // เบื้องต้นส่งไปแบบเดิมตามไฟล์ที่อัปโหลด
     dispatch(addToCart({ productId: product.id, quantity: 1 }));
 
     if (user) {
@@ -133,189 +130,146 @@ const ProductDetails = ({ product }) => {
   };
 
   return (
-    <div className="flex max-lg:flex-col gap-12">
-      {/* --- Image Section --- */}
-      <div className="flex max-sm:flex-col-reverse gap-3">
-        <div className="flex sm:flex-col gap-3">
-          {imageList.length > 0 &&
-            imageList.map((image, index) => (
-              <div
-                key={index}
-                onClick={() => setMainImage(image)}
-                className={`bg-slate-100 flex items-center justify-center size-26 rounded-lg cursor-pointer border ${
-                  mainImage === image ? "border-blue-500" : "border-transparent"
-                }`}
-              >
-                <Image
-                  src={image}
-                  className="hover:scale-105 transition object-contain p-2"
-                  alt=""
-                  width={45}
-                  height={45}
-                />
-              </div>
-            ))}
-        </div>
-
-        <div className="flex justify-center items-center h-100 sm:size-113 bg-slate-100 rounded-lg overflow-hidden relative">
-          {mainImage ? (
-            <Image
-              src={mainImage}
-              alt={product.name}
-              width={400}
-              height={400}
-              className="object-contain max-h-[80%] w-auto"
-              priority
-            />
-          ) : (
-            <div className="text-slate-400">No Image Available</div>
-          )}
-          {/* ✅ ป้าย SALE ใหญ่บนรูปหลัก */}
-          {isOnSale && (
-            <span className="absolute top-4 right-4 bg-red-600 text-white font-bold px-3 py-1 rounded-full shadow-lg z-10">
-              SALE{" "}
-              {Math.round(
-                ((product.price - product.sale_price) / product.price) * 100
-              )}
-              %
+    <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+      <div className="flex items-start justify-between gap-4">
+        <h1 className="text-2xl sm:text-3xl font-bold text-slate-800 leading-tight">
+          {product.name}
+          {product.model && (
+            <span className="block text-lg text-slate-400 font-normal mt-1">
+              {product.model}
             </span>
           )}
-        </div>
+        </h1>
+
+        <button
+          onClick={toggleFavoriteHandler}
+          className="p-2.5 bg-white rounded-full hover:bg-red-50 transition shadow-sm border border-slate-100 active:scale-90"
+        >
+          <Heart
+            size={22}
+            className={isFavorite ? "fill-red-500 text-red-500" : "text-slate-400"}
+          />
+        </button>
       </div>
 
-      {/* --- Details Section --- */}
-      <div className="flex-1">
-        <div className="flex items-start justify-between gap-4">
-          <h1 className="text-3xl font-semibold text-slate-800">
-            {product.name}
-            {product.model && (
-              <span className="text-xl text-slate-400 font-normal ml-2">
-                {product.model}
-              </span>
-            )}
-          </h1>
-
-          <button
-            onClick={toggleFavoriteHandler}
-            className="p-3 bg-slate-50 rounded-full hover:bg-slate-100 transition shadow-sm border border-slate-100 active:scale-90"
-          >
-            <Heart
-              size={24}
-              className={
-                isFavorite ? "fill-red-500 text-red-500" : "text-slate-400"
-              }
-            />
-          </button>
+      {/* Rating */}
+      <div className="flex items-center mt-3 gap-3">
+        <div className="flex items-center bg-green-50 px-2 py-1 rounded-md border border-green-100">
+           <span className="font-bold text-green-700 mr-1">{ratingStats.average.toFixed(1)}</span>
+           <StarIcon size={14} className="fill-green-500 text-green-500" />
         </div>
+        <p className="text-sm text-slate-500 underline decoration-slate-300 underline-offset-4">
+          {ratingStats.count} Reviews
+        </p>
+      </div>
 
-        {/* Rating */}
-        <div className="flex items-center mt-2">
-          <div className="flex gap-1">
-            {Array(5)
-              .fill("")
-              .map((_, index) => (
-                <StarIcon
-                  key={index}
-                  size={14}
-                  className="mt-0.5"
-                  fill={ratingStats.average > index ? "#00C950" : "#E5E7EB"}
-                  color={ratingStats.average > index ? "#00C950" : "#D1D5DB"}
-                />
-              ))}
-          </div>
-          <p className="text-sm ml-3 text-slate-500">
-            ({ratingStats.count} Reviews)
-          </p>
-        </div>
+      {/* 🔥 Social Proof */}
+      <div className="flex items-center gap-2 text-red-500 text-sm font-medium mt-4 bg-red-50 p-2 rounded-lg border border-red-100 animate-pulse">
+         <Eye size={16} />
+         <span>มีคนกำลังดูสินค้านี้อยู่ {viewers} คน</span>
+      </div>
 
-        {/* Status */}
-        <div className="mt-4 mb-2">
-          {isAvailable ? (
-            <span className="inline-flex items-center gap-2 px-3 py-1 bg-green-50 text-green-700 text-xs font-bold rounded-full border border-green-100">
-              <span className="size-2 rounded-full bg-green-500 animate-pulse"></span>
-              In Stock: {realStock} items left
-            </span>
-          ) : (
-            <span className="inline-flex items-center gap-2 px-3 py-1 bg-red-50 text-red-700 text-xs font-bold rounded-full border border-red-100">
-              <AlertCircle size={12} />
-              {!product.in_stock ? "Unavailable" : "Out of Stock"}
-            </span>
-          )}
-        </div>
-
-        {/* ✅ Price Section (อัปเดตใหม่) */}
-        <div className="my-6">
-          {isOnSale ? (
-            <div className="flex flex-col gap-1">
-              <div className="flex items-end gap-3">
-                <p className="text-4xl font-bold text-red-600">
-                  {currency}
-                  {currentPrice.toLocaleString()}
-                </p>
-                <p className="text-xl text-slate-400 line-through mb-1">
-                  {currency}
-                  {Number(product.price).toLocaleString()}
-                </p>
-              </div>
-              <p className="text-sm font-semibold text-green-600">
-                You save {currency}
-                {(product.price - product.sale_price).toLocaleString()}
+      {/* Price Section */}
+      <div className="my-6 p-4 bg-slate-50 rounded-xl border border-slate-100">
+        {isOnSale ? (
+          <div className="flex flex-col">
+            <div className="flex items-end gap-3 flex-wrap">
+              <p className="text-4xl font-black text-slate-900">
+                {currency}{currentPrice.toLocaleString()}
+              </p>
+              <p className="text-lg text-slate-400 line-through mb-1.5 font-medium">
+                {currency}{Number(product.price).toLocaleString()}
               </p>
             </div>
-          ) : (
-            <p className="text-3xl font-semibold text-slate-800">
-              {currency}
-              {Number(product.price).toLocaleString()}
-            </p>
-          )}
+            <div className="mt-2 inline-flex self-start px-3 py-1 bg-red-100 text-red-700 text-xs font-bold rounded-full">
+              Save {currency}{(product.price - product.sale_price).toLocaleString()}
+            </div>
+          </div>
+        ) : (
+          <p className="text-3xl font-bold text-slate-900">
+            {currency}{Number(product.price).toLocaleString()}
+          </p>
+        )}
+      </div>
+
+      {/* Stock Status */}
+      <div className="mb-6">
+        {isAvailable ? (
+          <div className="flex items-center gap-2 text-green-600 text-sm font-medium">
+             <span className="relative flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+              </span>
+            In Stock: {realStock} items left
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 text-red-500 text-sm font-medium">
+            <AlertCircle size={16} />
+            Out of Stock
+          </div>
+        )}
+      </div>
+
+      {/* Add to Cart */}
+      <div className="flex flex-col gap-4">
+        {cart[productId] && (
+          <div className="w-full">
+             <Counter productId={productId} stock={realStock} />
+          </div>
+        )}
+
+        <button
+          disabled={!isAvailable}
+          onClick={() =>
+            !cart[productId] ? addToCartHandler() : router.push("/cart")
+          }
+          className={`
+              w-full py-4 text-sm font-bold rounded-xl shadow-lg shadow-slate-200 transition-all active:scale-95
+              ${
+                !isAvailable
+                  ? "bg-slate-100 text-slate-400 cursor-not-allowed"
+                  : "bg-slate-900 text-white hover:bg-slate-800 hover:shadow-xl"
+              }
+          `}
+        >
+          {!isAvailable
+            ? "สินค้าหมดชั่วคราว"
+            : !cart[productId]
+            ? "เพิ่มลงตะกร้า"
+            : "ไปที่ตะกร้าสินค้า"}
+        </button>
+      </div>
+
+      <hr className="border-slate-100 my-6" />
+
+      {/* Trust Signals */}
+      <div className="space-y-4">
+        <div className="flex items-start gap-3">
+          <div className="p-2 bg-blue-50 text-blue-600 rounded-full">
+            <Truck size={20} />
+          </div>
+          <div>
+            <p className="text-sm font-bold text-slate-700">จัดส่งฟรีทั่วประเทศ</p>
+            <p className="text-xs text-slate-500">เมื่อช้อปครบ {currency}999</p>
+          </div>
         </div>
-
-        {/* Add to Cart */}
-        <div className="flex items-center gap-4 mt-8">
-          {cart[productId] && (
-            <Counter productId={productId} stock={realStock} />
-          )}
-
-          <button
-            disabled={!isAvailable}
-            onClick={() =>
-              !cart[productId] ? addToCartHandler() : router.push("/cart")
-            }
-            className={`
-                h-[46px] px-8 text-sm font-bold rounded-lg shadow-md transition-all
-                w-auto min-w-[160px] sm:min-w-[200px] flex items-center justify-center
-                ${
-                  !isAvailable
-                    ? "bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200 shadow-none"
-                    : "bg-slate-900 text-white hover:bg-slate-800 active:scale-95"
-                }
-            `}
-          >
-            {!isAvailable
-              ? !product.in_stock
-                ? "Unavailable"
-                : "Out of Stock"
-              : !cart[productId]
-              ? "Add to Cart"
-              : "View Cart"}
-          </button>
+        <div className="flex items-start gap-3">
+          <div className="p-2 bg-green-50 text-green-600 rounded-full">
+            <CreditCardIcon size={20} />
+          </div>
+          <div>
+            <p className="text-sm font-bold text-slate-700">ชำระเงินปลอดภัย</p>
+            <p className="text-xs text-slate-500">รองรับบัตรเครดิตและ PromptPay</p>
+          </div>
         </div>
-
-        <hr className="border-gray-200 my-8" />
-
-        <div className="flex flex-col gap-4 text-slate-500 text-sm">
-          <p className="flex items-center gap-3">
-            <EarthIcon size={18} className="text-slate-400" />
-            บริการจัดส่งฟรีรวดเร็วทั่วประเทศ
-          </p>
-          <p className="flex items-center gap-3">
-            <CreditCardIcon size={18} className="text-slate-400" />
-            ระบบชำระเงินปลอดภัย มั่นใจ 100%
-          </p>
-          <p className="flex items-center gap-3">
-            <UserIcon size={18} className="text-slate-400" />
-            ทีมงานผู้เชี่ยวชาญพร้อมดูแลตลอด 24 ชม.
-          </p>
+        <div className="flex items-start gap-3">
+          <div className="p-2 bg-purple-50 text-purple-600 rounded-full">
+            <UserIcon size={20} />
+          </div>
+          <div>
+            <p className="text-sm font-bold text-slate-700">รับประกันความพึงพอใจ</p>
+            <p className="text-xs text-slate-500">คืนสินค้าได้ภายใน 7 วัน</p>
+          </div>
         </div>
       </div>
     </div>

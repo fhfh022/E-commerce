@@ -1,91 +1,71 @@
-import { clerkMiddleware } from "@clerk/nextjs/server";
+import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+// 1. ตั้งค่า Supabase Admin Client (ใช้ Service Role Key)
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
-const supabaseAdmin = createClient(
-  supabaseUrl || "",
-  supabaseServiceKey || ""
-);
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-const ADMIN_ONLY_PATHS = [
-  "/admin",
-  "/admin/coupons",
-  "/admin/users",
-  "/store",
-  "/store/add-product",
-  "/store/manage-product",
-  "/store/orders",
-];
+// 2. กำหนด Path ที่ต้องการป้องกัน (Admin & Store Management)
+// ใช้ createRouteMatcher เพื่อประสิทธิภาพที่ดีกว่า
+const isAdminRoute = createRouteMatcher([
+  "/admin(.*)",
+  "/store(.*)",
+]);
 
-export default clerkMiddleware(async (auth, req: NextRequest) => {
-  const { userId } = await auth();
-  const { pathname } = req.nextUrl;
+export default clerkMiddleware(async (auth, req) => {
+  // 3. ตรวจสอบเฉพาะ Route ที่เป็น Admin
+  if (isAdminRoute(req)) {
+    const { userId } = await auth();
 
-  // ตรวจสอบว่าเป็น Path ที่ต้องเป็น Admin หรือไม่
-  const isAdminPath = ADMIN_ONLY_PATHS.some((path) =>
-    pathname.startsWith(path)
-  );
-
-  if (isAdminPath) {
-    // 1. ถ้ายังไม่ Login ให้ดีดไปหน้าหลัก
+    // 3.1 ถ้ายังไม่ Login -> ดีดไปหน้า Login
     if (!userId) {
-      return NextResponse.redirect(new URL("/", req.url));
+      const signInUrl = new URL("/sign-in", req.url);
+      signInUrl.searchParams.set("redirect_url", req.url);
+      return NextResponse.redirect(signInUrl);
     }
 
     try {
-      // 2. ✅ เช็คสิทธิ์จาก Supabase โดยตรง (ไม่ผ่าน Clerk)
-      const { data, error } = await supabaseAdmin
+      // 3.2 เช็ค Role และสถานะ Block จาก Supabase โดยตรง (Real-time)
+      const { data: user, error } = await supabase
         .from("users")
         .select("role, is_blocked")
         .eq("clerk_id", userId)
         .single();
 
-      if (error) {
-        console.error("Middleware DB Error:", error.message);
+      if (error || !user) {
+        console.error("Middleware Auth Error:", error);
+        return NextResponse.redirect(new URL("/", req.url)); // ถ้าหาไม่เจอ ดีดออกไปหน้าแรก
+      }
+
+      // 3.3 ⛔️ เช็คว่าโดนแบนหรือไม่?
+      if (user.is_blocked) {
+        // ถ้าโดนแบน ดีดไปหน้าแรกทันที
         return NextResponse.redirect(new URL("/", req.url));
       }
 
-      const userRole = data?.role;
-      const isBlocked = data?.is_blocked;
-
-      // 3. ✅ เช็คว่า User ถูก Block หรือไม่
-      if (isBlocked) {
-        console.log(`⛔ Blocked user tried to access: ${pathname}`);
-        return NextResponse.redirect(new URL("/", req.url));
-      }
-
-      // 4. ✅ เช็คสิทธิ์การเข้าถึง
-      const hasPermission = userRole === "admin" || userRole === "master_admin";
-
-      // console.log(`--- Middleware Check ---`);
-      // console.log(`Path: ${pathname}`);
-      // console.log(`User ID: ${userId}`);
-      // console.log(`Role: ${userRole}`);
-      // console.log(`Has Permission: ${hasPermission}`);
-      // console.log(`Is Blocked: ${isBlocked}`);
-      // console.log(`------------------------`);
-
-      // 5. ถ้าไม่มีสิทธิ์ ให้ดีดออก
+      // 3.4 🛡️ เช็คสิทธิ์ Admin
+      const hasPermission = user.role === "admin" || user.role === "master_admin";
       if (!hasPermission) {
+        // ถ้าไม่ใช่ Admin ดีดไปหน้าแรก
         return NextResponse.redirect(new URL("/", req.url));
       }
+
+      // ถ้าผ่านทุกด่าน ปล่อยให้เข้าใช้งานได้ตามปกติ ✅
 
     } catch (err) {
-      console.error("Middleware Auth Catch:", err);
+      console.error("Middleware Error:", err);
       return NextResponse.redirect(new URL("/", req.url));
     }
   }
-
-  return NextResponse.next();
 });
 
 export const config = {
   matcher: [
-    // ป้องกัน Middleware รันในไฟล์ Static ต่างๆ
-    "/((?!_next/static|_next/image|favicon.ico).*)",
+    // Matcher ตามมาตรฐานของ Clerk เพื่อให้ Middleware ทำงานถูกต้อง
+    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
+    '/(api|trpc)(.*)',
   ],
 };

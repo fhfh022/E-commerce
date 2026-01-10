@@ -1,144 +1,118 @@
-'use client'
-import PageTitle from "@/components/layout/PageTitle"
+"use client";
 import { useEffect, useState, useCallback } from "react";
-import OrderItem from "@/components/product/OrderItem";
-import { supabase } from "@/lib/supabase";
 import { useSelector } from "react-redux";
-import { useSearchParams, useRouter } from "next/navigation";
-// ไม่จำเป็นต้อง import clearCart ที่นี่แล้ว เพราะทำที่หน้าก่อน
-import toast from "react-hot-toast";
-import { Package } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
+import Loading from "@/components/layout/Loading";
+import OrderItem from "@/components/product/OrderItem"; // ✅ เรียกใช้ Item
+import { Package, ChevronLeft, ChevronRight } from "lucide-react";
 
-export default function Orders() {
-    const [orders, setOrders] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const user = useSelector(state => state.auth.user);
-    
-    const searchParams = useSearchParams();
-    const router = useRouter();
+const ITEMS_PER_PAGE = 5;
 
-    const fetchOrders = useCallback(async () => {
-        if (!user) return;
-        try {
-            const { data, error } = await supabase
-                .from('orders')
-                .select(`
-                    *,
-                    address:addresses(*),
-                    order_items:order_items(
-                        *,
-                        product:products(*)
-                    )
-                `)
-                .eq('user_id', user.id)
-                .order('created_at', { ascending: false });
+export default function OrdersContent() {
+  const { user } = useSelector((state) => state.auth);
+  const router = useRouter();
 
-            if (error) throw error;
-            setOrders(data || []);
-        } catch (error) {
-            console.error("Error fetching orders:", error);
-        } finally {
-            setLoading(false);
-        }
-    }, [user]);
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalOrders, setTotalOrders] = useState(0);
 
-    // ✅ 1. โหลดข้อมูลครั้งแรก (ใส่หน่วงเวลาตามที่ขอ เพื่อให้มั่นใจว่าข้อมูลจากหน้า Place Order มาครบ)
-    useEffect(() => {
-        // หน่วงเวลา 0.5 วินาที ก่อนดึงข้อมูลครั้งแรก
-        const timer = setTimeout(() => {
-            fetchOrders();
-        }, 500);
-        return () => clearTimeout(timer);
-    }, [fetchOrders]);
+  const fetchOrders = useCallback(async () => {
+    if (!user) return;
+    setLoading(true);
+    try {
+      const from = (currentPage - 1) * ITEMS_PER_PAGE;
+      const to = from + ITEMS_PER_PAGE - 1;
 
-    // ✅ 2. Logic จัดการหลังจ่ายเงินสำเร็จ (Stripe Redirect กลับมา)
-    useEffect(() => {
-        const handlePaymentReturn = async () => {
-            const isSuccess = searchParams.get("success") === "true";
-            const isCanceled = searchParams.get("canceled") === "true";
-            const orderId = searchParams.get("orderId");
+      const { data, error, count } = await supabase
+        .from("orders")
+        .select(`
+            *,
+            address:addresses(*),
+            order_items (
+                id,
+                quantity,
+                price_at_time,
+                product:products (id, name, images, price, model) 
+            )
+        `, { count: "exact" }) // ✅ Query นี้สำคัญ (ต้องมี model)
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .range(from, to);
 
-            if (isSuccess) {
-                // อัปเดตสถานะเป็น Paid (ตะกร้าไม่ต้องล้างแล้ว เพราะว่างตั้งแต่สร้างออเดอร์)
-                if (orderId) {
-                    try {
-                        const { error } = await supabase
-                            .from('orders')
-                            .update({ 
-                                payment_status: 'paid', 
-                                status: 'processing' 
-                            })
-                            .eq('id', orderId)
-                            .eq('payment_status', 'pending');
+      if (error) throw error;
 
-                        // if (!error) {
-                        //     toast.success("Payment confirmed!");
-                        // }
-                    } catch (err) {
-                        console.error("Update Order Error:", err);
-                    }
-                } else {
-                    toast.success("Payment successful!");
-                }
-
-                // Polling เพื่ออัปเดตปุ่ม Pay Now ให้หายไป
-                fetchOrders();
-                setTimeout(fetchOrders, 1000);
-                setTimeout(fetchOrders, 3000);
-
-                router.replace("/orders");
-            }
-
-            if (isCanceled) {
-                toast.error("Payment was cancelled");
-                router.replace("/orders");
-            }
-        };
-
-        handlePaymentReturn();
-    }, [searchParams, fetchOrders, router]);
-
-    if (loading) {
-        return (
-            <div className="min-h-[60vh] flex items-center justify-center">
-                <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-blue-500"></div>
-            </div>
-        );
+      setOrders(data || []);
+      setTotalOrders(count || 0);
+    } catch (error) {
+      console.error("Fetch orders error:", error);
+    } finally {
+      setLoading(false);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
+  }, [user, currentPage]);
 
-    return (
-        <div className="min-h-[70vh] mx-6 my-2">
-            {orders.length > 0 ? (
-                <div className="my-20 max-w-7xl mx-auto">
-                    <PageTitle heading="My Orders" text={`Showing total ${orders.length} orders`} linkText={'Go to home'} />
-                    
-                    <div className="overflow-x-auto">
-                        <table className="w-full max-w-5xl text-slate-500 table-auto border-separate border-spacing-y-12 border-spacing-x-4">
-                            <thead>
-                                <tr className="max-sm:text-sm text-slate-600 max-md:hidden">
-                                    <th className="text-left">Product</th>
-                                    <th className="text-center">Total Price</th>
-                                    <th className="text-left">Address</th>
-                                    <th className="text-left">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {orders.map((order) => (
-                                    <OrderItem order={order} key={order.id} />
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            ) : (
-                <div className="min-h-[80vh] mx-6 flex flex-col items-center justify-center text-center">
-                    <div className="size-20 bg-slate-50 text-slate-200 rounded-full flex items-center justify-center mb-4">
-                        <Package size={40} />
-                    </div>
-                    <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">You have no orders</h1>
-                    <p className="text-slate-500 mt-2">When you place an order, it will appear here.</p>
-                </div>
-            )}
+  useEffect(() => {
+    fetchOrders();
+  }, [fetchOrders]);
+
+  const totalPages = Math.ceil(totalOrders / ITEMS_PER_PAGE);
+
+  if (loading && orders.length === 0) return <Loading />;
+
+  return (
+    <div className="max-w-5xl mx-auto px-6 py-10 min-h-[60vh] animate-in fade-in duration-500">
+      <h1 className="text-2xl font-bold text-slate-800 mb-2">My Orders</h1>
+      <p className="text-slate-500 mb-8">ประวัติการสั่งซื้อและสถานะสินค้า</p>
+
+      {orders.length === 0 && !loading ? (
+        <div className="text-center py-16 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+          <div className="bg-white p-4 rounded-full inline-block shadow-sm mb-4">
+            <Package size={40} className="text-slate-300" />
+          </div>
+          <h3 className="text-lg font-semibold text-slate-700">No orders found</h3>
+          <p className="text-slate-400 mb-6">Looks like you haven't placed any orders yet.</p>
+          <button 
+            onClick={() => router.push('/shop')}
+            className="px-6 py-2.5 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition shadow-lg shadow-slate-200 font-medium"
+          >
+            Start Shopping
+          </button>
         </div>
-    )
+      ) : (
+        <div className="space-y-6">
+          {/* ✅ เรียกใช้ OrderItem แทนการเขียน Code ยาวๆ */}
+          {orders.map((order) => (
+            <OrderItem key={order.id} order={order} />
+          ))}
+
+          {/* Pagination Controls */}
+          {totalOrders > ITEMS_PER_PAGE && (
+            <div className="flex justify-center items-center gap-4 mt-10 pt-6 border-t border-slate-100">
+              <button
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition font-bold text-sm"
+              >
+                <ChevronLeft size={16} /> Previous
+              </button>
+
+              <span className="text-sm font-medium text-slate-600 bg-slate-50 px-4 py-2 rounded-xl border border-slate-100">
+                Page <span className="font-bold text-slate-900">{currentPage}</span> of <span className="font-bold text-slate-900">{totalPages}</span>
+              </span>
+
+              <button
+                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition font-bold text-sm"
+              >
+                Next <ChevronRight size={16} />
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
 }

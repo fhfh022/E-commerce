@@ -14,8 +14,8 @@ const prompt = Prompt({
 });
 
 export const metadata = {
-  title: "PRT. - IT Store",
-  description: "PRT. - IT Store",
+  title: "PRT - Store",
+  description: "PRT - Store",
 };
 
 export default function RootLayout({ children }) {

@@ -199,7 +199,7 @@ export default function Dashboard() {
                             <div className="flex flex-col justify-between gap-4 sm:items-end min-w-[150px]">
                                 <div className="flex flex-col sm:items-end">
                                     <p className="text-xs text-slate-400 uppercase tracking-wide">{review.product?.category}</p>
-                                    <p className="font-bold text-slate-700 text-sm mb-1">{review.product?.name}</p>
+                                    <p className="font-bold text-slate-700 text-sm mb-1">{review.product?.name} </p>
                                     <div className='flex items-center gap-0.5'>
                                         {Array(5).fill('').map((_, idx) => (
                                             <StarIcon 

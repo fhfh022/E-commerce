@@ -14,14 +14,14 @@ const AdminSidebar = () => {
     const { role, name, avatar } = useSelector((state) => state.user)
    
     const sidebarLinks = [
-        { name: 'Dashboard', href: '/admin', icon: HomeIcon },
-        { name: 'Orders', href: '/admin/orders', icon: ListOrdered },
-        { name: 'Coupons', href: '/admin/coupons', icon: TicketPercentIcon  },
+        { name: 'แดชบอร์ด', href: '/admin', icon: HomeIcon },
+        { name: 'คำสั่งซื้อ', href: '/admin/orders', icon: ListOrdered },
+        { name: 'คูปอง', href: '/admin/coupons', icon: TicketPercentIcon  },
 
     ]
 
     if (role === 'master_admin') {
-        sidebarLinks.push({ name: 'Users', href: '/admin/users', icon: Users })
+        sidebarLinks.push({ name: 'ผู้ใช้งาน', href: '/admin/users', icon: Users })
     }
 
     return (

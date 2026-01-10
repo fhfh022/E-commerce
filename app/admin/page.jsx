@@ -19,9 +19,9 @@ export default function AdminDashboard() {
     })
 
     const dashboardCardsData = [
-        { title: 'Total Products', value: dashboardData.products, icon: ShoppingBasketIcon },
-        { title: 'Total Revenue', value: currency + dashboardData.revenue.toLocaleString(), icon: CircleDollarSignIcon },
-        { title: 'Total Orders', value: dashboardData.orders, icon: TagsIcon },
+        { title: 'สินค้าทั้งหมด', value: dashboardData.products, icon: ShoppingBasketIcon },
+        { title: 'รายได้ทั้งหมด', value: currency + dashboardData.revenue.toLocaleString(), icon: CircleDollarSignIcon },
+        { title: 'คำสั่งซื้อทั้งหมด', value: dashboardData.orders, icon: TagsIcon },
     ]
 
     const fetchDashboardData = async () => {
@@ -105,7 +105,7 @@ export default function AdminDashboard() {
 
             {/* Area Chart Section */}
             <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                <h3 className="text-lg font-bold text-slate-800 mb-4">Orders Overview</h3>
+                <h3 className="text-lg font-bold text-slate-800 mb-4">ภาพรวมคำสั่งซื้อ</h3>
                 <div className="h-[400px] w-full">
                     <OrdersAreaChart allOrders={dashboardData.allOrders} />
                 </div>

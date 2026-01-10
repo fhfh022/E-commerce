@@ -69,10 +69,10 @@ const OrderSummary = ({ totalPrice, items }) => {
         if (error) throw error;
         dispatch(deleteAddress(addressIdToDelete));
         if (addressList[selectedAddressIndex]?.id === addressIdToDelete) setSelectedAddressIndex("");
-        toast.success("Address deleted successfully");
+        toast.success("ที่อยู่ถูกลบเรียบร้อยแล้ว");
         setShowDeleteModal(false);
       } catch (error) {
-        toast.error("Failed to delete address");
+        toast.error("เกิดข้อผิดพลาดในการลบที่อยู่");
       } finally {
         setIsProcessing(false);
         setAddressIdToDelete(null);
@@ -103,17 +103,17 @@ const OrderSummary = ({ totalPrice, items }) => {
           .single();
   
         if (error || !data) {
-          toast.error("Invalid or expired coupon code");
+          toast.error("รหัสคูปองไม่ถูกต้องหรือหมดอายุแล้ว");
           return;
         }
 
         if (data.expiry_date && new Date(data.expiry_date) < new Date()) {
-          toast.error("This coupon has expired");
+          toast.error("รหัสคูปองนี้หมดอายุแล้ว");
           return;
         }
 
         if (data.used_count >= data.quantity) {
-          toast.error("This coupon is fully redeemed (Out of stock)");
+          toast.error("รหัสคูปองนี้ถูกใช้ครบจำนวนแล้ว");
           return;
         }
   
@@ -128,18 +128,18 @@ const OrderSummary = ({ totalPrice, items }) => {
             ? `${data.discount_value}%` 
             : `${currency}${data.discount_value}`;
 
-        toast.success(`Coupon Applied: ${discountText} off!`);
+        toast.success(`ใช้คูปองแล้ว: ส่วนลด ${discountText}`);
         setCouponCodeInput("");
       } catch (error) {
         console.error(error);
-        toast.error("Something went wrong");
+        toast.error("เกิดข้อผิดพลาดในการใช้คูปอง");
       }
   };
 
   const handlePlaceOrderClick = (e) => {
     e.preventDefault();
     if (selectedAddressIndex === "" || !user) {
-      toast.error("Please select an address");
+      toast.error("กรุณาเลือกที่อยู่");
       return;
     }
     setShowConfirmModal(true);
@@ -177,7 +177,7 @@ const OrderSummary = ({ totalPrice, items }) => {
       }
 
       dispatch(clearCart());
-      toast.success("Order placed successfully!");
+      toast.success("คำสั่งซื้อสำเร็จ!");
       setShowConfirmModal(false);
       router.push("/orders");
 
@@ -191,11 +191,11 @@ const OrderSummary = ({ totalPrice, items }) => {
 
   return (
     <div className="w-full max-w-lg mx-auto lg:mx-0 lg:max-w-[340px] bg-white border border-slate-200 text-slate-500 text-sm rounded-2xl p-7 shadow-sm">
-      <h2 className="text-xl font-bold text-slate-800 mb-6">Order Summary</h2>
+      <h2 className="text-xl font-bold text-slate-800 mb-6">สรุปรายการสั่งซื้อ</h2>
 
       {/* Payment Method Section */}
       <div className="space-y-3 mb-6">
-        <p className="text-gray-500 text-xs font-bold uppercase tracking-wider">Payment Method</p>
+        <p className="text-gray-500 text-xs font-bold uppercase tracking-wider">วิธีการชำระเงิน</p>
         
         <label className={`flex gap-3 items-center p-3 border rounded-xl cursor-not-allowed transition-all ${
           paymentMethod === "COD" ? "border-blue-500 bg-blue-50/50" : "border-slate-200 hover:border-slate-300"
@@ -209,8 +209,9 @@ const OrderSummary = ({ totalPrice, items }) => {
             disabled 
           />
           <span className="font-medium text-gray-700 opacity-50">
-            Cash on Delivery (Not Available)
+           บริการเก็บเงินปลายทาง <br/>(ไม่พร้อมให้บริการ)
           </span>
+          
         </label>
 
         <label className={`flex gap-3 items-center p-3 border rounded-xl cursor-pointer transition-all ${
@@ -223,14 +224,14 @@ const OrderSummary = ({ totalPrice, items }) => {
             checked={paymentMethod === "STRIPE"} 
             className="accent-blue-600 size-4" 
           />
-          <span className="font-medium text-slate-700">Stripe Payment</span>
+          <span className="font-medium text-slate-700">การชำระเงินผ่าน Stripe</span>
         </label>
       </div>
 
       {/* Shipping Address Section */}
       <div className="my-6 py-6 border-y border-slate-100">
         <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-3">
-          Shipping Address
+          ที่อยู่จัดส่ง
         </p>
 
         {addressList.length > 0 ? (
@@ -240,7 +241,7 @@ const OrderSummary = ({ totalPrice, items }) => {
               onChange={(e) => setSelectedAddressIndex(e.target.value)} 
               value={selectedAddressIndex}
             >
-              <option value="" disabled>-- Select Delivery Address --</option>
+              <option value="" disabled>-- เลือกที่อยู่จัดส่ง --</option>
               {addressList.map((addr, index) => (
                 <option key={addr.id} value={index}>
                   {addr.receiver_name} - {addr.province}
@@ -253,7 +254,7 @@ const OrderSummary = ({ totalPrice, items }) => {
                 <p><span className="font-bold">To:</span> {addressList[selectedAddressIndex].receiver_name}</p>
                 <p><span className="font-bold">Tel:</span> {addressList[selectedAddressIndex].phone_number}</p>
                 <p className="mt-1 mb-2 pr-10">
-                  {addressList[selectedAddressIndex].detail}, {addressList[selectedAddressIndex].sub_district}, {addressList[selectedAddressIndex].province}, {addressList[selectedAddressIndex].postal_code}
+                  {addressList[selectedAddressIndex].detail}, {addressList[selectedAddressIndex].district}, {addressList[selectedAddressIndex].province}, {addressList[selectedAddressIndex].postal_code}
                 </p>
 
                 <div className="flex gap-3 mt-2 border-t border-slate-200 pt-2">
@@ -261,20 +262,20 @@ const OrderSummary = ({ totalPrice, items }) => {
                     onClick={() => handleEditAddress(addressList[selectedAddressIndex])} 
                     className="flex items-center gap-1 text-slate-400 hover:text-blue-600 font-medium transition"
                   >
-                    <Edit2Icon size={14} /> Edit
+                    <Edit2Icon size={14} /> แก้ไข
                   </button>
                   <button 
                     onClick={() => requestDeleteAddress(addressList[selectedAddressIndex].id)} 
                     className="flex items-center gap-1 text-slate-400 hover:text-red-500 font-medium transition"
                   >
-                    <Trash2Icon size={14} /> Delete
+                    <Trash2Icon size={14} /> ลบ
                   </button>
                 </div>
               </div>
             )}
           </div>
         ) : (
-          <p className="text-xs text-slate-400 italic mb-2">No address found. Please add one.</p>
+          <p className="text-xs text-slate-400 italic mb-2">ไม่พบที่อยู่ โปรดเพิ่มที่อยู่ใหม่.</p>
         )}
 
         <button 
@@ -284,23 +285,23 @@ const OrderSummary = ({ totalPrice, items }) => {
             setShowAddressModal(true); 
           }}
         >
-          <PlusIcon size={16} /> Add New Address
+          <PlusIcon size={16} /> เพิ่มที่อยู่ใหม่
         </button>
       </div>
 
       {/* Cost Breakdown */}
       <div className="space-y-3 pb-6 border-b border-slate-100">
         <div className="flex justify-between text-slate-500">
-          <span>Subtotal</span>
+          <span>ราคารวม</span>
           <span className="font-medium text-slate-700">{currency}{Math.round(totalPrice)}</span>
         </div>
         <div className="flex justify-between text-slate-500">
-          <span>Shipping</span>
-          <span className="text-green-600 font-medium">Free</span>
+          <span>ค่าจัดส่ง</span>
+          <span className="text-green-600 font-medium">ฟรี</span>
         </div>
         {coupon && (
           <div className="flex justify-between text-blue-600">
-            <span>Coupon ({coupon.code})</span>
+            <span>คูปอง ({coupon.code})</span>
             <span>-{currency}{discountAmount}</span>
           </div>
         )}
@@ -323,21 +324,21 @@ const OrderSummary = ({ totalPrice, items }) => {
       ) : (
         <div className="mt-6 bg-blue-50 border border-blue-100 p-3 rounded-xl flex items-center justify-between">
           <div className="flex flex-col">
-            <span className="text-xs font-bold text-blue-600">COUPON APPLIED</span>
+            <span className="text-xs font-bold text-blue-600">ใช้คูปองแล้ว</span>
             <span className="text-xs text-blue-400">{coupon.description}</span>
           </div>
           <button 
             onClick={() => setCoupon(null)} 
             className="text-xs text-red-500 hover:underline"
           >
-            Remove
+            ลบ
           </button>
         </div>
       )}
 
       {/* Total */}
       <div className="flex justify-between items-center py-6">
-        <span className="font-bold text-slate-800 text-lg">Total</span>
+        <span className="font-bold text-slate-800 text-lg">ยอดรวม</span>
         <span className="font-black text-slate-900 text-xl">{currency}{finalTotal}</span>
       </div>
 
@@ -346,7 +347,7 @@ const OrderSummary = ({ totalPrice, items }) => {
         onClick={handlePlaceOrderClick} 
         className="w-full bg-slate-900 text-white py-4 rounded-2xl font-bold text-lg hover:bg-slate-800 active:scale-95 transition-all shadow-lg shadow-slate-200"
       >
-        Place Order
+        สั่งซื้อสินค้า
       </button>
 
       {/* Confirm Order Modal */}
@@ -357,9 +358,9 @@ const OrderSummary = ({ totalPrice, items }) => {
               <div className="size-20 bg-green-50 text-green-500 rounded-full flex items-center justify-center mb-6">
                 <CheckCircle size={36} />
               </div>
-              <h3 className="text-2xl font-black text-slate-900">Confirm Order?</h3>
+              <h3 className="text-2xl font-black text-slate-900">ยืนยันการสั่งซื้อ?</h3>
               <p className="text-slate-500 mt-2 leading-relaxed text-sm">
-                You are about to place an order. You can pay immediately or later from the 'My Orders' page.
+                คุณกำลังจะสั่งซื้อสินค้าจำนวน {items.length} รายการ <br/>รวมเป็นเงิน {currency}{finalTotal}.
               </p>
               <div className="grid grid-cols-1 gap-3 w-full mt-8">
                 <button 
@@ -367,14 +368,14 @@ const OrderSummary = ({ totalPrice, items }) => {
                   onClick={confirmPlaceOrder} 
                   className="w-full py-3.5 bg-green-500 hover:bg-green-600 text-white font-bold rounded-2xl shadow-lg shadow-green-100 active:scale-95 disabled:opacity-70 transition-all"
                 >
-                  {isProcessing ? "Processing..." : "Confirm & Place Order"}
+                  {isProcessing ? "กำลังสั่งซื้อ..." : "ยืนยัน & สั่งซื้อสินค้า"}
                 </button>
                 <button 
                   disabled={isProcessing} 
                   onClick={() => setShowConfirmModal(false)} 
                   className="w-full py-3.5 bg-white text-slate-400 font-bold rounded-2xl hover:text-slate-600 active:scale-95 transition-all"
                 >
-                  Cancel
+                  ยกเลิก
                 </button>
               </div>
             </div>

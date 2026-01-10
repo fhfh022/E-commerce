@@ -295,7 +295,7 @@ export default function ChatPage() {
           >
             <div className="p-5 border-b border-slate-100 flex justify-between items-center">
               <h2 className="font-bold text-lg text-slate-800 tracking-tight">
-                Inbox ({chatRooms.length})
+                กล่องข้อความ ({chatRooms.length})
               </h2>
             </div>
             <div className="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar">
@@ -335,17 +335,17 @@ export default function ChatPage() {
                             : "text-slate-800"
                         }`}
                       >
-                        {room.user?.name || "Guest"}
+                        {room.user?.name || "ลูกค้าทั่วไป"}
                       </h3>
                       <span className="text-[9px] text-slate-400 font-medium">
-                        {new Date(room.updated_at).toLocaleTimeString([], {
+                        {new Date(room.updated_at).toLocaleTimeString("th-TH", {
                           hour: "2-digit",
                           minute: "2-digit",
                         })}
                       </span>
                     </div>
                     <p className="text-[11px] text-slate-500 truncate mt-0.5 opacity-80 font-medium">
-                      Click to view chat history
+                      คลิกเพื่อดูประวัติการแชท
                     </p>
                   </div>
                 </div>
@@ -379,13 +379,13 @@ export default function ChatPage() {
                   <div>
                     <h3 className="font-bold text-slate-800 text-sm md:text-base leading-none">
                       {isAdmin
-                        ? currentRoom?.user?.name || "Customer"
-                        : "PRT Customer Support"}
+                        ? currentRoom?.user?.name || "ลูกค้า"
+                        : "ฝ่ายบริการลูกค้า PRT"}
                     </h3>
                     <div className="flex items-center gap-1.5 mt-1">
                       <span className="size-1.5 bg-green-500 rounded-full animate-pulse"></span>
                       <span className="text-[10px] text-green-600 font-bold uppercase tracking-wider">
-                        Online
+                        ออนไลน์
                       </span>
                     </div>
                   </div>
@@ -459,7 +459,7 @@ export default function ChatPage() {
                             isMe ? "text-right mr-1" : "ml-1"
                           }`}
                         >
-                          {new Date(msg.created_at).toLocaleTimeString([], {
+                          {new Date(msg.created_at).toLocaleTimeString("th-TH", {
                             hour: "2-digit",
                             minute: "2-digit",
                           })}
@@ -504,7 +504,7 @@ export default function ChatPage() {
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     placeholder={
-                      isUploading ? "Uploading..." : "Type a message..."
+                      isUploading ? "กำลังอัปโหลด..." : "พิมพ์ข้อความ..."
                     }
                     className="flex-1 bg-slate-50 border border-slate-200 rounded-full px-5 py-3 text-sm focus:ring-2 focus:ring-indigo-100 focus:border-indigo-400 outline-none transition-all placeholder:text-slate-400 disabled:opacity-60"
                     disabled={isUploading}
@@ -531,11 +531,10 @@ export default function ChatPage() {
                 <MessageCircle size={40} />
               </div>
               <h3 className="font-bold text-slate-800 text-lg">
-                Your Conversations
+                การสนทนาของคุณ
               </h3>
               <p className="text-slate-500 text-xs mt-1 max-w-[200px] leading-relaxed">
-                Select a chat from the inbox to start messaging with your
-                customers.
+                เลือกแชทจากกล่องข้อความเพื่อเริ่มสนทนากับลูกค้า
               </p>
             </div>
           )}

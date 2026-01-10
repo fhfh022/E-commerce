@@ -102,7 +102,7 @@ export default function CouponPopup() {
               <TicketPercent size={20} />
             </div>
             <div>
-              <h3 className="font-bold text-slate-900">Available Coupons</h3>
+              <h3 className="font-bold text-slate-900">คูปองที่ใช้ได้</h3>
             </div>
           </div>
           <button
@@ -133,7 +133,7 @@ export default function CouponPopup() {
                 </p>
                 {/* แสดงจำนวนคงเหลือ */}
                 <p className="text-xs text-slate-400 mt-1">
-                  Left: {coupon.quantity - coupon.used_count} /{" "}
+                  คงเหลือ: {coupon.quantity - coupon.used_count} /{" "}
                   {coupon.quantity}
                 </p>
 
@@ -158,7 +158,7 @@ export default function CouponPopup() {
             onClick={() => setIsVisible(false)}
             className="text-xs text-slate-400 hover:text-red-500 w-full flex items-center justify-center gap-1 py-1"
           >
-            <X size={12} /> Don't show again this session
+            <X size={12} /> อย่าแสดงหน้าคูปองนี้อีก
           </button>
         </div>
       </div>

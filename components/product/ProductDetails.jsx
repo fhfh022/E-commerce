@@ -200,12 +200,12 @@ const ProductDetails = ({ product }) => {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
               </span>
-            In Stock: {realStock} items left
+            in stock: {realStock} ชิ้น
           </div>
         ) : (
           <div className="flex items-center gap-2 text-red-500 text-sm font-medium">
             <AlertCircle size={16} />
-            Out of Stock
+            สินค้าหมดชั่วคราว
           </div>
         )}
       </div>

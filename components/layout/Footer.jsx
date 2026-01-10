@@ -1,3 +1,4 @@
+"use client";
 import Link from "next/link";
 import { Gamepad2 ,Laptop } from "lucide-react";  
 
@@ -13,26 +14,26 @@ const Footer = () => {
 
     const linkSections = [
         {
-            title: "PRODUCTS",
+            title: "สินค้า",
             links: [
-                { text: "Ultrabook", path: '/', icon: Laptop },
-                { text: "Gaming", path: '/', icon: Gamepad2 },
+                { text: "อัลตร้าบุ๊ก", path: '/', icon: Laptop },
+                { text: "เกมมิ่ง", path: '/', icon: Gamepad2 },
             ]
         },
         {
-            title: "WEBSITE",
+            title: "เว็บไซต์",
             links: [
-                { text: "Home", path: '/' },
-                { text: "Privacy Policy", path: '/privacy-policy'},
+                { text: "หน้าแรก", path: '/' },
+                { text: "นโยบายความเป็นส่วนตัว", path: '/privacy-policy'},
             ]
                
         },
         {
-            title: "CONTACT",
+            title: "ติดต่อเรา",
             links: [
                 { text: "087-2122-444", path: '/', icon: MailIcon },
                 { text: "prt@gmail.com", path: '/', icon: PhoneIcon },
-                { text: "Loei Rajabhat University", path: '/', icon: MapPinIcon }
+                { text: "มหาวิทยาลัยราชภัฏเลย", path: '/', icon: MapPinIcon }
             ]
         }
     ];
@@ -52,7 +53,9 @@ const Footer = () => {
                         <Link href="/" className="text-4xl font-semibold text-slate-700">
                             <span className="text-green-600">PR</span>T<span className="text-green-600 text-5xl leading-0">.</span>
                         </Link>
-                        <p className="max-w-[410px] mt-6 text-sm">At PRT, we specialize in delivering top-tier laptops and technology products. Whether you're a gamer, professional, or tech enthusiast, find the perfect device from brands like Acer, Asus, Lenovo, HP, and more. Enjoy seamless shopping with fast delivery and expert support.</p>
+                        <p className="max-w-[410px] mt-6 text-sm">
+                            PRT ผู้นำด้านแล็ปท็อปและสินค้าไอทีคุณภาพสูง เราคัดสรรอุปกรณ์ที่ดีที่สุดสำหรับเกมเมอร์และคนทำงานระดับโปร จากแบรนด์ชั้นนำอย่าง Acer, Asus, Lenovo, HP และอีกมากมาย พร้อมบริการจัดส่งรวดเร็วและทีมงานมืออาชีพคอยดูแลคุณ
+                        </p>
                         <div className="flex items-center gap-3 mt-5">
                             {socialIcons.map((item, i) => (
                                 <Link href={item.link} key={i} className="flex items-center justify-center w-10 h-10 bg-slate-100 hover:scale-105 hover:border border-slate-300 transition rounded-full">
@@ -78,7 +81,7 @@ const Footer = () => {
                     </div>
                 </div>
                 <p className="py-4 text-sm text-slate-500">
-                    Copyright 2025 © PRT All Right Reserved.
+                    สงวนลิขสิทธิ์ 2025 © PRT All Right Reserved.
                 </p>
             </div>
         </footer>

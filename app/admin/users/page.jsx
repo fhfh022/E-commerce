@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import PageTitle from "@/components/layout/PageTitle";
 import Loading from "@/components/layout/Loading";
 import toast from "react-hot-toast";
-import { UserMinus, UserCheck, AlertTriangle } from "lucide-react"; // เพิ่ม icon AlertTriangle
+import { UserMinus, UserCheck, AlertTriangle, Search, ShieldAlert } from "lucide-react";
 
 export default function UserManagement() {
   const [users, setUsers] = useState([]);
@@ -17,7 +17,7 @@ export default function UserManagement() {
   // State สำหรับ Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [modalProcessing, setModalProcessing] = useState(false); // Add loading state for modal buttons
+  const [modalProcessing, setModalProcessing] = useState(false);
 
   const router = useRouter();
   const currentUser = useSelector((state) => state.auth.user);
@@ -38,7 +38,7 @@ export default function UserManagement() {
         if (!isMounted) return;
 
         if (error || userData?.role !== "master_admin") {
-          toast.error("Access Denied: Master Admin only!", {
+          toast.error("ปฏิเสธการเข้าถึง: สำหรับ Master Admin เท่านั้น!", {
             id: "access-denied",
           });
           router.replace("/admin");
@@ -68,7 +68,7 @@ export default function UserManagement() {
       if (error) throw error;
       setUsers(data || []);
     } catch (error) {
-      toast.error("Failed to load users");
+      toast.error("ไม่สามารถโหลดรายชื่อผู้ใช้ได้");
     } finally {
       setLoading(false);
     }
@@ -80,7 +80,7 @@ export default function UserManagement() {
     try {
       const targetUser = users.find((u) => u.id === userId);
       if (!targetUser?.clerk_id) {
-        throw new Error("Clerk ID not found");
+        throw new Error("ไม่พบ Clerk ID");
       }
 
       const { error: supabaseError } = await supabase
@@ -102,36 +102,34 @@ export default function UserManagement() {
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error || "Failed to sync with Clerk");
+        throw new Error(result.error || "การซิงค์ข้อมูลกับ Clerk ล้มเหลว");
       }
 
       setUsers(
         users.map((u) => (u.id === userId ? { ...u, role: targetRole } : u))
       );
-      toast.success(`Role updated to ${targetRole} successfully!`);
+      toast.success(`อัปเดตสิทธิ์เป็น ${targetRole} เรียบร้อยแล้ว!`);
     } catch (error) {
       console.error("Update Role Error:", error);
-      toast.error(error.message || "Failed to update role");
+      toast.error(error.message || "เกิดข้อผิดพลาดในการอัปเดตสิทธิ์");
     } finally {
       setUpdatingUserId(null);
     }
   };
 
-  // 1. Function to open Modal (called from table button)
   const openBlockModal = (user) => {
     setSelectedUser(user);
     setIsModalOpen(true);
   };
 
-  // 2. Actual Block function (removed old confirm)
- const toggleBlockStatus = async (userId, currentBlockStatus) => {
+  const toggleBlockStatus = async (userId, currentBlockStatus) => {
     setModalProcessing(true);
     try {
       const newStatus = !currentBlockStatus;
       
       const targetUser = users.find((u) => u.id === userId);
       if (!targetUser?.clerk_id) {
-        toast.error("Clerk ID not found for this user");
+        toast.error("ไม่พบ Clerk ID สำหรับผู้ใช้นี้");
         return;
       }
 
@@ -153,12 +151,10 @@ export default function UserManagement() {
         }),
       });
 
-      // ✅ อ่าน Error จริงจากหลังบ้าน
       const result = await response.json();
 
       if (!response.ok) {
-        // เอาข้อความ error จาก API มาแสดง (เช่น "Forbidden: ...")
-        throw new Error(result.error || "Failed to sync with Clerk");
+        throw new Error(result.error || "การซิงค์ข้อมูลกับ Clerk ล้มเหลว");
       }
 
       // 3. Update UI
@@ -168,14 +164,13 @@ export default function UserManagement() {
         )
       );
       toast.success(
-        newStatus ? "User blocked & kicked out!" : "User unblocked"
+        newStatus ? "บล็อกและตัดผู้ใช้ออกจากระบบแล้ว!" : "ปลดบล็อกผู้ใช้แล้ว"
       );
       
       setIsModalOpen(false); 
 
     } catch (error) {
       console.error("Block Error:", error);
-      // ตอนนี้ Toast จะโชว์สาเหตุจริงๆ แล้ว
       toast.error(error.message);
     } finally {
       setModalProcessing(false);
@@ -191,31 +186,32 @@ export default function UserManagement() {
   if (loading) return <Loading />;
 
   return (
-    <div className="max-w-7xl mx-auto px-6 pt-10 pb-20">
+    <div className="max-w-7xl mx-auto px-6 pt-10 pb-20 animate-in fade-in duration-500">
       <PageTitle
-        heading="Master Control"
-        text="Manage Admins and User Access"
+        heading="จัดการผู้ใช้งาน (Master Control)"
+        text="จัดการสิทธิ์แอดมินและการเข้าถึงระบบ"
       />
 
-      <div className="mt-8 mb-6">
+      <div className="mt-8 mb-6 relative max-w-md">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
         <input
           type="text"
-          placeholder="Search users by name or email..."
+          placeholder="ค้นหาชื่อ หรือ อีเมล..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full max-w-md px-4 py-3 border border-slate-200 rounded-xl outline-none focus:border-blue-500 transition"
+          className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-xl outline-none focus:border-blue-500 transition"
         />
       </div>
 
       <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
-          <table className="w-full text-base text-left">
-            <thead className="bg-slate-50 text-base uppercase font-bold text-slate-500">
+          <table className="w-full text-base text-left whitespace-nowrap">
+            <thead className="bg-slate-50 text-sm uppercase font-bold text-slate-500">
               <tr>
-                <th className="px-4 py-3">User</th>
-                <th className="px-4 py-3">Current Role</th>
-                <th className="px-4 py-3 text-right">Set Role</th>
-                <th className="px-4 py-3 text-right">Access</th>
+                <th className="px-6 py-4">ผู้ใช้งาน</th>
+                <th className="px-6 py-4">สิทธิ์ปัจจุบัน</th>
+                <th className="px-6 py-4 text-right">กำหนดสิทธิ์</th>
+                <th className="px-6 py-4 text-right">สถานะ</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -223,74 +219,81 @@ export default function UserManagement() {
                 <tr>
                   <td
                     colSpan="4"
-                    className="px-4 py-2.5 text-center text-base text-slate-400"
+                    className="px-6 py-8 text-center text-slate-400"
                   >
-                    No users found
+                    ไม่พบข้อมูลผู้ใช้งาน
                   </td>
                 </tr>
               ) : (
                 filteredUsers.map((u) => (
                   <tr key={u.id} className="hover:bg-slate-50 transition">
-                    <td className="px-4 py-2.5">
-                      <div className="font-bold text-slate-800 text-base">
-                        {u.name || "No Name"}
+                    <td className="px-6 py-4">
+                      <div className="font-bold text-slate-800">
+                        {u.name || "ไม่ระบุชื่อ"}
                       </div>
-                      <div className="text-base text-slate-400">{u.email}</div>
+                      <div className="text-sm text-slate-500">{u.email}</div>
                     </td>
-                    <td className="px-4 py-2.5">
+                    <td className="px-6 py-4">
                       <span
-                        className={`px-2 py-0.5 rounded text-base font-black uppercase ${
+                        className={`inline-flex px-2.5 py-1 rounded-md text-xs font-black uppercase tracking-wide ${
                           u.role === "master_admin"
-                            ? "bg-indigo-100 text-indigo-700"
+                            ? "bg-indigo-100 text-indigo-700 border border-indigo-200"
                             : u.role === "admin"
-                            ? "bg-purple-100 text-purple-700"
-                            : "bg-slate-100 text-slate-500"
+                            ? "bg-purple-100 text-purple-700 border border-purple-200"
+                            : "bg-slate-100 text-slate-600 border border-slate-200"
                         }`}
                       >
-                        {u.role || "user"}
+                        {u.role === "master_admin" ? "Master Admin" : u.role === "admin" ? "Admin" : "User"}
                       </span>
                     </td>
-                    <td className="px-4 py-2.5 text-right">
+                    <td className="px-6 py-4 text-right">
                       {u.role !== "master_admin" && (
-                        <div className="flex justify-end gap-1">
+                        <div className="flex justify-end gap-2">
                           <button
                             onClick={() => updateRole(u.id, "admin")}
                             disabled={updatingUserId === u.id}
-                            className="px-2 py-1 text-base font-bold bg-white border border-purple-200 text-purple-600 rounded-md hover:bg-purple-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                            className={`px-3 py-1.5 text-xs font-bold rounded-lg border transition ${
+                                u.role === "admin" 
+                                    ? "bg-purple-50 border-purple-200 text-purple-600 opacity-50 cursor-default"
+                                    : "bg-white border-slate-200 text-slate-600 hover:bg-purple-50 hover:text-purple-600 hover:border-purple-200"
+                            }`}
                           >
-                            {updatingUserId === u.id ? "..." : "Set Admin"}
+                            {updatingUserId === u.id ? "กำลังโหลด..." : "ตั้งเป็น Admin"}
                           </button>
                           <button
                             onClick={() => updateRole(u.id, "user")}
                             disabled={updatingUserId === u.id}
-                            className="px-2 py-1 text-base font-bold bg-white border border-slate-200 text-slate-500 rounded-md hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                            className={`px-3 py-1.5 text-xs font-bold rounded-lg border transition ${
+                                u.role === "user" || !u.role
+                                    ? "bg-slate-100 border-slate-200 text-slate-500 opacity-50 cursor-default"
+                                    : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-800"
+                            }`}
                           >
-                            {updatingUserId === u.id ? "..." : "Set User"}
+                            {updatingUserId === u.id ? "กำลังโหลด..." : "ตั้งเป็น User"}
                           </button>
                         </div>
                       )}
                       {u.role === "master_admin" && (
-                        <span className="text-base text-slate-400 italic">
-                          Protected
+                        <span className="flex items-center justify-end gap-1 text-sm text-slate-400 italic">
+                          <ShieldAlert size={14} /> สงวนสิทธิ์
                         </span>
                       )}
                     </td>
-                    <td className="px-4 py-2.5 text-right">
+                    <td className="px-6 py-4 text-right">
                       <button
-                        // Changed here: call openBlockModal instead
                         onClick={() => openBlockModal(u)}
                         disabled={u.role === "master_admin"}
-                        className={`p-1.5 rounded-lg border transition ${
+                        className={`p-2 rounded-lg border transition ${
                           u.is_blocked
                             ? "bg-red-50 border-red-200 text-red-600 hover:bg-red-100"
                             : "bg-white border-slate-200 text-slate-400 hover:text-red-500 hover:border-red-200"
                         } disabled:opacity-50 disabled:cursor-not-allowed`}
-                        title={u.is_blocked ? "Unblock User" : "Block User"}
+                        title={u.is_blocked ? "ปลดบล็อกผู้ใช้" : "บล็อกผู้ใช้"}
                       >
                         {u.is_blocked ? (
-                          <UserMinus size={16} />
+                          <UserMinus size={18} />
                         ) : (
-                          <UserCheck size={16} />
+                          <UserCheck size={18} />
                         )}
                       </button>
                     </td>
@@ -304,8 +307,8 @@ export default function UserManagement() {
 
       {/* MODAL UI */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="bg-white p-6 md:p-8 rounded-2xl shadow-2xl max-w-sm w-full transform transition-all scale-100">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-white p-6 md:p-8 rounded-2xl shadow-2xl max-w-sm w-full transform transition-all scale-100 animate-in zoom-in-95">
             <div className="flex flex-col items-center text-center">
               
               {/* Icon */}
@@ -322,15 +325,15 @@ export default function UserManagement() {
               {/* Title */}
               <h3 className="text-xl font-bold text-slate-800 mb-2">
                 {selectedUser?.is_blocked
-                  ? "Unblock User?"
-                  : "Block & Kick User?"}
+                  ? "ปลดบล็อกผู้ใช้?"
+                  : "บล็อกและตัดออกจากระบบ?"}
               </h3>
 
               {/* Description */}
               <p className="text-slate-500 mb-6 text-sm md:text-base leading-relaxed">
                 {selectedUser?.is_blocked
-                  ? `Do you want to restore access for "${selectedUser?.name}"?`
-                  : `User "${selectedUser?.name}" will be kicked out immediately and cannot log in until unblocked.`}
+                  ? <span>คุณต้องการคืนสิทธิ์การใช้งานให้กับ <br/><span className="font-bold text-slate-800">"{selectedUser?.name}"</span> ใช่หรือไม่?</span>
+                  : <span>ผู้ใช้ <span className="font-bold text-slate-800">"{selectedUser?.name}"</span> จะถูกตัดออกจากระบบทันที และไม่สามารถเข้าใช้งานได้จนกว่าจะปลดบล็อก</span>}
               </p>
 
               {/* Buttons */}
@@ -340,7 +343,7 @@ export default function UserManagement() {
                   disabled={modalProcessing}
                   className="flex-1 px-4 py-2.5 border border-slate-200 text-slate-600 rounded-xl font-bold hover:bg-slate-50 transition disabled:opacity-50"
                 >
-                  Cancel
+                  ยกเลิก
                 </button>
                 <button
                   onClick={() => {
@@ -356,7 +359,7 @@ export default function UserManagement() {
                   {modalProcessing ? (
                     <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   ) : (
-                    "Confirm"
+                    "ยืนยัน"
                   )}
                 </button>
               </div>

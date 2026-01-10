@@ -15,7 +15,7 @@ import {
     ChevronRight 
 } from "lucide-react";
 
-export default function StoreOrders() {
+export default function AdminOrders() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState(null);
@@ -30,11 +30,15 @@ export default function StoreOrders() {
     try {
         const { error } = await supabase
             .from('orders')
-            .delete()
+            .update({ 
+                status: 'cancelled',
+                payment_status: 'not_paid'
+            })
             .eq('payment_status', 'pending')
+            .neq('status', 'cancelled')
             .lt('created_at', tenMinutesAgo); 
 
-        if (error) console.error("Auto-delete error:", error);
+        if (error) console.error("Auto-cancel error:", error);
     } catch (err) {
         console.error("Cleanup failed:", err);
     }
@@ -61,8 +65,8 @@ export default function StoreOrders() {
       if (error) throw error;
       setOrders(data || []);
     } catch (error) {
-      console.error("Error fetching store orders:", error);
-      toast.error("Failed to load orders");
+      console.error("Error fetching admin orders:", error);
+      toast.error("ไม่สามารถโหลดข้อมูลคำสั่งซื้อได้");
     } finally {
       setLoading(false);
     }
@@ -94,10 +98,10 @@ export default function StoreOrders() {
           setSelectedOrder({ ...selectedOrder, status: status });
       }
 
-      toast.success(`Order status updated to ${status}`);
+      toast.success(`อัปเดตสถานะเป็น ${status} เรียบร้อยแล้ว`);
     } catch (error) {
       console.error("Update error:", error);
-      toast.error("Failed to update status");
+      toast.error("เกิดข้อผิดพลาดในการอัปเดตสถานะ");
     }
   };
 
@@ -121,12 +125,12 @@ export default function StoreOrders() {
 
   return (
     <>
-      <div className="flex justify-between items-end mb-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-6 gap-2">
         <h1 className="text-2xl text-slate-500">
-            Store <span className="text-slate-800 font-bold">Orders</span>
+            Admin <span className="text-slate-800 font-bold">Orders</span>
         </h1>
         <p className="text-sm text-slate-400 font-medium">
-            Showing {currentOrders.length} of {orders.length} orders
+            แสดง {currentOrders.length} จาก {orders.length} รายการ
         </p>
       </div>
       
@@ -135,14 +139,14 @@ export default function StoreOrders() {
             <div className="flex justify-center mb-2">
                 <AlertCircle size={32} />
             </div>
-            No active orders found
+            ไม่พบรายการคำสั่งซื้อ
         </div>
       ) : (
         <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
-          <table className="w-full text-left border-collapse">
+          <table className="w-full text-left border-collapse min-w-[900px]">
             <thead className="bg-slate-50/80 text-slate-500 text-sm uppercase tracking-wider font-bold border-b border-slate-200">
               <tr>
-                {["No.", "Customer", "Total", "Payment", "Status", "Date & Time"].map((heading, i) => (
+                {["ลำดับ", "ลูกค้า", "ยอดรวม", "การชำระเงิน", "สถานะ", "วัน & เวลา"].map((heading, i) => (
                   <th key={i} className="px-6 py-4 text-slate-500">{heading}</th>
                 ))}
               </tr>
@@ -150,6 +154,7 @@ export default function StoreOrders() {
             <tbody className="divide-y divide-slate-100 text-sm">
               {currentOrders.map((order, index) => {
                 const isPaid = order.payment_status === "paid";
+                const isCancelled = order.status === "cancelled"; // ✅ เช็คสถานะยกเลิก
                 const realIndex = indexOfFirstItem + index + 1;
 
                 return (
@@ -165,7 +170,7 @@ export default function StoreOrders() {
                     <td className="px-6 py-4">
                       <div className="flex flex-col">
                         <span className="font-bold text-slate-800 text-sm leading-tight mb-0.5">
-                            {order.user?.name || "Guest"}
+                            {order.user?.name || "ลูกค้าทั่วไป"}
                         </span>
                         <span className="text-sm text-slate-400 font-medium truncate max-w-[150px]">
                             {order.user?.email}
@@ -179,17 +184,26 @@ export default function StoreOrders() {
 
                     <td className="px-6 py-4">
                         <div className="flex flex-col items-start gap-2">
+                            {/* ✅ ปรับ Logic การแสดงผล Badge */}
                             <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-black uppercase border leading-none ${
-                                isPaid
-                                  ? "bg-green-50 text-green-600 border-green-100"
-                                  : "bg-amber-50 text-amber-600 border-amber-100"
+                                isCancelled 
+                                    ? "bg-red-50 text-red-600 border-red-100" // สียกเลิก
+                                    : isPaid
+                                        ? "bg-green-50 text-green-600 border-green-100"
+                                        : "bg-amber-50 text-amber-600 border-amber-100"
                               }`}
                             >
-                              <span className={`size-1.5 rounded-full ${isPaid ? "bg-green-500" : "bg-amber-500 animate-pulse"}`}></span>
-                              {order.payment_status}
+                              <span className={`size-1.5 rounded-full ${
+                                  isCancelled 
+                                    ? "bg-red-500" 
+                                    : isPaid 
+                                        ? "bg-green-500" 
+                                        : "bg-amber-500 animate-pulse"
+                              }`}></span>
+                              {isCancelled ? "ยกเลิก" : (isPaid ? "ชำระแล้ว" : "รอชำระเงิน")}
                             </span>
 
-                            {!isPaid && order.status !== 'cancelled' && (
+                            {!isPaid && !isCancelled && (
                                 <div className="w-fit">
                                     <OrderTimer createdAt={order.created_at} onExpire={fetchOrders} />
                                 </div>
@@ -198,37 +212,38 @@ export default function StoreOrders() {
                     </td>
 
                     <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
-                        <div className="relative w-full max-w-[140px] pb-4"> 
+                        <div className="relative w-full max-w-[160px] pb-4"> 
                             <select
                                 value={order.status}
-                                disabled={!isPaid} 
                                 onChange={(e) => updateOrderStatus(order.id, e.target.value)}
                                 className={`
-                                    appearance-none w-full pl-3 pr-8 py-1.5 rounded-md text-xs font-bold uppercase outline-none border transition-all cursor-pointer shadow-sm
-                                    ${!isPaid 
-                                        ? "bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed" 
-                                        : order.status === 'delivered'
-                                            ? "bg-green-50 text-green-700 border-green-200 hover:border-green-300"
-                                            : order.status === 'shipped'
-                                                ? "bg-amber-50 text-amber-700 border-amber-200 hover:border-amber-300"
-                                                : "bg-white text-slate-700 border-slate-200 hover:border-blue-300 focus:ring-2 focus:ring-blue-100"
+                                    appearance-none w-full pl-3 pr-8 py-1.5 rounded-md text-xs font-bold outline-none border transition-all cursor-pointer shadow-sm
+                                    ${order.status === 'cancelled'
+                                        ? "bg-red-50 text-red-700 border-red-200"
+                                        : !isPaid 
+                                            ? "bg-slate-50 text-slate-400 border-slate-100" 
+                                            : order.status === 'delivered'
+                                                ? "bg-green-50 text-green-700 border-green-200 hover:border-green-300"
+                                                : order.status === 'shipped'
+                                                    ? "bg-amber-50 text-amber-700 border-amber-200 hover:border-amber-300"
+                                                    : "bg-white text-slate-700 border-slate-200 hover:border-blue-300 focus:ring-2 focus:ring-blue-100"
                                     }
                                 `}
                             >
-                                <option value="order_placed" hidden={isPaid ? true : false}>Placed</option>
-                                <option value="processing">Processing</option>
-                                <option value="shipped">Shipped</option>
-                                <option value="delivered">Delivered</option>
-                                <option value="cancelled">Cancelled</option>
+                                <option value="order_placed">ได้รับคำสั่งซื้อ</option>
+                                <option value="processing">กำลังดำเนินการ</option>
+                                <option value="shipped">จัดส่งแล้ว</option>
+                                <option value="delivered">จัดส่งสำเร็จ</option>
+                                <option value="cancelled">ยกเลิก</option>
                             </select>
                             
                             <div className="absolute top-1.5 right-2 flex items-center pointer-events-none">
-                                <svg className={`size-3 ${!isPaid ? "text-slate-300" : "text-slate-500"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7" /></svg>
+                                <svg className={`size-3 ${order.status === 'cancelled' ? "text-red-300" : "text-slate-400"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7" /></svg>
                             </div>
 
-                            {!isPaid && (
-                                <div className="absolute top-full left-0  text-[10px] text-red-400 font-bold tracking-wide pl-1 uppercase">
-                                    Wait Payment
+                            {!isPaid && !isCancelled && (
+                                <div className="absolute top-full left-0 text-[10px] text-red-400 font-bold tracking-wide pl-1 uppercase">
+                                    รอการชำระเงิน
                                 </div>
                             )}
                         </div>
@@ -266,7 +281,7 @@ export default function StoreOrders() {
             </button>
             
             <span className="text-sm font-bold text-slate-600 px-4 bg-white border border-slate-100 rounded-md py-2 shadow-sm">
-                Page {currentPage} of {totalPages}
+                หน้า {currentPage} จาก {totalPages}
             </span>
 
             <button 
@@ -283,32 +298,37 @@ export default function StoreOrders() {
       {isModalOpen && selectedOrder && (
         <div
           onClick={closeModal}
-          className="fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-50 animate-in fade-in duration-200"
+          className="fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-50 animate-in fade-in duration-200 p-4"
         >
           <div
             onClick={(e) => e.stopPropagation()}
             className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-8 relative animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto"
           >
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-2">
               <div>
-                <h2 className="text-2xl font-bold text-slate-900">Order Details</h2>
+                <h2 className="text-2xl font-bold text-slate-900">รายละเอียดคำสั่งซื้อ</h2>
                 <p className="text-sm text-slate-400 mt-1 flex items-center gap-1">
-                  <Clock size={14} /> Ordered on {new Date(selectedOrder.created_at).toLocaleString("th-TH")}
+                  <Clock size={14} /> สั่งซื้อเมื่อ {new Date(selectedOrder.created_at).toLocaleString("th-TH")}
                 </p>
               </div>
-              <div className={`px-3 py-1 rounded-full text-sm font-bold uppercase ${selectedOrder.status === "delivered" ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-600"}`}>
-                {selectedOrder.status}
+              <div className={`px-3 py-1 rounded-full text-sm font-bold uppercase ${selectedOrder.status === "delivered" ? "bg-green-100 text-green-700" : selectedOrder.status === 'cancelled' ? "bg-red-100 text-red-700" : "bg-slate-100 text-slate-600"}`}>
+                {selectedOrder.status === 'order_placed' && 'ได้รับคำสั่งซื้อ'}
+                {selectedOrder.status === 'processing' && 'กำลังดำเนินการ'}
+                {selectedOrder.status === 'shipped' && 'จัดส่งแล้ว'}
+                {selectedOrder.status === 'delivered' && 'จัดส่งสำเร็จ'}
+                {selectedOrder.status === 'cancelled' && 'ยกเลิก'}
+                {!['order_placed', 'processing', 'shipped', 'delivered', 'cancelled'].includes(selectedOrder.status) && selectedOrder.status}
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-6 mb-8 bg-slate-50 p-6 rounded-xl border border-slate-100">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8 bg-slate-50 p-6 rounded-xl border border-slate-100">
               <div>
-                <h3 className="text-xs font-bold text-slate-400 uppercase mb-2">Customer</h3>
+                <h3 className="text-xs font-bold text-slate-400 uppercase mb-2">ข้อมูลลูกค้า</h3>
                 <p className="font-bold text-slate-800 text-sm">{selectedOrder.user?.name}</p>
                 <p className="text-sm text-slate-600">{selectedOrder.user?.email}</p>
               </div>
               <div>
-                <h3 className="text-xs font-bold text-slate-400 uppercase mb-2">Shipping Address</h3>
+                <h3 className="text-xs font-bold text-slate-400 uppercase mb-2">ที่อยู่จัดส่ง</h3>
                 <p className="font-bold text-slate-800 text-sm">{selectedOrder.address?.receiver_name}</p>
                 <p className="text-sm text-slate-600">{selectedOrder.address?.detail}, {selectedOrder.address?.sub_district}</p>
                 <p className="text-sm text-slate-600">{selectedOrder.address?.province}, {selectedOrder.address?.postal_code}</p>
@@ -316,10 +336,9 @@ export default function StoreOrders() {
               </div>
             </div>
 
-            <h3 className="font-bold text-slate-800 mb-4">Items Ordered</h3>
+            <h3 className="font-bold text-slate-800 mb-4">รายการสินค้า</h3>
             <div className="space-y-3 mb-8">
               {selectedOrder.order_items?.map((item, i) => {
-                // ✅ Logic เช็คราคาลด: ถ้าราคาที่ซื้อ < ราคาปัจจุบัน แสดงว่าเป็นสินค้าลดราคา
                 const isDiscounted = item.product?.price && item.price_at_time < item.product.price;
 
                 return (
@@ -345,25 +364,47 @@ export default function StoreOrders() {
                             ${item.product?.price?.toLocaleString()}
                         </p>
                     )}
-                    <p className="text-sm text-slate-500">Qty: {item.quantity}</p>
+                    <p className="text-sm text-slate-500">จำนวน: {item.quantity}</p>
                   </div>
                 </div>
               )})}
             </div>
 
+            {/* ✅ ปรับ Logic การแสดงสถานะการชำระเงินใน Modal */}
             <div className="flex justify-between items-center pt-6 border-t border-slate-100">
               <div>
-                <p className="text-sm text-slate-400">Payment Status</p>
-                <p className={`font-bold text-sm ${selectedOrder.payment_status === "paid" ? "text-green-600" : "text-slate-600"}`}>
-                  {selectedOrder.payment_status?.toUpperCase() || "PENDING"}
+                <p className="text-sm text-slate-400">สถานะการชำระเงิน</p>
+                <p className={`font-bold text-sm ${
+                    selectedOrder.status === 'cancelled' 
+                    ? "text-red-600" 
+                    : selectedOrder.payment_status === "paid" 
+                        ? "text-green-600" 
+                        : "text-slate-600"
+                }`}>
+                  {selectedOrder.status === 'cancelled' 
+                    ? "ยกเลิก" 
+                    : selectedOrder.payment_status === "paid" 
+                        ? "ชำระเงินแล้ว" 
+                        : "รอชำระเงิน"
+                  }
                 </p>
               </div>
               <div className="text-right">
-                {selectedOrder.discount_amount > 0 && (
-                    <p className="text-xs text-green-600 mb-1">Discount: -${selectedOrder.discount_amount.toLocaleString()}</p>
+                {selectedOrder.discount_amount > 0 ? (
+                    <>
+                        <p className="text-xs text-slate-400 line-through mb-1">
+                            ${((selectedOrder.total_amount || 0) + (selectedOrder.discount_amount || 0)).toLocaleString()}
+                        </p>
+                        <p className="text-xs text-green-600 mb-1">ส่วนลด: -${selectedOrder.discount_amount.toLocaleString()}</p>
+                        <p className="text-sm text-slate-400">ยอดรวมสุทธิ</p>
+                        <p className="text-2xl font-black text-red-600">${selectedOrder.total_amount?.toLocaleString()}</p>
+                    </>
+                ) : (
+                    <>
+                         <p className="text-sm text-slate-400">ยอดรวมสุทธิ</p>
+                         <p className="text-2xl font-black text-slate-900">${selectedOrder.total_amount?.toLocaleString()}</p>
+                    </>
                 )}
-                <p className="text-sm text-slate-400">Total Amount</p>
-                <p className="text-2xl font-black text-slate-900">${selectedOrder.total_amount?.toLocaleString()}</p>
               </div>
             </div>
 

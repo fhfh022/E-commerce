@@ -8,9 +8,10 @@ import {
   ClipboardList,
   Package2,
   Heart,
-  Loader2,
+  Tag,
   Sparkles,
   MessageCircleMore,
+  Home,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -110,16 +111,16 @@ const Navbar = () => {
               className="hidden items-center gap-4 text-slate-600 md:flex lg:gap-8"
             >
               <Link href="/" className="transition hover:text-green-600">
-                Home
+                หน้าหลัก
               </Link>
               <Link href="/shop" className="transition hover:text-green-600">
-                Shop
+                สินค้า
               </Link>
               <Link
                 href="/promotions"
                 className="transition hover:text-green-600"
               >
-                Promotions
+                โปรโมชั่น
               </Link>
 
               {/* AI Button */}
@@ -144,7 +145,7 @@ const Navbar = () => {
                   <input
                     className="w-full bg-transparent outline-none placeholder-slate-600"
                     type="text"
-                    placeholder="Search name, brand, or model..." 
+                    placeholder="ค้นหาสินค้า..." 
                     value={search}
                     onFocus={() => setIsSearchOpen(true)}
                     onBlur={() => setTimeout(() => setIsSearchOpen(false), 200)}
@@ -178,7 +179,7 @@ const Navbar = () => {
                         onMouseDown={handleSearch}
                         className="px-4 py-2 text-center text-xs bg-slate-50 text-slate-500 border-t hover:bg-slate-100 rounded-b-lg cursor-pointer transition font-medium"
                       >
-                        View all results ({products.length})
+                        ดูผลลัพธ์ทั้งหมด ({products.length})
                       </div>
                     </div>
                   )}
@@ -194,7 +195,7 @@ const Navbar = () => {
                   }
                 }}
                 className="relative text-slate-600 transition hover:text-green-600 focus:outline-none hover:bg-slate-50 p-2 rounded-full"
-                title="My Favorites"
+                title="สินค้าที่ชอบ"
               >
                 <Heart size={22} />
                 {favoriteCount > 0 && (
@@ -224,19 +225,19 @@ const Navbar = () => {
                   onClick={openSignIn}
                   className="px-6 py-2 bg-indigo-500 rounded-full text-white text-sm font-medium transition hover:bg-indigo-600 shadow-md hover:shadow-lg active:scale-95"
                 >
-                  Login
+                  เข้าสู่ระบบ
                 </button>
               ) : (
                 <UserButton>
                   <UserButton.MenuItems>
                     <UserButton.Action
                       labelIcon={<PackageIcon size={16} />}
-                      label="My Orders"
+                      label="คำสั่งซื้อของฉัน"
                       onClick={() => router.push("/orders")}
                     />
                     <UserButton.Action
                       labelIcon={<MessageCircleMore size={16} />}
-                      label="Chat"
+                      label="แชทกับเรา"
                       onClick={() => router.push("/chat")}
                     />
 
@@ -301,33 +302,34 @@ const Navbar = () => {
             <Link
               href="/"
               onClick={() => setIsMenuOpen(false)}
-              className="transition hover:text-green-600 py-2 border-b border-slate-50"
+              className="flex items-center gap-2 transition hover:text-green-600 py-2 border-b border-slate-50"
             >
-              Home
+              <Home size={18} />หน้าหลัก
+              
             </Link>
             <Link
               href="/shop"
               onClick={() => setIsMenuOpen(false)}
-              className="transition hover:text-green-600 py-2 border-b border-slate-50"
+              className="flex items-center gap-2 transition hover:text-green-600 py-2 border-b border-slate-50"
             >
-              Shop
+              <PackageIcon size={18} />สินค้า
             </Link>
             <Link
               href="/promotions"
               onClick={() => setIsMenuOpen(false)}
-              className="transition hover:text-green-600 py-2 border-b border-slate-50"
+              className="flex items-center gap-2 transition hover:text-green-600 py-2 border-b border-slate-50"
             >
-              Promotions
+              <Tag size={18} />โปรโมชัน
             </Link>
             <Link
               href="/favorites"
               onClick={() => setIsMenuOpen(false)}
               className="flex items-center gap-2 transition hover:text-green-600 py-2 border-b border-slate-50"
             >
-              <Heart size={18} /> Favorites{" "}
+              <Heart size={18} /> รายการโปรด{" "}
               {favoriteCount > 0 && (
                 <span className="text-xs text-red-500 font-semibold bg-red-50 px-2 py-0.5 rounded-full">
-                  {favoriteCount} items
+                  {favoriteCount} จำนวน
                 </span>
               )}
             </Link>
@@ -338,7 +340,7 @@ const Navbar = () => {
               className="group flex items-center justify-center w-full gap-2 px-3 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-xl text-sm font-bold shadow-md active:scale-95 transition-all mt-2 hover:shadow-indigo-200 animate-pulse hover:animate-none"
             >
               <Sparkles size={18} />
-              Ask PRT Assistant
+              ถาม PRT Assistant
             </button>
 
             <form
@@ -363,7 +365,7 @@ const Navbar = () => {
                 onClick={openSignIn}
                 className="w-full py-3 bg-indigo-500 rounded-xl text-white text-center mt-2 transition hover:bg-indigo-600 font-medium shadow-md"
               >
-                Login / Sign Up
+                เข้าสู่ระบบ / สมัครสมาชิก
               </button>
             ) : (
               <div className="mt-2 pt-4 border-t border-slate-100">
@@ -373,7 +375,7 @@ const Navbar = () => {
                     <span className="font-bold text-slate-800 text-sm">
                       {user.fullName || user.username}
                     </span>
-                    <span className="text-xs text-slate-400">View Account</span>
+                    <span className="text-xs text-slate-400">ดูโปรไฟล์</span>
                   </div>
                 </div>
 
@@ -384,7 +386,7 @@ const Navbar = () => {
                     className="flex flex-col items-center justify-center gap-1 py-3 px-2 bg-white border border-slate-100 rounded-xl shadow-sm hover:border-indigo-100 hover:text-indigo-600 transition"
                   >
                     <PackageIcon size={20} />{" "}
-                    <span className="text-xs font-medium">Orders</span>
+                    <span className="text-xs font-medium">คำสั่งซื้อของฉัน</span>
                   </Link>
 
                   <Link
@@ -393,7 +395,7 @@ const Navbar = () => {
                     className="flex flex-col items-center justify-center gap-1 py-3 px-2 bg-white border border-slate-100 rounded-xl shadow-sm hover:border-indigo-100 hover:text-indigo-600 transition"
                   >
                     <MessageCircleMore size={20} />{" "}
-                    <span className="text-xs font-medium">Chat</span>
+                    <span className="text-xs font-medium">แชทกับเรา</span>
                   </Link>
 
                   {isAdmin && (

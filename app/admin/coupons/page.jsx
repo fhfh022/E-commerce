@@ -36,7 +36,7 @@ export default function AdminCoupons() {
       setCoupons(data || []);
     } catch (error) {
       console.error("Error fetching coupons:", error);
-      toast.error("Failed to load coupons");
+      toast.error("ไม่สามารถโหลดข้อมูลคูปองได้");
     } finally {
       setIsLoading(false);
     }
@@ -52,7 +52,7 @@ export default function AdminCoupons() {
     try {
       // 1. ตรวจสอบค่าว่าง
       if (!newCoupon.discount_value || !newCoupon.quantity) {
-        throw new Error("Please enter valid Discount Value and Quantity");
+        throw new Error("กรุณาระบุมูลค่าส่วนลดและจำนวนสิทธิ์ให้ถูกต้อง");
       }
 
       const discountVal = parseInt(newCoupon.discount_value);
@@ -60,7 +60,7 @@ export default function AdminCoupons() {
 
       // 2. ตรวจสอบว่าเป็นตัวเลขจริงหรือไม่
       if (isNaN(discountVal) || isNaN(quantityVal)) {
-        throw new Error("Discount and Quantity must be numbers");
+        throw new Error("มูลค่าส่วนลดและจำนวนต้องเป็นตัวเลขเท่านั้น");
       }
 
       const couponData = {
@@ -79,7 +79,7 @@ export default function AdminCoupons() {
 
       // 3. Validation เพิ่มเติม
       if (couponData.discount_type === 'percentage' && couponData.discount_value > 100) {
-        throw new Error("Percentage discount cannot exceed 100%");
+        throw new Error("ส่วนลดเปอร์เซ็นต์ต้องไม่เกิน 100%");
       }
 
       // 4. ส่งข้อมูลไปยัง Supabase
@@ -90,12 +90,12 @@ export default function AdminCoupons() {
         .single();
 
       if (error) {
-        if (error.code === "23505") throw new Error(`Coupon code "${couponData.code}" already exists!`);
+        if (error.code === "23505") throw new Error(`รหัสคูปอง "${couponData.code}" มีอยู่แล้วในระบบ!`);
         throw error;
       }
 
       setCoupons([data, ...coupons]);
-      toast.success("Coupon added successfully");
+      toast.success("สร้างคูปองเรียบร้อยแล้ว");
 
       // Reset Form
       setNewCoupon({
@@ -110,7 +110,7 @@ export default function AdminCoupons() {
 
     } catch (error) {
       console.error("Add error details:", JSON.stringify(error, null, 2));
-      const message = error.message || error.details || "Failed to add coupon";
+      const message = error.message || error.details || "เกิดข้อผิดพลาดในการสร้างคูปอง";
       toast.error(message);
     }
   };
@@ -134,11 +134,11 @@ export default function AdminCoupons() {
       const { error } = await supabase.from("coupons").delete().eq("id", couponToDelete.id);
       if (error) throw error;
       setCoupons(coupons.filter((c) => c.id !== couponToDelete.id));
-      toast.success(`Coupon "${couponToDelete.code}" deleted`);
+      toast.success(`ลบคูปอง "${couponToDelete.code}" เรียบร้อยแล้ว`);
       setIsDeleteModalOpen(false);
     } catch (error) {
       console.error("Delete error:", error);
-      toast.error("Failed to delete coupon");
+      toast.error("ไม่สามารถลบคูปองได้");
     } finally {
       setIsDeleting(false);
       setCouponToDelete(null);
@@ -162,16 +162,16 @@ export default function AdminCoupons() {
         )
       );
       
-      toast.success(currentStatus ? "Coupon Deactivated" : "Coupon Activated");
+      toast.success(currentStatus ? "ปิดใช้งานคูปองแล้ว" : "เปิดใช้งานคูปองแล้ว");
     } catch (error) {
       console.error("Update error:", error);
-      toast.error("Failed to update status");
+      toast.error("ไม่สามารถอัปเดตสถานะได้");
     }
   };
 
   return (
     <div className="max-w-7xl mx-auto px-6 pt-10 pb-20 text-slate-500 animate-in fade-in duration-500">
-      <PageTitle heading="Coupon Management" text="Create and manage discount codes" />
+      <PageTitle heading="จัดการคูปองส่วนลด" text="สร้างและจัดการโค้ดส่วนลดสำหรับร้านค้า" />
       
       <div className="mt-8 flex flex-col lg:flex-row items-start gap-8">
         
@@ -181,16 +181,16 @@ export default function AdminCoupons() {
             <div className="bg-blue-50 p-2.5 rounded-xl text-blue-600">
               <TicketPercent size={24} />
             </div>
-            <h2 className="text-xl font-bold text-slate-800">Add New Coupon</h2>
+            <h2 className="text-xl font-bold text-slate-800">เพิ่มคูปองใหม่</h2>
           </div>
 
           <form onSubmit={handleAddCoupon} className="flex flex-col gap-4 text-sm">
             <div>
-              <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Code</label>
+              <label className="block text-xs font-bold text-slate-400 uppercase mb-1">รหัสคูปอง (Code)</label>
               <input
                 type="text"
                 name="code"
-                placeholder="Example: SALE2024"
+                placeholder="ตัวอย่าง: SALE2024"
                 value={newCoupon.code}
                 onChange={handleChange}
                 className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-blue-500 transition font-medium uppercase"
@@ -200,23 +200,23 @@ export default function AdminCoupons() {
 
             <div className="flex gap-4">
               <div className="w-1/2">
-                 <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Type</label>
+                 <label className="block text-xs font-bold text-slate-400 uppercase mb-1">ประเภทส่วนลด</label>
                  <select 
                    name="discount_type"
                    value={newCoupon.discount_type}
                    onChange={handleChange}
                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-blue-500 transition"
                  >  
-                   <option value="percentage">Percent (%)</option>
-                   <option value="fixed">Fixed Amount (฿)</option>
+                   <option value="percentage">เปอร์เซ็นต์ (%)</option>
+                   <option value="fixed">จำนวนเงินคงที่ (฿)</option>
                  </select>
               </div>
               <div className="w-1/2">
-                <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Value</label>
+                <label className="block text-xs font-bold text-slate-400 uppercase mb-1">มูลค่าส่วนลด</label>
                 <input
                   type="number"
                   name="discount_value"
-                  placeholder={newCoupon.discount_type === 'percentage' ? "1-100" : "Amount"}
+                  placeholder={newCoupon.discount_type === 'percentage' ? "ระบุ 1-100" : "ระบุจำนวนเงิน"}
                   value={newCoupon.discount_value}
                   onChange={handleChange}
                   className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-blue-500 transition text-center font-medium"
@@ -227,11 +227,11 @@ export default function AdminCoupons() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Total Quantity</label>
+              <label className="block text-xs font-bold text-slate-400 uppercase mb-1">จำนวนสิทธิ์ทั้งหมด</label>
               <input
                 type="number"
                 name="quantity"
-                placeholder="100"
+                placeholder="เช่น 100"
                 value={newCoupon.quantity}
                 onChange={handleChange}
                 className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-blue-500 transition"
@@ -241,11 +241,11 @@ export default function AdminCoupons() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Description</label>
+              <label className="block text-xs font-bold text-slate-400 uppercase mb-1">รายละเอียด</label>
               <input
                 type="text"
                 name="description"
-                placeholder="Brief details about this discount"
+                placeholder="รายละเอียดสั้นๆ เกี่ยวกับส่วนลดนี้"
                 value={newCoupon.description}
                 onChange={handleChange}
                 className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-blue-500 transition"
@@ -254,7 +254,7 @@ export default function AdminCoupons() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Expiry Date</label>
+              <label className="block text-xs font-bold text-slate-400 uppercase mb-1">วันหมดอายุ</label>
               <input
                 type="date"
                 name="expiry_date"
@@ -275,12 +275,12 @@ export default function AdminCoupons() {
                 className="accent-blue-600 size-4 cursor-pointer"
               />
               <label htmlFor="isActive" className="cursor-pointer select-none text-slate-700 font-medium">
-                Active Coupon
+                เปิดใช้งานคูปองทันที
               </label>
             </div>
 
             <button disabled={isLoading} className="mt-2 w-full py-3 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 active:scale-95 transition shadow-lg shadow-slate-200 disabled:opacity-70">
-              Create Coupon
+              สร้างคูปอง
             </button>
           </form>
         </div>
@@ -288,12 +288,12 @@ export default function AdminCoupons() {
         {/* ---- ส่วนที่ 2: List Coupons (ด้านขวา) ---- */}
         <div className="flex-1 w-full">
           <h2 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
-            Active Coupons <span className="text-xs bg-slate-100 text-slate-500 px-2 py-1 rounded-full">{coupons.length}</span>
+            คูปองที่ใช้งานอยู่ <span className="text-xs bg-slate-100 text-slate-500 px-2 py-1 rounded-full">{coupons.length}</span>
           </h2>
 
           {isLoading ? (
             <div className="text-center py-10 flex items-center justify-center gap-2 text-slate-400">
-                <Loader2 size={20} className="animate-spin" /> Loading coupons...
+                <Loader2 size={20} className="animate-spin" /> กำลังโหลดข้อมูล...
             </div>
           ) : (
             <div className="max-w-[calc(100vw-3rem)] lg:max-w-none bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
@@ -301,19 +301,19 @@ export default function AdminCoupons() {
                 <table className="w-full text-left text-sm whitespace-nowrap">
                   <thead className="bg-slate-50 border-b border-slate-100 text-xs uppercase font-bold text-slate-400">
                     <tr>
-                      <th className="py-4 px-6">Code</th>
-                      <th className="py-4 px-6">Description</th>
-                      <th className="py-4 px-6 text-center">Discount</th>
-                      <th className="py-4 px-6 text-center">Usage</th>
-                      <th className="py-4 px-6">Expires</th>
-                      <th className="py-4 px-6 text-center">Status</th>
-                      <th className="py-4 px-6 text-right">Action</th>
+                      <th className="py-4 px-6">รหัส</th>
+                      <th className="py-4 px-6">รายละเอียด</th>
+                      <th className="py-4 px-6 text-center">ส่วนลด</th>
+                      <th className="py-4 px-6 text-center">การใช้งาน</th>
+                      <th className="py-4 px-6">หมดอายุ</th>
+                      <th className="py-4 px-6 text-center">สถานะ</th>
+                      <th className="py-4 px-6 text-right">จัดการ</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {coupons.length === 0 ? (
                         <tr>
-                            <td colSpan="7" className="text-center py-8 text-slate-400">No coupons created yet.</td>
+                            <td colSpan="7" className="text-center py-8 text-slate-400">ยังไม่มีคูปองที่สร้างไว้</td>
                         </tr>
                     ) : (
                         coupons.map((coupon) => {
@@ -325,18 +325,18 @@ export default function AdminCoupons() {
                           const isExpired = today > expiryDate;
                           const isSoldOut = coupon.used_count >= coupon.quantity;
 
-                          let statusLabel = "Active";
+                          let statusLabel = "ใช้งานได้";
                           let statusColor = "bg-green-100 text-green-700";
 
                           // เรียงลำดับความสำคัญของสถานะ
                           if (!coupon.is_active) {
-                            statusLabel = "Inactive";
+                            statusLabel = "ปิดใช้งาน";
                             statusColor = "bg-slate-100 text-slate-500";
                           } else if (isExpired) {
-                            statusLabel = "Expired";
+                            statusLabel = "หมดอายุ";
                             statusColor = "bg-red-100 text-red-600";
                           } else if (isSoldOut) {
-                            statusLabel = "Sold Out";
+                            statusLabel = "สิทธิ์เต็ม";
                             statusColor = "bg-orange-100 text-orange-600";
                           }
 
@@ -378,7 +378,7 @@ export default function AdminCoupons() {
                                 </td>
 
                                 <td className="py-4 px-6 text-right">
-                                <button onClick={() => openDeleteModal(coupon)} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition" title="Delete Coupon">
+                                <button onClick={() => openDeleteModal(coupon)} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition" title="ลบคูปอง">
                                     <Trash2Icon size={18} />
                                 </button>
                                 </td>
@@ -405,11 +405,11 @@ export default function AdminCoupons() {
               </div>
 
               <h3 className="text-xl font-bold text-slate-900 mb-2">
-                Delete Coupon?
+                ยืนยันการลบคูปอง?
               </h3>
 
               <p className="text-slate-500 mb-6 text-sm md:text-base leading-relaxed">
-                Are you sure you want to delete the coupon <span className="font-bold text-slate-800">"{couponToDelete.code}"</span>? This action cannot be undone.
+                คุณแน่ใจหรือไม่ว่าต้องการลบคูปอง <span className="font-bold text-slate-800">"{couponToDelete.code}"</span>? <br/> การกระทำนี้ไม่สามารถย้อนกลับได้
               </p>
 
               <div className="flex gap-3 w-full">
@@ -418,7 +418,7 @@ export default function AdminCoupons() {
                   disabled={isDeleting}
                   className="flex-1 px-4 py-2.5 border border-slate-200 text-slate-600 rounded-xl font-bold hover:bg-slate-50 transition disabled:opacity-50"
                 >
-                  Cancel
+                  ยกเลิก
                 </button>
                 <button
                   onClick={confirmDeleteCoupon}
@@ -428,7 +428,7 @@ export default function AdminCoupons() {
                   {isDeleting ? (
                     <Loader2 size={20} className="animate-spin" />
                   ) : (
-                    "Yes, Delete"
+                    "ใช่, ลบเลย"
                   )}
                 </button>
               </div>

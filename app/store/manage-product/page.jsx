@@ -18,9 +18,10 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
+// ปรับ Label เป็นภาษาไทย (ส่วน value เก็บเป็นอังกฤษเหมือนเดิมเพื่อไม่ให้กระทบ Database)
 const CATEGORIES = [
-  { label: "Ultrabook", value: "ultrabook" },
-  { label: "Gaming", value: "gaming" },
+  { label: "อัลตร้าบุ๊ก (Ultrabook)", value: "ultrabook" },
+  { label: "เกมมิ่ง (Gaming)", value: "gaming" },
 ];
 
 const BRANDS = [
@@ -115,7 +116,7 @@ export default function StoreManageProducts() {
     const newStatus = !product.in_stock;
 
     if (newStatus && (product.stock || 0) <= 0) {
-      toast.error("Cannot enable: Out of stock! Please update quantity first.");
+      toast.error("ไม่สามารถเปิดใช้งานได้: สินค้าหมด! กรุณาเพิ่มจำนวนสต็อกก่อน");
       return;
     }
 
@@ -131,7 +132,7 @@ export default function StoreManageProducts() {
       );
       dispatch(setProduct(updatedProducts));
     } catch (error) {
-      toast.error("Failed to update status");
+      toast.error("อัปเดตสถานะไม่สำเร็จ");
     }
   };
 
@@ -154,9 +155,9 @@ export default function StoreManageProducts() {
         (p) => p.id !== productToDelete.id
       );
       dispatch(setProduct(updatedProducts));
-      toast.success("Deleted successfully");
+      toast.success("ลบสินค้าเรียบร้อยแล้ว");
     } catch (error) {
-      toast.error("Failed to delete: " + error.message);
+      toast.error("ลบสินค้าไม่สำเร็จ: " + error.message);
     } finally {
       setIsDeleting(false);
       setIsDeleteModalOpen(false);
@@ -223,10 +224,10 @@ export default function StoreManageProducts() {
       );
       dispatch(setProduct(updatedList));
 
-      toast.success("Product updated successfully");
+      toast.success("อัปเดตสินค้าเรียบร้อยแล้ว");
       setIsEditModalOpen(false);
     } catch (error) {
-      toast.error("Failed to update: " + error.message);
+      toast.error("อัปเดตไม่สำเร็จ: " + error.message);
     } finally {
       setIsUpdating(false);
     }
@@ -240,17 +241,17 @@ export default function StoreManageProducts() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-800">
-            Manage <span className="text-slate-500 font-normal">Products</span>
+            จัดการ <span className="text-slate-500 font-normal">สินค้า</span>
           </h1>
           <p className="text-sm text-slate-400 mt-1">
-            Total {filteredAndSortedProducts.length} items found
+            พบสินค้าทั้งหมด {filteredAndSortedProducts.length} รายการ
           </p>
         </div>
 
         <div className="relative w-full sm:w-72">
           <input
             type="text"
-            placeholder="Search by name, brand..."
+            placeholder="ค้นหาจาก ชื่อ, แบรนด์..."
             value={searchTerm}
             onChange={handleSearch}
             className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-blue-400 outline-none text-sm transition-all shadow-sm"
@@ -295,7 +296,7 @@ export default function StoreManageProducts() {
                 {/* Info Grid */}
                 <div className="grid grid-cols-2 gap-2 text-sm bg-slate-50 p-3 rounded-lg border border-slate-100 mb-4">
                   <div>
-                    <p className="text-xs text-slate-400">Price</p>
+                    <p className="text-xs text-slate-400">ราคา</p>
                     {isOnSale ? (
                       <div className="flex flex-col">
                         <span className="font-bold text-red-600">{currency}{Number(product.sale_price).toLocaleString()}</span>
@@ -306,7 +307,7 @@ export default function StoreManageProducts() {
                     )}
                   </div>
                   <div className="text-right">
-                    <p className="text-xs text-slate-400">Stock</p>
+                    <p className="text-xs text-slate-400">สต็อก</p>
                     <span className={`font-bold ${ (product.stock || 0) > 0 ? "text-blue-600" : "text-red-500" }`}>
                       {product.stock || 0}
                     </span>
@@ -316,7 +317,7 @@ export default function StoreManageProducts() {
                 {/* Actions */}
                 <div className="flex items-center justify-between pt-2 border-t border-slate-50">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium text-slate-500">Active:</span>
+                    <span className="text-xs font-medium text-slate-500">สถานะ:</span>
                     <label className="relative inline-flex items-center cursor-pointer">
                       <input
                         type="checkbox"
@@ -351,7 +352,7 @@ export default function StoreManageProducts() {
           })
         ) : (
           <div className="col-span-full py-12 text-center text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-300">
-            No products found matching "{searchTerm}"
+            ไม่พบสินค้าที่ตรงกับ "{searchTerm}"
           </div>
         )}
       </div>
@@ -363,22 +364,22 @@ export default function StoreManageProducts() {
             <thead className="bg-slate-50/80 border-b border-slate-200">
               <tr>
                 <th className="px-6 py-4 font-semibold text-slate-700 w-[30%]">
-                  Product
+                  สินค้า
                 </th>
                 <th className="px-6 py-4 font-semibold text-slate-700">
-                  Category
+                  หมวดหมู่
                 </th>
                 <th className="px-6 py-4 font-semibold text-slate-700 text-center">
-                  Price
+                  ราคา
                 </th>
                 <th className="px-6 py-4 font-semibold text-slate-700 text-center">
-                  Stock
+                  สต็อก
                 </th>
                 <th className="px-6 py-4 font-semibold text-slate-700 text-center">
-                  Active
+                  สถานะ
                 </th>
                 <th className="px-6 py-4 font-semibold text-slate-700 text-right">
-                  Actions
+                  จัดการ
                 </th>
               </tr>
             </thead>
@@ -508,7 +509,7 @@ export default function StoreManageProducts() {
                     colSpan="6"
                     className="px-6 py-8 text-center text-slate-400"
                   >
-                    No products found matching "{searchTerm}"
+                    ไม่พบสินค้าที่ตรงกับ "{searchTerm}"
                   </td>
                 </tr>
               )}
@@ -528,7 +529,7 @@ export default function StoreManageProducts() {
             <ChevronLeft size={20} />
           </button>
           <span className="text-sm font-medium text-slate-600 px-2">
-            Page {currentPage} of {totalPages}
+            หน้า {currentPage} จาก {totalPages}
           </span>
           <button
             onClick={() => paginate(currentPage + 1)}
@@ -549,10 +550,10 @@ export default function StoreManageProducts() {
                 <AlertTriangle size={36} />
               </div>
               <h3 className="text-2xl font-black text-slate-900">
-                Delete Product?
+                ลบสินค้า?
               </h3>
               <p className="text-slate-500 mt-2">
-                Sure you want to delete{" "}
+                คุณแน่ใจหรือไม่ว่าต้องการลบ{" "}
                 <span className="font-bold">"{productToDelete?.name}"</span>?
               </p>
               <div className="grid grid-cols-1 gap-3 w-full mt-8">
@@ -561,14 +562,14 @@ export default function StoreManageProducts() {
                   onClick={handleDeleteConfirm}
                   className="w-full py-3.5 bg-red-500 hover:bg-red-600 text-white font-bold rounded-2xl shadow-lg shadow-red-100 active:scale-95 disabled:opacity-70"
                 >
-                  {isDeleting ? "Deleting..." : "Yes, Delete it"}
+                  {isDeleting ? "กำลังลบ..." : "ยืนยันการลบ"}
                 </button>
                 <button
                   disabled={isDeleting}
                   onClick={() => setIsDeleteModalOpen(false)}
                   className="w-full py-3.5 bg-white text-slate-400 font-bold rounded-2xl hover:text-slate-600 active:scale-95"
                 >
-                  Cancel
+                  ยกเลิก
                 </button>
               </div>
             </div>
@@ -593,10 +594,10 @@ export default function StoreManageProducts() {
               </div>
               <div>
                 <h2 className="text-2xl font-bold text-slate-900">
-                  Edit Product
+                  แก้ไขสินค้า
                 </h2>
                 <p className="text-sm text-slate-500">
-                  Update detailed specifications
+                  อัปเดตรายละเอียดข้อมูลจำเพาะ
                 </p>
               </div>
             </div>
@@ -610,7 +611,7 @@ export default function StoreManageProducts() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div className="sm:col-span-2">
                   <label className="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1">
-                    Product Name
+                    ชื่อสินค้า
                   </label>
                   <input
                     name="name"
@@ -621,7 +622,7 @@ export default function StoreManageProducts() {
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1">
-                    Brand
+                    แบรนด์
                   </label>
                   <select
                     name="brand"
@@ -637,7 +638,7 @@ export default function StoreManageProducts() {
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1">
-                    Category
+                    หมวดหมู่
                   </label>
                   <select
                     name="category"
@@ -653,7 +654,7 @@ export default function StoreManageProducts() {
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1">
-                    Model
+                    รุ่น (Model)
                   </label>
                   <input
                     name="model"
@@ -664,7 +665,7 @@ export default function StoreManageProducts() {
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1">
-                    Price ({currency})
+                    ราคา ({currency})
                   </label>
                   <input
                     name="price"
@@ -676,7 +677,7 @@ export default function StoreManageProducts() {
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1">
-                    Stock Quantity
+                    จำนวนสต็อก
                   </label>
                   <input
                     name="stock"
@@ -697,10 +698,10 @@ export default function StoreManageProducts() {
                   />
                   <div>
                     <label className="font-bold text-slate-700 block">
-                      Available for Sale?
+                      วางจำหน่าย?
                     </label>
                     <p className="text-xs text-slate-400">
-                      If stock is 0, this will be automatically disabled.
+                      หากสต็อกเป็น 0 ระบบจะปิดการใช้งานอัตโนมัติ
                     </p>
                   </div>
                 </div>
@@ -710,13 +711,13 @@ export default function StoreManageProducts() {
               <div className="border-t border-slate-100 my-4 pt-4">
                 <p className="text-sm font-bold text-slate-900 mb-4 flex items-center gap-2">
                   <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>{" "}
-                  Technical Specifications
+                  ข้อมูลจำเพาะทางเทคนิค
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                   {/* Processor */}
                   <div>
                     <label className="block text-xs font-bold text-slate-400 uppercase mb-2 ml-1">
-                      CPU Model
+                      รุ่น CPU
                     </label>
                     <input
                       name="processor"
@@ -724,10 +725,10 @@ export default function StoreManageProducts() {
                       className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none text-sm"
                     />
                   </div>
-                  {/* ✅ เพิ่มช่อง CPU Detail */}
+                  {/* ✅ CPU Detail */}
                   <div className="sm:col-span-2">
                     <label className="block text-xs font-bold text-slate-400 uppercase mb-2 ml-1">
-                      CPU Detail
+                      รายละเอียด CPU
                     </label>
                     <input
                       name="processor_detail"
@@ -739,7 +740,7 @@ export default function StoreManageProducts() {
                   {/* Graphics */}
                   <div className="sm:col-span-3">
                     <label className="block text-xs font-bold text-slate-400 uppercase mb-2 ml-1">
-                      Graphics Card
+                      การ์ดจอ (Graphics)
                     </label>
                     <input
                       name="graphics"
@@ -749,10 +750,10 @@ export default function StoreManageProducts() {
                   </div>
 
                   {/* Display */}
-                  {/* ✅ เพิ่มช่อง Display Size */}
+                  {/* ✅ Display Size */}
                   <div>
                     <label className="block text-xs font-bold text-slate-400 uppercase mb-2 ml-1">
-                      Display Size
+                      ขนาดหน้าจอ
                     </label>
                     <input
                       name="display_size"
@@ -760,10 +761,10 @@ export default function StoreManageProducts() {
                       className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none text-sm"
                     />
                   </div>
-                  {/* ✅ แก้ชื่อช่อง Display Specs และ Fallback ค่าเก่า */}
+                  {/* ✅ Display Specs */}
                   <div className="sm:col-span-2">
                     <label className="block text-xs font-bold text-slate-400 uppercase mb-2 ml-1">
-                      Display Specs
+                      สเปคหน้าจอ
                     </label>
                     <input
                       name="display_specs"
@@ -788,7 +789,7 @@ export default function StoreManageProducts() {
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-slate-400 uppercase mb-2 ml-1">
-                      Storage
+                      พื้นที่เก็บข้อมูล (Storage)
                     </label>
                     <input
                       name="storage"
@@ -798,7 +799,7 @@ export default function StoreManageProducts() {
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-slate-400 uppercase mb-2 ml-1">
-                      OS
+                      ระบบปฏิบัติการ (OS)
                     </label>
                     <input
                       name="os"
@@ -808,7 +809,7 @@ export default function StoreManageProducts() {
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-slate-400 uppercase mb-2 ml-1">
-                      Ports
+                      พอร์ตเชื่อมต่อ
                     </label>
                     <input
                       name="ports"
@@ -838,7 +839,7 @@ export default function StoreManageProducts() {
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-slate-400 uppercase mb-2 ml-1">
-                      Battery
+                      แบตเตอรี่
                     </label>
                     <input
                       name="battery"
@@ -848,7 +849,7 @@ export default function StoreManageProducts() {
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-slate-400 uppercase mb-2 ml-1">
-                      Weight
+                      น้ำหนัก
                     </label>
                     <input
                       name="weight"
@@ -858,7 +859,7 @@ export default function StoreManageProducts() {
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-slate-400 uppercase mb-2 ml-1">
-                      Network
+                      เครือข่าย (Network)
                     </label>
                     <input
                       name="network"
@@ -876,14 +877,14 @@ export default function StoreManageProducts() {
                     disabled={isUpdating}
                     className="flex-1 py-4 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-2xl shadow-lg shadow-slate-200 transition active:scale-95 disabled:opacity-70"
                   >
-                    {isUpdating ? "Saving..." : "Save Update"}
+                    {isUpdating ? "กำลังบันทึก..." : "บันทึกการแก้ไข"}
                   </button>
                   <button
                     type="button"
                     onClick={() => setIsEditModalOpen(false)}
                     className="flex-1 py-4 text-slate-500 font-bold hover:bg-slate-50 rounded-2xl transition"
                   >
-                    Cancel
+                    ยกเลิก
                   </button>
                 </div>
               </div>

@@ -30,7 +30,7 @@ export default function ReceiptModal({ order, onClose }) {
         
         {/* Header */}
         <div className="flex justify-between items-center p-4 border-b border-slate-100">
-          <h3 className="font-bold text-slate-800">Receipt Details</h3>
+          <h3 className="font-bold text-slate-800">รายละเอียดใบเสร็จ</h3>
           <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition text-slate-500">
             <X size={20} />
           </button>
@@ -49,7 +49,7 @@ export default function ReceiptModal({ order, onClose }) {
                         <h1 className="text-2xl font-bold text-slate-900">PRT STORE</h1>
                     </div>
                     <p className="text-sm text-slate-500">123 IT Building, Tech Road</p>
-                    <p className="text-sm text-slate-500">Bangkok, Thailand 10110</p>
+                    <p className="text-sm text-slate-500">Loei, Thailand 42000</p>
                 </div>
                 <div className="text-right">
                     <h2 className="text-xl font-bold text-indigo-600 uppercase tracking-widest mb-1">ใบเสร็จ</h2>
@@ -71,10 +71,10 @@ export default function ReceiptModal({ order, onClose }) {
             <table className="w-full text-sm mb-8">
                 <thead>
                     <tr className="border-b-2 border-slate-100">
-                        <th className="text-left py-3 font-bold text-slate-700">Item Description</th>
-                        <th className="text-center py-3 font-bold text-slate-700 w-20">Qty</th>
-                        <th className="text-right py-3 font-bold text-slate-700 w-32">Price</th>
-                        <th className="text-right py-3 font-bold text-slate-700 w-32">Amount</th>
+                        <th className="text-left py-3 font-bold text-slate-700">รายละเอียดสินค้า</th>
+                        <th className="text-center py-3 font-bold text-slate-700 w-20">จํานวน</th>
+                        <th className="text-right py-3 font-bold text-slate-700 w-32">ราคา</th>
+                        <th className="text-right py-3 font-bold text-slate-700 w-32">จำนวนเงิน</th>
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
@@ -107,15 +107,15 @@ export default function ReceiptModal({ order, onClose }) {
                         </div>
                     )}
                     <div className="flex justify-between text-lg font-bold text-slate-900 border-t border-slate-100 pt-2 mt-2">
-                        <span>Total</span>
+                        <span>ยอดรวม</span>
                         <span>฿{order.total_amount.toLocaleString()}</span>
                     </div>
                 </div>
             </div>
 
             <div className="mt-12 text-center text-xs text-slate-400">
-                <p>Thank you for your business!</p>
-                <p className="mt-1">For support, please contact support@prtstore.com</p>
+                <p>ขอบคุณสำหรับการใช้บริการของคุณ!</p>
+                <p className="mt-1">สำหรับความช่วยเหลือ โปรดติดต่อ support@prtstore.com</p>
             </div>
           </div>
         </div>

@@ -63,7 +63,7 @@ export default function OrdersContent() {
 
   return (
     <div className="max-w-5xl mx-auto px-6 py-10 min-h-[60vh] animate-in fade-in duration-500">
-      <h1 className="text-2xl font-bold text-slate-800 mb-2">My Orders</h1>
+      <h1 className="text-2xl font-bold text-slate-800 mb-2">รายการสั่งซื้อทั้งหมด</h1>
       <p className="text-slate-500 mb-8">ประวัติการสั่งซื้อและสถานะสินค้า</p>
 
       {orders.length === 0 && !loading ? (
@@ -71,13 +71,13 @@ export default function OrdersContent() {
           <div className="bg-white p-4 rounded-full inline-block shadow-sm mb-4">
             <Package size={40} className="text-slate-300" />
           </div>
-          <h3 className="text-lg font-semibold text-slate-700">No orders found</h3>
-          <p className="text-slate-400 mb-6">Looks like you haven't placed any orders yet.</p>
+          <h3 className="text-lg font-semibold text-slate-700">ไม่พบรายการสั่งซื้อ</h3>
+          <p className="text-slate-400 mb-6">ดูเหมือนคุณจะยังไม่มีการสั่งซื้อสินค้าใดๆ ยัง</p>
           <button 
             onClick={() => router.push('/shop')}
             className="px-6 py-2.5 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition shadow-lg shadow-slate-200 font-medium"
           >
-            Start Shopping
+            เริ่มช้อปปิ้งกันเถอะ!
           </button>
         </div>
       ) : (
@@ -95,7 +95,7 @@ export default function OrdersContent() {
                 disabled={currentPage === 1}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition font-bold text-sm"
               >
-                <ChevronLeft size={16} /> Previous
+                <ChevronLeft size={16} /> ย้อนกลับ
               </button>
 
               <span className="text-sm font-medium text-slate-600 bg-slate-50 px-4 py-2 rounded-xl border border-slate-100">
@@ -107,7 +107,7 @@ export default function OrdersContent() {
                 disabled={currentPage === totalPages}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition font-bold text-sm"
               >
-                Next <ChevronRight size={16} />
+                ถัดไป <ChevronRight size={16} />
               </button>
             </div>
           )}

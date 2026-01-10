@@ -41,7 +41,7 @@ export default function Banner() {
         
         // คัดลอกรหัสคูปอง
         navigator.clipboard.writeText(coupon.code);
-        toast.success(`Coupon code "${coupon.code}" copied to clipboard!`);
+        toast.success(`คัดลอกรหัสคูปอง "${coupon.code}" แล้ว!`);
         
         // บันทึกสถานะลง localStorage เพื่อไม่ให้แบนเนอร์แสดงอีก
         localStorage.setItem('hidePromoBanner', 'true');
@@ -69,9 +69,9 @@ export default function Banner() {
                 <div className='flex items-center justify-between w-full max-w-7xl mx-auto gap-4'>
                     
                     <p className="truncate">
-                        Get <span className="font-bold text-yellow-300">{coupon.discount_percent}% OFF</span> on Your First Order! 
+                        รับส่วนลด <span className="font-bold text-yellow-300">{coupon.discount_percent}%</span> สำหรับคำสั่งซื้อแรกของคุณ! 
                         <span className="hidden sm:inline ml-1 text-white/90"> 
-                            Use code: <span className="font-mono bg-white/20 px-2 py-0.5 rounded border border-white/10">{coupon.code}</span>
+                            ใช้รหัส: <span className="font-mono bg-white/20 px-2 py-0.5 rounded border border-white/10">{coupon.code}</span>
                         </span>
                     </p>
 
@@ -81,7 +81,7 @@ export default function Banner() {
                             type="button" 
                             className="text-gray-900 bg-white px-4 sm:px-6 py-1.5 rounded-full text-[10px] sm:text-sm font-bold hover:bg-gray-100 active:scale-95 transition shadow-sm whitespace-nowrap"
                         >
-                            Claim Offer
+                            รับสิทธิ์
                         </button>
                         
                         <button 

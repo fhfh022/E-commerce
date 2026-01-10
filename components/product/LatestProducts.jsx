@@ -15,8 +15,8 @@ const LatestProducts = () => {
     return (
         <div className='px-6 my-30 max-w-6xl mx-auto'>
             <Title 
-                title='Latest Products' 
-                description={`Showing ${availableProducts.length < displayQuantity ? availableProducts.length : displayQuantity} of ${availableProducts.length} products`} 
+                title='สินค้าใหม่ล่าสุด' 
+                description={`แสดง ${availableProducts.length < displayQuantity ? availableProducts.length : displayQuantity} จาก ${availableProducts.length} สินค้า`} 
                 href='/shop' 
             />
             

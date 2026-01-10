@@ -78,9 +78,9 @@ export default function Cart() {
           .eq("user_id", user.id)
           .eq("product_id", productToDelete);
       }
-      toast.success("Item removed");
+      toast.success("สินค้าถูกลบแล้ว");
     } catch (error) {
-      toast.error("Failed to remove item");
+      toast.error("ไม่สามารถลบสินค้าได้: " + error.message);
     } finally {
       setIsDeleteModalOpen(false);
       setProductToDelete(null);
@@ -96,17 +96,16 @@ export default function Cart() {
           <ShoppingBag size={48} />
         </div>
         <h1 className="text-3xl font-bold text-slate-900 mb-2">
-            Your Cart is Empty
+          ตะกร้าของคุณยังว่างเปล่า
         </h1>
         <p className="text-slate-500 max-w-sm mb-8">
-            Looks like you haven't added any items to your cart yet. 
-            Start shopping to add some items to your cart.
+          ดูเหมือนว่าคุณยังไม่ได้เพิ่มสินค้าลงในตะกร้า เริ่มช็อปปิ้งเพื่อค้นหาสินค้าที่คุณชื่นชอบกันเถอะ!
         </p>
         <Link
           href="/shop"
           className="group flex items-center gap-2 bg-slate-900 text-white px-8 py-4 rounded-2xl font-bold hover:bg-slate-800 transition-all active:scale-95 shadow-xl shadow-slate-200"
         >
-          Go to Shop{" "}
+          ไปหน้าสินค้า{" "}
           <ArrowRight
             size={20}
             className="group-hover:translate-x-1 transition-transform"
@@ -128,18 +127,18 @@ export default function Cart() {
     <div className="min-h-screen bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
         <PageTitle
-          heading="My Cart"
-          text={`${cartArray.length} items`}
-          linkText="Add more"
+          heading="ตะกร้าสินค้า"
+          text={`${cartArray.length} รายการ`}
+          linkText="ไปหน้าสินค้า"
         />
 
         <div className="mt-6 sm:mt-10 flex flex-col lg:flex-row gap-8 lg:gap-12 items-start">
           <div className="w-full lg:flex-[2.5]">
             {/* Desktop Header */}
-            <div className="hidden sm:grid grid-cols-12 gap-4 pb-6 border-b border-slate-100 text-[11px] font-bold uppercase tracking-widest text-slate-400">
-              <div className="col-span-6">Product Information</div>
-              <div className="col-span-3 text-center">Quantity</div>
-              <div className="col-span-2 text-right">Total Price</div>
+            <div className="hidden sm:grid grid-cols-12 gap-4 pb-6 border-b border-slate-100 text-[16px] font-bold uppercase tracking-widest text-slate-400">
+              <div className="col-span-6">ข้อมูลสินค้า</div>
+              <div className="col-span-3 text-center">จํานวน</div>
+              <div className="col-span-2 text-right">ราคารวม</div>
               <div className="col-span-1"></div>
             </div>
 
@@ -205,7 +204,7 @@ export default function Cart() {
                           }}
                           className="sm:hidden mt-2.5 flex items-center gap-1.5 text-[10px] font-bold text-red-500 bg-red-50 px-2.5 py-1.5 rounded-lg active:scale-95 transition"
                         >
-                          <Trash2Icon size={12} /> Remove Item
+                          <Trash2Icon size={12} /> ลบสินค้า
                         </button>
                       </div>
                     </div>
@@ -213,14 +212,14 @@ export default function Cart() {
 
                   <div className="col-span-1 sm:col-span-3 flex flex-col items-start sm:items-center mt-2 sm:mt-0">
                     <p className="sm:hidden text-[10px] font-bold text-slate-400 uppercase mb-2 tracking-wider">
-                      Quantity
+                      จำนวน
                     </p>
                     <Counter productId={item.id} />
                   </div>
 
                   <div className="col-span-1 sm:col-span-2 text-right mt-[-40px] sm:mt-0">
                     <p className="sm:hidden text-[10px] font-bold text-slate-400 uppercase mb-1 tracking-wider">
-                      Total Price
+                      ราคารวม
                     </p>
                     {/* 🟢 ราคารวมต่อรายการ (ใช้ effectivePrice คูณจำนวน) */}
                     <span className={`font-black text-base sm:text-lg ${item.isOnSale ? 'text-red-600' : 'text-slate-900'}`}>
@@ -259,24 +258,23 @@ export default function Cart() {
                 <AlertTriangle size={36} />
               </div>
               <h3 className="text-2xl font-black text-slate-900">
-                Remove Item?
+                ยืนยันการลบสินค้า?
               </h3>
               <p className="text-slate-500 mt-2 leading-relaxed">
-                Are you sure you want to remove this item from your cart? This
-                action cannot be undone.
+                คุณแน่ใจหรือไม่ว่าต้องการลบสินค้านี้ออกจากตะกร้า? การดำเนินการนี้ไม่สามารถย้อนกลับได้.
               </p>
               <div className="grid grid-cols-1 gap-3 w-full mt-10">
                 <button
                   onClick={handleDeleteItem}
                   className="w-full py-4 bg-red-500 hover:bg-red-600 text-white font-bold rounded-2xl transition-all shadow-lg shadow-red-100 active:scale-95"
                 >
-                    Yes, Remove
+                  ลบสินค้า
                 </button>
                 <button
                   onClick={() => setIsDeleteModalOpen(false)}
                   className="w-full py-4 bg-white text-slate-400 font-bold rounded-2xl hover:text-slate-600 transition-all active:scale-95"
                 >
-                 Cancel
+                  ยกเลิก
                 </button>
               </div>
             </div>

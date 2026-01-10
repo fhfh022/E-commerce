@@ -43,7 +43,7 @@ export default function RatingModal({
     e.preventDefault();
 
     if (rating === 0) {
-      toast.error("Please select a star rating");
+      toast.error("กรุณาให้คะแนนก่อนส่งรีวิว");
       return;
     }
 
@@ -83,7 +83,7 @@ export default function RatingModal({
 
       if (error) throw error;
 
-      toast.success(existingReview ? "Review updated!" : "Review submitted!");
+      toast.success(existingReview ? "รีวิวถูกอัปเดตแล้ว!" : "รีวิวถูกส่งแล้ว!");
       
       // ✅ แจ้ง Parent ว่าเซฟเสร็จแล้วนะ ให้ดึงข้อมูลใหม่ด้วย
       if(onReviewSaved) onReviewSaved();
@@ -92,7 +92,7 @@ export default function RatingModal({
 
     } catch (error) {
       console.error("Submit review error:", error);
-      toast.error(error.message || "Failed to submit review");
+      toast.error(error.message || "เกิดข้อผิดพลาดในการส่งรีวิว");
     } finally {
       setIsSubmitting(false);
     }
@@ -104,10 +104,10 @@ export default function RatingModal({
         
         <div className="text-center mb-6">
             <h3 className="text-xl font-bold text-slate-800">
-                {existingReview ? "Edit Review" : "Rate Product"}
+                {existingReview ? "แก้ไขรีวิว" : "ให้คะแนนสินค้า"}
             </h3>
             <p className="text-sm text-slate-500 mt-1">
-                {existingReview ? "Update your experience" : "How was your experience?"}
+                {existingReview ? "อัปเดตประสบการณ์ของคุณ" : "ประสบการณ์ของคุณเป็นอย่างไร?"}
             </p>
         </div>
 
@@ -150,7 +150,7 @@ export default function RatingModal({
             </div>
             
             <div className="mb-6">
-                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Comment (Optional)</label>
+                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">ความคิดเห็น (ไม่บังคับ)</label>
                 <textarea
                     rows="3"
                     className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-400 transition text-sm resize-none"
@@ -167,7 +167,7 @@ export default function RatingModal({
                     disabled={isSubmitting}
                     className="flex-1 py-2.5 border border-slate-200 text-slate-600 rounded-xl font-bold hover:bg-slate-50 transition text-sm"
                 >
-                    Cancel
+                   ยกเลิก
                 </button>
                 <button
                     type="submit"
@@ -177,7 +177,7 @@ export default function RatingModal({
                     {isSubmitting ? (
                         <> <Loader2 size={16} className="animate-spin" /> {existingReview ? "Updating..." : "Submitting..."} </>
                     ) : (
-                        existingReview ? "Update Review" : "Submit Review"
+                        existingReview ? "อัพเดตรีวิว" : "ส่งรีวิว"
                     )}
                 </button>
             </div>

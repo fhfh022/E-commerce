@@ -29,16 +29,16 @@ export default function Dashboard() {
         ratings: [],
     })
 
-    // ✅ State สำหรับ Modal
+    // State สำหรับ Modal
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
     const [reviewToDelete, setReviewToDelete] = useState(null)
     const [isDeleting, setIsDeleting] = useState(false)
 
     const dashboardCardsData = [
-        { title: 'Total Products', value: dashboardData.totalProducts, icon: ShoppingBasketIcon },
-        { title: 'Total Earnings', value: currency + dashboardData.totalEarnings.toLocaleString(), icon: CircleDollarSignIcon },
-        { title: 'Total Orders', value: dashboardData.totalOrders, icon: TagsIcon },
-        { title: 'Total Ratings', value: dashboardData.totalRatingsCount, icon: StarIcon },
+        { title: 'สินค้าทั้งหมด', value: dashboardData.totalProducts, icon: ShoppingBasketIcon },
+        { title: 'รายได้ทั้งหมด', value: currency + dashboardData.totalEarnings.toLocaleString(), icon: CircleDollarSignIcon },
+        { title: 'คำสั่งซื้อทั้งหมด', value: dashboardData.totalOrders, icon: TagsIcon },
+        { title: 'รีวิวทั้งหมด', value: dashboardData.totalRatingsCount, icon: StarIcon },
     ]
 
     const fetchDashboardData = async () => {
@@ -69,9 +69,10 @@ export default function Dashboard() {
                 .select(`
                     *,
                     user:users(name, avatar), 
-                    product:products(id, name, category)
+                    product:products(id, name, category, model) 
                 `, { count: 'exact' })
                 .order('created_at', { ascending: false })
+                // ^ เพิ่ม model ใน select ด้วยนะครับ (product:products(...))
 
             if (productError || orderError || earningsError || reviewError) throw new Error("Failed to fetch data")
 
@@ -85,7 +86,7 @@ export default function Dashboard() {
 
         } catch (error) {
             console.error("Dashboard Error:", error)
-            toast.error("Failed to load dashboard data")
+            toast.error("ไม่สามารถโหลดข้อมูลแดชบอร์ดได้")
         } finally {
             setLoading(false)
         }
@@ -95,13 +96,21 @@ export default function Dashboard() {
         fetchDashboardData()
     }, [])
 
-    // ✅ 1. เปิด Modal เพื่อยืนยัน
     const openDeleteModal = (review) => {
         setReviewToDelete(review)
         setIsDeleteModalOpen(true)
     }
 
-    // ✅ 2. สั่งลบข้อมูลจริงๆ เมื่อกดยืนยันใน Modal
+    const formatDateTH = (dateString) => {
+        if (!dateString) return "-";
+        const date = new Date(dateString);
+        return date.toLocaleDateString("th-TH", {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+        });
+    };
+
     const handleDeleteConfirm = async () => {
         if (!reviewToDelete) return
 
@@ -114,20 +123,19 @@ export default function Dashboard() {
 
             if (error) throw error
 
-            // อัปเดต UI ทันทีโดยไม่ต้องโหลดใหม่
             setDashboardData(prev => ({
                 ...prev,
                 totalRatingsCount: prev.totalRatingsCount - 1,
                 ratings: prev.ratings.filter(r => r.id !== reviewToDelete.id)
             }))
 
-            toast.success("Review deleted successfully")
+            toast.success("ลบรีวิวเรียบร้อยแล้ว")
             setIsDeleteModalOpen(false)
             setReviewToDelete(null)
 
         } catch (error) {
             console.error("Delete Error:", error)
-            toast.error("Failed to delete review")
+            toast.error("เกิดข้อผิดพลาดในการลบรีวิว")
         } finally {
             setIsDeleting(false)
         }
@@ -137,7 +145,7 @@ export default function Dashboard() {
 
     return (
         <div className="text-slate-500 mb-28 relative">
-            <h1 className="text-2xl">Seller <span className="text-slate-800 font-medium">Dashboard</span></h1>
+            <h1 className="text-2xl">Store <span className="text-slate-800 font-medium">Dashboard</span></h1>
 
             {/* Dashboard Stats Cards */}
             <div className="flex flex-wrap gap-5 my-10 mt-4">
@@ -154,20 +162,19 @@ export default function Dashboard() {
                 }
             </div>
 
-            <h2 className="text-xl font-bold text-slate-800 mb-4">Latest Reviews</h2>
+            <h2 className="text-xl font-bold text-slate-800 mb-4">รีวิวทั้งหมด</h2>
 
             <div className="mt-5 space-y-4">
                 {dashboardData.ratings.length === 0 ? (
-                     <div className="text-center py-10 bg-slate-50 rounded-lg text-slate-400">No reviews yet</div>
+                     <div className="text-center py-10 bg-slate-50 rounded-lg text-slate-400">ยังไม่มีรีวิวในขณะนี้</div>
                 ) : (
                     dashboardData.ratings.map((review, index) => (
                         <div key={index} className="relative group flex max-sm:flex-col gap-5 sm:items-center justify-between p-6 border border-slate-200 rounded-xl bg-white shadow-sm hover:border-red-200 transition-colors max-w-4xl">
                             
-                            {/* ✅ ปุ่มลบ (เรียก Modal) */}
                             <button 
                                 onClick={() => openDeleteModal(review)}
                                 className="absolute -top-2 -right-2 p-2 bg-white border border-red-100 text-red-500 rounded-full shadow-sm hover:bg-red-50 hover:scale-110 transition-all opacity-0 group-hover:opacity-100 z-10"
-                                title="Delete Review"
+                                title="ลบรีวิว"
                             >
                                 <Trash2Icon size={16} />
                             </button>
@@ -189,8 +196,8 @@ export default function Dashboard() {
                                     )}
                                     
                                     <div>
-                                        <p className="font-medium text-slate-800">{review.user?.name || "Anonymous"}</p>
-                                        <p className="font-light text-xs text-slate-400">{new Date(review.created_at).toLocaleDateString()}</p>
+                                        <p className="font-medium text-slate-800">{review.user?.name || "ไม่ระบุตัวตน"}</p>
+                                        <p className="font-light text-xs text-slate-400">{formatDateTH(review.created_at)}</p>
                                     </div>
                                 </div>
                                 <p className="mt-3 text-slate-600 max-w-lg text-sm leading-relaxed">{review.comment}</p>
@@ -199,7 +206,17 @@ export default function Dashboard() {
                             <div className="flex flex-col justify-between gap-4 sm:items-end min-w-[150px]">
                                 <div className="flex flex-col sm:items-end">
                                     <p className="text-xs text-slate-400 uppercase tracking-wide">{review.product?.category}</p>
-                                    <p className="font-bold text-slate-700 text-sm mb-1">{review.product?.name} </p>
+                                    
+                                    {/* ✅ 1. เพิ่ม Model ต่อท้ายชื่อสินค้า */}
+                                    <p className="font-bold text-slate-700 text-sm mb-1 flex items-center gap-1">
+                                        {review.product?.name}
+                                        {review.product?.model && (
+                                            <span className="text-xs text-slate-400 font-normal">
+                                                ({review.product.model})
+                                            </span>
+                                        )}
+                                    </p>
+
                                     <div className='flex items-center gap-0.5'>
                                         {Array(5).fill('').map((_, idx) => (
                                             <StarIcon 
@@ -214,7 +231,7 @@ export default function Dashboard() {
                                     onClick={() => router.push(`/product/${review.product?.id}`)} 
                                     className="text-xs font-bold text-blue-600 bg-blue-50 px-4 py-2 rounded-lg hover:bg-blue-100 transition-all self-start sm:self-end"
                                 >
-                                    View Product
+                                    ดูสินค้า
                                 </button>
                             </div>
                         </div>
@@ -222,7 +239,7 @@ export default function Dashboard() {
                 )}
             </div>
 
-            {/* ✅ Delete Confirmation Modal */}
+            {/* ✅ 2. ปรับ UI Modal เป็นภาษาไทย */}
             {isDeleteModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
                     <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200 relative">
@@ -238,9 +255,9 @@ export default function Dashboard() {
                             <div className="size-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-4">
                                 <AlertTriangle size={32} />
                             </div>
-                            <h3 className="text-xl font-bold text-slate-900">Delete Review?</h3>
+                            <h3 className="text-xl font-bold text-slate-900">ยืนยันการลบรีวิว?</h3>
                             <p className="text-sm text-slate-500 mt-2 mb-6">
-                                Are you sure you want to delete this review from <span className="font-bold text-slate-800">{reviewToDelete?.user?.name}</span>? This action cannot be undone.
+                                คุณต้องการลบรีวิวของ <span className="font-bold text-slate-800">{reviewToDelete?.user?.name}</span> ใช่หรือไม่? <br/> เมื่อลบแล้วจะไม่สามารถกู้คืนได้
                             </p>
                             
                             <div className="flex gap-3 w-full">
@@ -249,7 +266,7 @@ export default function Dashboard() {
                                     className="flex-1 py-2.5 bg-white border border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-50 transition"
                                     disabled={isDeleting}
                                 >
-                                    Cancel
+                                    ยกเลิก
                                 </button>
                                 <button 
                                     onClick={handleDeleteConfirm} 
@@ -257,10 +274,10 @@ export default function Dashboard() {
                                     disabled={isDeleting}
                                 >
                                     {isDeleting ? (
-                                        <>Deleting...</>
+                                        <>กำลังลบ...</>
                                     ) : (
                                         <>
-                                            <Trash2Icon size={16} /> Delete
+                                            <Trash2Icon size={16} /> ยืนยัน
                                         </>
                                     )}
                                 </button>

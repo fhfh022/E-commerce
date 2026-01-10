@@ -108,7 +108,7 @@ export default function OrderItem({ order }) {
             }
         } catch (error) {
             console.error("Payment Error:", error);
-            toast.error("Failed to initialize payment");
+            toast.error("ไม่สามารถเริ่มต้นการชำระเงินได้");
             setIsActionLoading(false);
             setShowPayModal(false);
         }
@@ -123,10 +123,10 @@ export default function OrderItem({ order }) {
                 .eq('id', order.id);
 
             if (error) throw error;
-            toast.success("Order cancelled");
+            toast.success("คำสั่งซื้อถูกยกเลิก");
             window.location.reload();
         } catch (error) {
-            toast.error("Failed to cancel");
+            toast.error("ไม่สามารถยกเลิกคำสั่งซื้อได้");
             setIsActionLoading(false);
         }
     };
@@ -183,11 +183,11 @@ export default function OrderItem({ order }) {
                             <p className="text-sm font-mono text-slate-700 font-medium">#{order.id.slice(0, 8).toUpperCase()}</p>
                         </div>
                         <div>
-                            <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Date</p>
+                            <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">วันที่สั่งซื้อ</p>
                             <p className="text-sm text-slate-700">{formatDateTH(order.created_at)}</p>
                         </div>
                         <div>
-                            <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Total</p>
+                            <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">ยอดรวม</p>
                             {order.discount_amount > 0 ? (
                                 <div className="flex flex-col items-start leading-none">
                                     <span className="text-[10px] text-slate-400 line-through">
@@ -215,7 +215,7 @@ export default function OrderItem({ order }) {
                                 onClick={() => setShowReceipt(true)}
                                 className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 text-slate-600 rounded-lg text-xs font-bold hover:border-indigo-300 hover:text-indigo-600 transition shadow-sm active:scale-95"
                             >
-                                <FileText size={14} /> Receipt
+                                <FileText size={14} /> ใบเสร็จ
                             </button>
                         )}
                     </div>
@@ -228,8 +228,8 @@ export default function OrderItem({ order }) {
                             <div className="p-1 bg-orange-100 rounded-full">
                                 <AlertTriangle size={14} />
                             </div>
-                            <span className="text-xs font-bold">Waiting for payment</span>
-                            <span className="text-xs text-orange-600 hidden sm:inline">• Please pay within 10 mins.</span>
+                            <span className="text-xs font-bold">กำลังรอการชำระเงิน</span>
+                            <span className="text-xs text-orange-600 hidden sm:inline">• กรุณาชำระเงินภายใน 10 นาที</span>
                         </div>
                         <OrderTimer createdAt={order.created_at} />
                     </div>
@@ -286,7 +286,7 @@ export default function OrderItem({ order }) {
                                                         ? "text-indigo-500 bg-indigo-50 border-indigo-100 hover:bg-indigo-100" 
                                                         : "text-slate-300 bg-slate-50 border-slate-100 hover:text-yellow-400 hover:bg-yellow-50"
                                                     }`}
-                                                    title={review ? "Edit your review" : "Rate this product"}
+                                                    title={review ? "แก้ไขรีวิว" : "ให้คะแนนสินค้า"}
                                                 >
                                                     {review ? <Edit3 size={16} /> : <Star size={16} className={review ? "fill-current" : ""} />}
                                                 </button>
@@ -295,7 +295,7 @@ export default function OrderItem({ order }) {
                                         {review && (
                                             <div className="mt-2 p-3 bg-slate-50 rounded-lg border border-slate-100 text-xs">
                                                 <div className="flex items-center gap-1 mb-1">
-                                                    <span className="font-bold text-slate-600">Your Review:</span>
+                                                    <span className="font-bold text-slate-600">รีวิวของคุณ:</span>
                                                     <div className="flex">
                                                         {[...Array(5)].map((_, i) => (
                                                             <Star key={i} size={10} className={i < review.rating ? "fill-yellow-400 text-yellow-400" : "fill-slate-200 text-slate-200"} />
@@ -321,14 +321,14 @@ export default function OrderItem({ order }) {
                             disabled={isActionLoading} 
                             className="px-4 py-2 border border-red-200 text-red-500 hover:bg-red-50 rounded-xl text-sm font-bold transition flex items-center gap-2 disabled:opacity-50"
                         >
-                            <Trash2 size={16} /> Cancel Order
+                            <Trash2 size={16} /> ยกเลิกคำสั่งซื้อ
                         </button>
                         <button 
                             onClick={() => setShowPayModal(true)} 
                             disabled={isActionLoading || isExpired}
                             className="px-6 py-2 bg-indigo-600 text-white hover:bg-indigo-700 rounded-xl text-sm font-bold shadow-md shadow-indigo-100 transition flex items-center gap-2 disabled:opacity-50 disabled:bg-slate-300 disabled:cursor-not-allowed"
                         >
-                            <CreditCard size={16} /> {isExpired ? "Expired" : "Pay Now"}
+                            <CreditCard size={16} /> {isExpired ? "หมดเวลาชำระเงิน" : "ชำระเงินตอนนี้"}
                         </button>
                     </div>
                 )}
@@ -341,14 +341,14 @@ export default function OrderItem({ order }) {
                         <div className="size-16 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
                             <CreditCard size={32} />
                         </div>
-                        <h3 className="text-xl font-bold text-slate-800">Proceed to Payment?</h3>
+                        <h3 className="text-xl font-bold text-slate-800">ยืนยันการชำระเงิน?</h3>
                         <p className="text-sm text-slate-500 mt-2 mb-6">
-                            You will be redirected to Stripe to complete your payment of <span className="font-bold text-slate-900">{currency}{order.total_amount?.toLocaleString()}</span>.
+                            คุณจะถูกเปลี่ยนเส้นทางไปยัง Stripe เพื่อชำระเงิน <span className="font-bold text-slate-900">{currency}{order.total_amount?.toLocaleString()}</span>.
                         </p>
                         <div className="flex gap-3">
-                            <button onClick={() => setShowPayModal(false)} className="flex-1 py-2.5 border border-slate-200 rounded-xl font-bold text-slate-600 hover:bg-slate-50">Cancel</button>
+                            <button onClick={() => setShowPayModal(false)} className="flex-1 py-2.5 border border-slate-200 rounded-xl font-bold text-slate-600 hover:bg-slate-50">ยกเลิก</button>
                             <button onClick={handleConfirmPayment} disabled={isActionLoading} className="flex-1 py-2.5 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 flex justify-center items-center gap-2">
-                                {isActionLoading && <Loader2 size={16} className="animate-spin" />} Pay Now
+                                {isActionLoading && <Loader2 size={16} className="animate-spin" />} ชำระเงินตอนนี้
                             </button>
                         </div>
                     </div>
@@ -361,14 +361,14 @@ export default function OrderItem({ order }) {
                         <div className="size-16 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
                             <AlertTriangle size={32} />
                         </div>
-                        <h3 className="text-xl font-bold text-slate-800">Cancel Order?</h3>
+                        <h3 className="text-xl font-bold text-slate-800">ยกเลิกคำสั่งซื้อ?</h3>
                         <p className="text-sm text-slate-500 mt-2 mb-6">
-                            Are you sure you want to cancel this order? This action cannot be undone.
+                            คุณแน่ใจหรือไม่ว่าต้องการยกเลิกคำสั่งซื้อนี้? การกระทำนี้ไม่สามารถย้อนกลับได้.
                         </p>
                         <div className="flex gap-3">
-                            <button onClick={() => setShowCancelModal(false)} className="flex-1 py-2.5 border border-slate-200 rounded-xl font-bold text-slate-600 hover:bg-slate-50">Keep Order</button>
+                            <button onClick={() => setShowCancelModal(false)} className="flex-1 py-2.5 border border-slate-200 rounded-xl font-bold text-slate-600 hover:bg-slate-50">รักษาคำสั่งซื้อไว้</button>
                             <button onClick={handleCancelOrder} disabled={isActionLoading} className="flex-1 py-2.5 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 flex justify-center items-center gap-2">
-                                {isActionLoading && <Loader2 size={16} className="animate-spin" />} Yes, Cancel
+                                {isActionLoading && <Loader2 size={16} className="animate-spin" />} ยกเลิกคำสั่งซื้อ
                             </button>
                         </div>
                     </div>

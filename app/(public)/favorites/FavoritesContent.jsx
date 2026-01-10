@@ -43,9 +43,9 @@ export default function FavoritesPage() {
   return (
     <div className="min-h-screen bg-white animate-in fade-in duration-500">
       <div className="max-w-7xl mx-auto px-6 py-10">
-        <h1 className="text-3xl font-bold text-slate-800 mb-2">My Favorites</h1>
+        <h1 className="text-3xl font-bold text-slate-800 mb-2">สินค้าโปรด</h1>
         <p className="text-slate-500 mb-8">
-          You have {favoriteProducts.length} items in your wishlist.
+          คุณมี {favoriteProducts.length} ไอเท็มในรายการโปรด
         </p>
 
         <hr className="mb-10 border-slate-200" />
@@ -74,16 +74,16 @@ export default function FavoritesPage() {
               </svg>
             </div>
             <h2 className="text-xl font-semibold text-slate-700">
-              No favorites yet
+              คุณยังไม่มีสินค้าที่ชื่นชอบ
             </h2>
             <p className="text-slate-400 mt-2">
-              Start adding some items you love!
+              เริ่มเพิ่มสินค้าที่คุณชื่นชอบเพื่อดูรายการโปรดของคุณที่นี่
             </p>
             <a
               href="/shop"
               className="mt-6 bg-slate-900 text-white px-6 py-2 rounded-md hover:bg-slate-800 transition"
             >
-              Go Shopping
+              ไปหน้าสินค้า
             </a>
           </div>
         )}

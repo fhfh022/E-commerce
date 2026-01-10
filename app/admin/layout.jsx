@@ -26,7 +26,7 @@ export default function RootAdminLayout({ children }) {
       <div className="fixed inset-0 z-[9999] bg-white flex flex-col items-center justify-center gap-4">
         <div className="w-10 h-10 border-4 border-slate-100 border-t-slate-800 rounded-full animate-spin" />
         <p className="text-slate-500 font-medium animate-pulse">
-          Checking Admin permissions...
+          กำลังตรวจสอบสิทธิ์ผู้ดูแลระบบ...
         </p>
       </div>
     );

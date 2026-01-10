@@ -55,10 +55,10 @@ export default function PromotionsPage() {
     <div className="max-w-7xl mx-auto px-6 py-10 pb-20">
       <div className="text-center mb-12">
         <h1 className="text-4xl font-black text-slate-800 mb-4">
-          Deals & Promotions
+          Deal & Promotions
         </h1>
         <p className="text-slate-500">
-          Grab the best deals and coupons before they expire!
+          เก็บข้อเสนอพิเศษและคูปองก่อนหมดอายุ!
         </p>
       </div>
 
@@ -70,7 +70,7 @@ export default function PromotionsPage() {
               <TicketPercent size={24} />
             </div>
             <h2 className="text-2xl font-bold text-slate-800">
-              Available Coupons
+              คูปองที่ใช้ได้
             </h2>
           </div>
 
@@ -105,17 +105,17 @@ export default function PromotionsPage() {
                       className="bg-white text-slate-900 px-4 py-2 rounded-lg text-sm font-bold hover:bg-yellow-400 transition"
                       disabled={!user ? true : false}
                     >
-                      COPY
+                      คัดลอกโค้ด
                     </button>
                   </div>
                   <p className="text-xs text-slate-500 mt-3 text-center">
-                    Exp:{" "}
+                    หมดอายุ:{" "}
                     {new Date(coupon.expiry_date).toLocaleDateString("th-TH", {
                       year: "numeric",
                       month: "long",
                       day: "numeric",
                     })}{" "}
-                    • Left: {coupon.quantity - coupon.used_count}
+                    • คงเหลือ: {coupon.quantity - coupon.used_count}
                   </p>
                 </div>
               </div>
@@ -132,7 +132,7 @@ export default function PromotionsPage() {
               <Tag size={24} />
             </div>
             <h2 className="text-2xl font-bold text-slate-800">
-              Flash Sale Items
+              สินค้า Flash Sale 
             </h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">

@@ -36,8 +36,8 @@ export default function HomeContent() {
             {/* 1. PROMOTION */}
             {promotionProducts.length > 0 && (
                 <ProductSlider 
-                    title="Flash Sale & Promotions" 
-                    description="Grab these deals before they are gone!"
+                    title="โปรโมชั่นและส่วนลดพิเศษ" 
+                    description="คว้าโอกาสดีๆ เหล่านี้ก่อนที่จะหมด!"
                     products={promotionProducts}
                     bgColor="bg-red-50/30"
                 />
@@ -45,26 +45,26 @@ export default function HomeContent() {
 
             {/* 2. BEST SELLING */}
             <ProductSlider 
-                title="Best Selling Products" 
-                description="Our most popular picks this week."
+                title="สินค้าขายดี" 
+                description="สินค้าที่ได้รับความนิยมสูงสุดสัปดาห์นี้"
                 products={bestSellingProducts}
             />
 
             {/* 3. GAMING LAPTOPS */}
             {gamingProducts.length > 0 && (
                 <ProductSlider 
-                    title="Gaming Beasts" 
-                    description="High performance laptops for hardcore gamers."
+                    title="เครื่องเกมมิ่งระดับตำนาน" 
+                    description="แล็ปท็อปประสิทธิภาพสูงสำหรับเกมเมอร์ตัวยง"
                     products={gamingProducts}
-                    bgColor="bg-slate-900 text-white"
+                    // bgColor="bg-slate-900 text-white"
                 />
             )}
 
             {/* 4. ULTRABOOKS */}
             {ultrabookProducts.length > 0 && (
                 <ProductSlider 
-                    title="Premium Ultrabooks" 
-                    description="Thin, light, and powerful for professionals."
+                    title="อัลตร้าบุ๊คพรีเมียม" 
+                    description="บาง เบา และทรงพลังสำหรับมืออาชีพ"
                     products={ultrabookProducts}
                     bgColor="bg-blue-50/30"
                 />

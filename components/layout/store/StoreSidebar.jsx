@@ -13,10 +13,10 @@ const StoreSidebar = () => { // นำ storeInfo ออกหากต้อง�
     const { role, name, avatar } = useSelector((state) => state.user)
 
     const sidebarLinks = [
-        { name: 'Dashboard', href: '/store', icon: HomeIcon },
-        { name: 'Add Product', href: '/store/add-product', icon: SquarePlusIcon },
-        { name: 'Manage Product', href: '/store/manage-product', icon: SquarePenIcon },
-        { name: 'Promotions', href: '/store/manage-promotions', icon: LayoutListIcon },
+        { name: 'แดชบอร์ด', href: '/store', icon: HomeIcon },
+        { name: 'เพิ่มสินค้า', href: '/store/add-product', icon: SquarePlusIcon },
+        { name: 'จัดการสินค้า', href: '/store/manage-product', icon: SquarePenIcon },
+        { name: 'โปรโมชั่น', href: '/store/manage-promotions', icon: LayoutListIcon },
     ]
 
     return (

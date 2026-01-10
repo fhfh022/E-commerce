@@ -40,18 +40,18 @@ const ProductCard = ({ product, hideLikeButton = false }) => {
           .eq("user_id", user.id);
         if (error) throw error;
         dispatch(removeFavorite(product.id));
-        toast.success("Removed from favorites");
+        toast.success("ลบออกจากรายการโปรดแล้ว");
       } else {
         const { error } = await supabase
           .from("favorites")
           .insert({ product_id: product.id, user_id: user.id });
         if (error) throw error;
         dispatch(addFavorite(product.id));
-        toast.success("Added to favorites");
+        toast.success("เพิ่มลงในรายการโปรดแล้ว");
       }
     } catch (err) {
       console.error(err);
-      toast.error("Something went wrong");
+      toast.error("เกิดข้อผิดพลาด");
     }
   };
 
@@ -146,7 +146,7 @@ const ProductCard = ({ product, hideLikeButton = false }) => {
 
           {/* Spec String */}
           <p className="text-xs text-slate-500 leading-relaxed">
-            {specString || product.description || "View details for specifications"}
+            {specString || product.description || "ดูรายละเอียดสินค้าเพิ่มเติม..."}
           </p>
 
           {/* ราคา */}

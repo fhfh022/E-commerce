@@ -3,24 +3,24 @@ import { assets } from "@/assets/assets";
 import {
   ArrowRightIcon,
   ChevronRightIcon,
-  Route,
-  Sparkles,
 } from "lucide-react";
 import Image from "next/image";
 import React, { useState, useEffect } from "react";
 import CategoriesMarquee from "../product/CategoriesMarquee";
 import Link from "next/link";
 
+// ✅ 1. ย้าย words ออกมาไว้นอก Component เพื่อแก้ Error useEffect
+const words = ["Carry.", "Trust.", "Unleash.", "Master."];
+
 const Hero = () => {
   const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || "$";
 
-  // ✅ State สำหรับ Typing Animation
-  const words = ["Carry.", "Trust.", "Love.", "Rely On."];
+  // State สำหรับ Typing Animation
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const [displayedText, setDisplayedText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // ✅ Logic การพิมพ์ตัวอักษรทีละตัว
+  // Logic การพิมพ์ตัวอักษรทีละตัว
   useEffect(() => {
     const typingSpeed = isDeleting ? 50 : 150; // พิมพ์ช้า, ลบเร็ว
     const pauseTime = 2000; // หยุดรอ 2 วินาทีก่อนลบ
@@ -44,14 +44,15 @@ const Hero = () => {
 
     const timer = setTimeout(handleTyping, typingSpeed);
     return () => clearTimeout(timer);
-  }, [displayedText, isDeleting, currentWordIndex]);
+  }, [displayedText, isDeleting, currentWordIndex]); 
 
   return (
     <div className="mx-6">
       <div className="flex max-xl:flex-col gap-8 max-w-7xl mx-auto my-10">
+        
         {/* 🟢 Left Side: Hero Banner */}
         <div className="relative flex-1 flex flex-col bg-green-50 rounded-3xl xl:min-h-100 group overflow-hidden border border-green-100 shadow-sm">
-          {/* Background Blob (Optional decoration) */}
+          {/* Background Blob */}
           <div className="absolute top-0 right-0 w-64 h-64 bg-green-200/50 rounded-full blur-3xl -z-0 translate-x-1/2 -translate-y-1/2"></div>
 
           <div className="p-5 sm:p-16 z-10">
@@ -61,7 +62,7 @@ const Hero = () => {
                 NEW
               </span>
               <span className="font-medium">
-                Free Shipping on Orders Above $50!
+                จัดส่งฟรีสำหรับคำสั่งซื้อมากกว่า ฿2,500!
               </span>
               <ChevronRightIcon className="text-green-400" size={16} />
             </div>
@@ -69,27 +70,27 @@ const Hero = () => {
             {/* 🚀 Dynamic Typing Title */}
             <h2 className="text-4xl sm:text-6xl leading-[1.1] font-bold text-slate-800 max-w-md min-h-[140px] sm:min-h-[160px]">
               Power you can <br />
-              <span className="bg-gradient-to-r from-green-600 to-emerald-400 bg-clip-text text-transparent">
+              <span
+                className={`
+            transition-all duration-300
+            ${
+              displayedText === "Master."
+                ? "text-red-600 animate-pulse drop-shadow-[0_0_10px_rgba(239,68,68,0.8)] [text-shadow:_0_0_20px_#f87171,_0_0_30px_#ef4444]"
+                : "bg-gradient-to-r from-green-600 to-emerald-400 bg-clip-text text-transparent"
+            }
+        `}
+              >
                 {displayedText}
               </span>
               <span className="ml-1 w-1 h-10 bg-slate-800 inline-block animate-pulse align-middle"></span>
             </h2>
-
-            {/* <div className="text-slate-600 text-sm font-medium mt-6">
-              <p className="uppercase tracking-widest text-xs text-slate-400 mb-1">
-                Starting from
-              </p>
-              <p className="text-3xl font-bold text-slate-800">
-                {currency}20,000
-              </p>
-            </div> */}
 
             {/* 🔥 Enhanced CTA Button */}
             <Link href="/shop">
               <button className="group relative mt-8 sm:mt-10 overflow-hidden rounded-full bg-slate-900 px-8 py-4 text-white shadow-xl shadow-green-200 transition-all hover:bg-slate-800 hover:scale-105 active:scale-95">
                 <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></div>
                 <span className="relative flex items-center gap-2 font-semibold text-sm tracking-wide">
-                  SHOP NOW{" "}
+                  ช้อปเลย{" "}
                   <ArrowRightIcon
                     size={18}
                     className="group-hover:translate-x-1 transition-transform"
@@ -106,18 +107,19 @@ const Hero = () => {
           />
         </div>
 
-        {/* 🟠 Right Side: Promo Cards */}
+        {/* 🟠 Right Side: Promo Cards (Updated Logic) */}
         <div className="flex flex-col md:flex-row xl:flex-col gap-5 w-full xl:max-w-sm text-sm text-slate-600">
-          {/* Best Products Card */}
-          <div className="flex-1 flex items-center justify-between w-full bg-orange-50 border border-orange-100 rounded-3xl p-6 px-8 group hover:shadow-lg hover:shadow-orange-100 transition-all cursor-pointer relative overflow-hidden">
+          
+          {/* ✅ Card 1: Unleash Your Productivity (แทน Best Performers) */}
+          <Link href="/collections/productivity" className="flex-1 flex items-center justify-between w-full bg-orange-50 border border-orange-100 rounded-3xl p-6 px-8 group hover:shadow-lg hover:shadow-orange-100 transition-all cursor-pointer relative overflow-hidden">
             <div className="absolute top-0 right-0 w-32 h-32 bg-orange-200/40 rounded-full blur-2xl -mr-10 -mt-10"></div>
             <div className="relative z-10">
               <p className="text-2xl font-bold text-slate-800 max-w-40 leading-tight">
-                Best <br />
-                <span className="text-orange-500">Performers</span>
+                Unleash <br />
+                <span className="text-orange-500">Productivity</span>
               </p>
               <p className="flex items-center gap-2 mt-4 text-xs font-bold uppercase tracking-wide text-orange-600 group-hover:underline decoration-2 underline-offset-4">
-                View Collection{" "}
+                Work Anywhere{" "}
                 <ArrowRightIcon
                   className="group-hover:translate-x-1 transition-all"
                   size={16}
@@ -127,20 +129,20 @@ const Hero = () => {
             <Image
               className="w-32 drop-shadow-lg group-hover:scale-110 transition-transform duration-500"
               src={assets.hero_product_img1}
-              alt="Best Product"
+              alt="Productivity"
             />
-          </div>
+          </Link>
 
-          {/* Discount Card */}
-          <div className="flex-1 flex items-center justify-between w-full bg-blue-50 border border-blue-100 rounded-3xl p-6 px-8 group hover:shadow-lg hover:shadow-blue-100 transition-all cursor-pointer relative overflow-hidden">
+          {/* ✅ Card 2: Master The Game (แทน 20% Discounts) */}
+          <Link href="/collections/gaming-pro" className="flex-1 flex items-center justify-between w-full bg-blue-50 border border-blue-100 rounded-3xl p-6 px-8 group hover:shadow-lg hover:shadow-blue-100 transition-all cursor-pointer relative overflow-hidden">
             <div className="absolute bottom-0 left-0 w-32 h-32 bg-blue-200/40 rounded-full blur-2xl -ml-10 -mb-10"></div>
             <div className="relative z-10">
               <p className="text-2xl font-bold text-slate-800 max-w-40 leading-tight">
-                20% <br />
-                <span className="text-blue-500">Discounts</span>
+                Master <br />
+                <span className="text-blue-500">The Game</span>
               </p>
               <p className="flex items-center gap-2 mt-4 text-xs font-bold uppercase tracking-wide text-blue-600 group-hover:underline decoration-2 underline-offset-4">
-                Grab Deal{" "}
+                Pro Choice{" "}
                 <ArrowRightIcon
                   className="group-hover:translate-x-1 transition-all"
                   size={16}
@@ -150,9 +152,9 @@ const Hero = () => {
             <Image
               className="w-32 drop-shadow-lg group-hover:scale-110 transition-transform duration-500"
               src={assets.hero_product_img2}
-              alt="Discount Product"
+              alt="Gaming"
             />
-          </div>
+          </Link>
         </div>
       </div>
       <CategoriesMarquee />

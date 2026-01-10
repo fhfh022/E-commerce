@@ -16,7 +16,7 @@ import { useSelector, useDispatch } from "react-redux";
 
 // กำหนด Options
 const BRAND_OPTIONS = ["Asus", "Acer", "HP", "Lenovo", "MSI", "Gigabyte"];
-const CATEGORY_OPTIONS = ["Ultrabook", "Gaming"];
+const CATEGORY_OPTIONS = [ "Gaming","Ultrabook"];
 
 function ShopContent() {
   const searchParams = useSearchParams();
@@ -320,9 +320,9 @@ function ShopContent() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 pb-6 border-b border-slate-100">
           <div>
-            <h1 className="text-2xl font-bold text-slate-800">All Products</h1>
+            <h1 className="text-2xl font-bold text-slate-800">สินค้าทั้งหมด</h1>
             <p className="text-slate-500 text-sm mt-1">
-              Found {finalFilteredProducts.length} results{" "}
+              เจอ {finalFilteredProducts.length} ผลลัพธ์{" "}
               {search && `for "${search}"`}
             </p>
           </div>
@@ -342,11 +342,11 @@ function ShopContent() {
                 onChange={(e) => setSortOrder(e.target.value)}
                 className="w-full sm:w-48 appearance-none pl-4 pr-10 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500 cursor-pointer shadow-sm hover:border-slate-300 transition-colors"
               >
-                <option value="default">Newest Arrivals</option>
-                <option value="price-asc">Price: Low - High</option>
-                <option value="price-desc">Price: High - Low</option>
-                <option value="name-asc">Name: A - Z</option>
-                <option value="name-desc">Name: Z - A</option>
+                <option value="default">สินค้าใหม่ล่าสุด</option>
+                <option value="price-asc">ราคา: ต่ำ - สูง</option>
+                <option value="price-desc">ราคา: สูง - ต่ำ</option>
+                <option value="name-asc">ชื่อ: A - Z</option>
+                <option value="name-desc">ชื่อ: Z - A</option>
               </select>
             </div>
           </div>
@@ -379,11 +379,10 @@ function ShopContent() {
                     <SlidersHorizontal size={32} />
                   </div>
                   <h3 className="text-lg font-semibold text-slate-600">
-                    No products found
+                   ไม่พบสินค้าที่ตรงกับตัวกรองของคุณ
                   </h3>
                   <p className="text-slate-400 text-sm mt-1 max-w-xs">
-                    Try adjusting your search or filter to find what you're
-                    looking for.
+                    ลองล้างตัวกรองหรือลองใช้ตัวเลือกอื่นเพื่อดูสินค้ามากขึ้น
                   </p>
                   <button
                     onClick={() => {
@@ -486,7 +485,7 @@ function ShopContent() {
                 onClick={() => setIsMobileFilterOpen(false)}
                 className="w-full py-3 bg-slate-900 text-white rounded-lg font-medium hover:bg-slate-800 active:scale-95 transition shadow-lg"
               >
-                Show Results ({finalFilteredProducts.length})
+                แสดงผลทั้งหมด ({finalFilteredProducts.length})
               </button>
             </div>
           </div>

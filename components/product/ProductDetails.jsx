@@ -89,7 +89,7 @@ const ProductDetails = ({ product }) => {
 
         if (error) throw error;
         dispatch(removeFavorite(productId));
-        toast.success("Removed from favorites");
+        toast.success("ลบออกจากสินค้าที่ชื่นชอบแล้ว");
       } else {
         const { error } = await supabase
           .from("favorites")
@@ -97,11 +97,11 @@ const ProductDetails = ({ product }) => {
 
         if (error) throw error;
         dispatch(addFavorite(productId));
-        toast.success("Added to favorites");
+        toast.success("เพิ่มไปยังสินค้าที่ชื่นชอบแล้ว");
       }
     } catch (err) {
       console.error(err);
-      toast.error("Something went wrong");
+      toast.error("ไม่สามารถอัปเดตรายการโปรดได้");
     }
   };
 
@@ -124,9 +124,9 @@ const ProductDetails = ({ product }) => {
           { user_id: user.id, product_id: product.id, quantity: 1 },
           { onConflict: "user_id, product_id" }
         );
-      if (error) toast.error("Failed to sync cart to server");
+      if (error) toast.error("ไม่สามารถซิงค์ตะกร้าสินค้ากับเซิร์ฟเวอร์ได้");
     }
-    toast.success("Added to cart!");
+    toast.success("เพิ่มสินค้าลงในตะกร้าแล้ว!");
   };
 
   return (

@@ -14,7 +14,7 @@ export default function HomeContent() {
     // 1. Promotion Products
     const promotionProducts = allProducts.filter(p => p.sale_price && p.sale_price > 0);
 
-    // 2. Best Selling
+    // 2. Best Selling (สมมติว่า sort ตามราคา หรือ logic อื่น)
     const bestSellingProducts = [...allProducts]
         .sort((a, b) => b.price - a.price)
         .slice(0, 10);
@@ -26,48 +26,58 @@ export default function HomeContent() {
     const ultrabookProducts = allProducts.filter(p => p.category?.toLowerCase() === 'ultrabook');
 
     return (
-        <div>
+        <div className="overflow-x-hidden"> {/* ป้องกัน scroll แนวนอนจาก animation */}
             <Hero />
             
             <div className="border-b border-slate-100 bg-slate-50/50">
                  <OurSpecs />
             </div>
 
-            {/* 1. PROMOTION */}
+            {/* 1. PROMOTION (Theme: Red/Pink - ตื่นเต้น) */}
             {promotionProducts.length > 0 && (
-                <ProductSlider 
-                    title="โปรโมชั่นและส่วนลดพิเศษ" 
-                    description="คว้าโอกาสดีๆ เหล่านี้ก่อนที่จะหมด!"
-                    products={promotionProducts}
-                    bgColor="bg-red-50/30"
-                />
+                <div className="animate-in fade-in slide-in-from-bottom-8 duration-700">
+                    <ProductSlider 
+                        title="🔥 โปรโมชั่นและส่วนลดพิเศษ" 
+                        description="คว้าโอกาสดีๆ เหล่านี้ก่อนที่จะหมด!"
+                        products={promotionProducts}
+                        bgColor="bg-gradient-to-r from-red-50 via-white to-pink-50 border-y border-red-100"
+                    />
+                </div>
             )}
 
-            {/* 2. BEST SELLING */}
-            <ProductSlider 
-                title="สินค้าขายดี" 
-                description="สินค้าที่ได้รับความนิยมสูงสุดสัปดาห์นี้"
-                products={bestSellingProducts}
-            />
+            {/* 2. BEST SELLING (Theme: Gold/Orange - ยอดนิยม) */}
+            <div className="animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-100">
+                <ProductSlider 
+                    title="🏆 สินค้าขายดี" 
+                    description="สินค้าที่ได้รับความนิยมสูงสุดสัปดาห์นี้"
+                    products={bestSellingProducts}
+                    bgColor="bg-gradient-to-r from-orange-50 via-white to-yellow-50 border-y border-orange-100"
+                />
+            </div>
 
-            {/* 3. GAMING LAPTOPS */}
+            {/* 3. GAMING LAPTOPS (Theme: Dark/Purple - ดุดัน เกมมิ่ง) */}
             {gamingProducts.length > 0 && (
-                <ProductSlider 
-                    title="เครื่องเกมมิ่งระดับตำนาน" 
-                    description="แล็ปท็อปประสิทธิภาพสูงสำหรับเกมเมอร์ตัวยง"
-                    products={gamingProducts}
-                    // bgColor="bg-slate-900 text-white"
-                />
+                <div className="animate-in zoom-in-95 fade-in duration-1000 view-transition">
+                    <ProductSlider 
+                        title="🎮 เครื่องเกมมิ่งระดับตำนาน" 
+                        description="แล็ปท็อปประสิทธิภาพสูงสำหรับเกมเมอร์ตัวยง"
+                        products={gamingProducts}
+                        // ใช้สีพื้นหลังแบบ Dark Mode + Gradient ม่วง
+                        bgColor="bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-purple-900 to-slate-950 text-white border-y border-purple-900/50 shadow-2xl"
+                    />
+                </div>
             )}
 
-            {/* 4. ULTRABOOKS */}
+            {/* 4. ULTRABOOKS (Theme: Blue/Cyan - ทันสมัย พรีเมียม) */}
             {ultrabookProducts.length > 0 && (
-                <ProductSlider 
-                    title="อัลตร้าบุ๊คพรีเมียม" 
-                    description="บาง เบา และทรงพลังสำหรับมืออาชีพ"
-                    products={ultrabookProducts}
-                    bgColor="bg-blue-50/30"
-                />
+                <div className="animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-200">
+                    <ProductSlider 
+                        title="💻 อัลตร้าบุ๊คพรีเมียม" 
+                        description="บาง เบา และทรงพลังสำหรับมืออาชีพ"
+                        products={ultrabookProducts}
+                        bgColor="bg-gradient-to-r from-blue-50 via-white to-cyan-50 border-y border-blue-100"
+                    />
+                </div>
             )}
 
             <Newsletter />

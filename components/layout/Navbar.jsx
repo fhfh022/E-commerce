@@ -12,6 +12,7 @@ import {
   Sparkles,
   MessageCircleMore,
   Home,
+  BookOpenText
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -53,14 +54,15 @@ const Navbar = () => {
   // ✅ OPTIMIZATION 2: Logic Search (Name, Brand, Model)
   const searchSuggestions = useMemo(() => {
     if (!search || search.length < 2) return [];
-    
+
     const query = search.toLowerCase();
 
     return products
-      .filter((product) =>
-        product.name?.toLowerCase().includes(query) ||
-        product.brand?.toLowerCase().includes(query) ||
-        product.model?.toLowerCase().includes(query)
+      .filter(
+        (product) =>
+          product.name?.toLowerCase().includes(query) ||
+          product.brand?.toLowerCase().includes(query) ||
+          product.model?.toLowerCase().includes(query)
       )
       .slice(0, 5);
   }, [search, products]);
@@ -122,7 +124,10 @@ const Navbar = () => {
               >
                 โปรโมชั่น
               </Link>
-
+              <Link href="/blogs" className="transition hover:text-green-600">
+                บทความ
+              </Link>
+              
               {/* AI Button */}
               <button
                 onClick={handleAIClick}
@@ -133,7 +138,6 @@ const Navbar = () => {
                   PRT Assistant
                 </span>
               </button>
-
               {/* ✅ Search Bar (ขยายขนาด) */}
               <div className="relative hidden xl:block">
                 <form
@@ -145,7 +149,7 @@ const Navbar = () => {
                   <input
                     className="w-full bg-transparent outline-none placeholder-slate-600"
                     type="text"
-                    placeholder="ค้นหาสินค้า..." 
+                    placeholder="ค้นหาสินค้า..."
                     value={search}
                     onFocus={() => setIsSearchOpen(true)}
                     onBlur={() => setTimeout(() => setIsSearchOpen(false), 200)}
@@ -184,7 +188,6 @@ const Navbar = () => {
                     </div>
                   )}
               </div>
-
               {/* Icons Group */}
               <button
                 onClick={() => {
@@ -204,7 +207,6 @@ const Navbar = () => {
                   </span>
                 )}
               </button>
-
               <Link
                 href="/cart"
                 className="relative text-slate-600 transition hover:text-green-600 focus:outline-none hover:bg-slate-50 p-2 rounded-full"
@@ -216,7 +218,6 @@ const Navbar = () => {
                   </span>
                 )}
               </Link>
-
               {/* Auth Button */}
               {!isLoaded ? (
                 <div className="w-[88px] h-[40px] bg-slate-100 rounded-full animate-pulse"></div>
@@ -304,22 +305,32 @@ const Navbar = () => {
               onClick={() => setIsMenuOpen(false)}
               className="flex items-center gap-2 transition hover:text-green-600 py-2 border-b border-slate-50"
             >
-              <Home size={18} />หน้าหลัก
-              
+              <Home size={18} />
+              หน้าหลัก
             </Link>
             <Link
               href="/shop"
               onClick={() => setIsMenuOpen(false)}
               className="flex items-center gap-2 transition hover:text-green-600 py-2 border-b border-slate-50"
             >
-              <PackageIcon size={18} />สินค้า
+              <PackageIcon size={18} />
+              สินค้า
             </Link>
             <Link
               href="/promotions"
               onClick={() => setIsMenuOpen(false)}
               className="flex items-center gap-2 transition hover:text-green-600 py-2 border-b border-slate-50"
             >
-              <Tag size={18} />โปรโมชัน
+              <Tag size={18} />
+              โปรโมชัน
+            </Link>
+            <Link
+              href="/blogs"
+              onClick={() => setIsMenuOpen(false)}
+              className="flex items-center gap-2 transition hover:text-green-600 py-2 border-b border-slate-50"
+            >
+              <BookOpenText size={18} />
+              บทความ
             </Link>
             <Link
               href="/favorites"
@@ -333,6 +344,7 @@ const Navbar = () => {
                 </span>
               )}
             </Link>
+
 
             {/* Mobile AI Button */}
             <button
@@ -386,7 +398,9 @@ const Navbar = () => {
                     className="flex flex-col items-center justify-center gap-1 py-3 px-2 bg-white border border-slate-100 rounded-xl shadow-sm hover:border-indigo-100 hover:text-indigo-600 transition"
                   >
                     <PackageIcon size={20} />{" "}
-                    <span className="text-xs font-medium">คำสั่งซื้อของฉัน</span>
+                    <span className="text-xs font-medium">
+                      คำสั่งซื้อของฉัน
+                    </span>
                   </Link>
 
                   <Link

@@ -1,9 +1,6 @@
 "use client";
 import { assets } from "@/assets/assets";
-import {
-  ArrowRightIcon,
-  ChevronRightIcon,
-} from "lucide-react";
+import { ArrowRightIcon, ChevronRightIcon } from "lucide-react";
 import Image from "next/image";
 import React, { useState, useEffect } from "react";
 import CategoriesMarquee from "../product/CategoriesMarquee";
@@ -44,12 +41,11 @@ const Hero = () => {
 
     const timer = setTimeout(handleTyping, typingSpeed);
     return () => clearTimeout(timer);
-  }, [displayedText, isDeleting, currentWordIndex]); 
+  }, [displayedText, isDeleting, currentWordIndex]);
 
   return (
     <div className="mx-6">
       <div className="flex max-xl:flex-col gap-8 max-w-7xl mx-auto my-10">
-        
         {/* 🟢 Left Side: Hero Banner */}
         <div className="relative flex-1 flex flex-col bg-green-50 rounded-3xl xl:min-h-100 group overflow-hidden border border-green-100 shadow-sm">
           {/* Background Blob */}
@@ -109,16 +105,20 @@ const Hero = () => {
 
         {/* 🟠 Right Side: Promo Cards (Updated Logic) */}
         <div className="flex flex-col md:flex-row xl:flex-col gap-5 w-full xl:max-w-sm text-sm text-slate-600">
-          
-          {/* ✅ Card 1: Unleash Your Productivity (แทน Best Performers) */}
-          <Link href="/collections/productivity" className="flex-1 flex items-center justify-between w-full bg-orange-50 border border-orange-100 rounded-3xl p-6 px-8 group hover:shadow-lg hover:shadow-orange-100 transition-all cursor-pointer relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-orange-200/40 rounded-full blur-2xl -mr-10 -mt-10"></div>
+          {/* ✅ Card 1: Unleash Your Productivity (Theme: Light/Blue) */}
+          <Link
+            href="/collections/productivity"
+            className="flex-1 flex items-center justify-between w-full bg-gradient-to-br from-slate-50 to-slate-200 border border-slate-200 rounded-3xl p-6 px-8 group hover:shadow-xl hover:shadow-slate-200 transition-all cursor-pointer relative overflow-hidden"
+          >
+            {/* Animated Blob */}
+            <div className="absolute top-0 right-0 w-40 h-40 bg-blue-400/20 rounded-full blur-3xl -mr-10 -mt-10 animate-pulse duration-1000"></div>
+
             <div className="relative z-10">
               <p className="text-2xl font-bold text-slate-800 max-w-40 leading-tight">
                 Unleash <br />
-                <span className="text-orange-500">Productivity</span>
+                <span className="text-blue-600">Productivity</span>
               </p>
-              <p className="flex items-center gap-2 mt-4 text-xs font-bold uppercase tracking-wide text-orange-600 group-hover:underline decoration-2 underline-offset-4">
+              <p className="flex items-center gap-2 mt-4 text-xs font-bold uppercase tracking-wide text-blue-700 group-hover:underline decoration-2 underline-offset-4">
                 Work Anywhere{" "}
                 <ArrowRightIcon
                   className="group-hover:translate-x-1 transition-all"
@@ -127,21 +127,26 @@ const Hero = () => {
               </p>
             </div>
             <Image
-              className="w-32 drop-shadow-lg group-hover:scale-110 transition-transform duration-500"
+              className="w-32 drop-shadow-lg group-hover:scale-110 transition-transform duration-500 relative z-10"
               src={assets.hero_product_img1}
               alt="Productivity"
             />
           </Link>
 
-          {/* ✅ Card 2: Master The Game (แทน 20% Discounts) */}
-          <Link href="/collections/gaming-pro" className="flex-1 flex items-center justify-between w-full bg-blue-50 border border-blue-100 rounded-3xl p-6 px-8 group hover:shadow-lg hover:shadow-blue-100 transition-all cursor-pointer relative overflow-hidden">
-            <div className="absolute bottom-0 left-0 w-32 h-32 bg-blue-200/40 rounded-full blur-2xl -ml-10 -mb-10"></div>
+          {/* ✅ Card 2: Master The Game (Theme: Dark/Purple) */}
+          <Link
+            href="/collections/gaming-pro"
+            className="flex-1 flex items-center justify-between w-full bg-gradient-to-br from-slate-900 via-purple-950 to-slate-900 border border-slate-800 rounded-3xl p-6 px-8 group hover:shadow-xl hover:shadow-purple-900/20 transition-all cursor-pointer relative overflow-hidden"
+          >
+            {/* Animated Blob */}
+            <div className="absolute bottom-0 left-0 w-40 h-40 bg-purple-600/30 rounded-full blur-3xl -ml-10 -mb-10 animate-pulse duration-1000"></div>
+
             <div className="relative z-10">
-              <p className="text-2xl font-bold text-slate-800 max-w-40 leading-tight">
+              <p className="text-2xl font-bold text-white max-w-40 leading-tight">
                 Master <br />
-                <span className="text-blue-500">The Game</span>
+                <span className="text-red-500">The Game</span>
               </p>
-              <p className="flex items-center gap-2 mt-4 text-xs font-bold uppercase tracking-wide text-blue-600 group-hover:underline decoration-2 underline-offset-4">
+              <p className="flex items-center gap-2 mt-4 text-xs font-bold uppercase tracking-wide text-red-400 group-hover:underline decoration-2 underline-offset-4">
                 Pro Choice{" "}
                 <ArrowRightIcon
                   className="group-hover:translate-x-1 transition-all"
@@ -150,7 +155,7 @@ const Hero = () => {
               </p>
             </div>
             <Image
-              className="w-32 drop-shadow-lg group-hover:scale-110 transition-transform duration-500"
+              className="w-32 drop-shadow-2xl shadow-purple-500/50 group-hover:scale-110 transition-transform duration-500 relative z-10"
               src={assets.hero_product_img2}
               alt="Gaming"
             />

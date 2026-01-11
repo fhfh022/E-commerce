@@ -6,7 +6,8 @@ import { useRouter } from "next/navigation";
 import PageTitle from "@/components/layout/PageTitle";
 import Loading from "@/components/layout/Loading";
 import toast from "react-hot-toast";
-import { UserMinus, UserCheck, AlertTriangle, Search, ShieldAlert } from "lucide-react";
+import Image from "next/image"; // ✅ เพิ่ม Image
+import { UserMinus, UserCheck, AlertTriangle, Search, ShieldAlert, User, X, Clock, Mail, Shield } from "lucide-react"; // ✅ เพิ่ม Icon
 
 export default function UserManagement() {
   const [users, setUsers] = useState([]);
@@ -14,10 +15,14 @@ export default function UserManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [updatingUserId, setUpdatingUserId] = useState(null);
   
-  // State สำหรับ Modal
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [modalProcessing, setModalProcessing] = useState(false);
+  // State สำหรับ Block Modal
+  const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
+  const [selectedUserForBlock, setSelectedUserForBlock] = useState(null);
+  const [blockProcessing, setBlockProcessing] = useState(false);
+
+  // ✅ State สำหรับ Detail Modal
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [selectedUserDetail, setSelectedUserDetail] = useState(null);
 
   const router = useRouter();
   const currentUser = useSelector((state) => state.auth.user);
@@ -118,12 +123,18 @@ export default function UserManagement() {
   };
 
   const openBlockModal = (user) => {
-    setSelectedUser(user);
-    setIsModalOpen(true);
+    setSelectedUserForBlock(user);
+    setIsBlockModalOpen(true);
+  };
+
+  // ✅ ฟังก์ชันเปิด Modal ดูรายละเอียด
+  const openDetailModal = (user) => {
+    setSelectedUserDetail(user);
+    setIsDetailModalOpen(true);
   };
 
   const toggleBlockStatus = async (userId, currentBlockStatus) => {
-    setModalProcessing(true);
+    setBlockProcessing(true);
     try {
       const newStatus = !currentBlockStatus;
       
@@ -167,13 +178,13 @@ export default function UserManagement() {
         newStatus ? "บล็อกและตัดผู้ใช้ออกจากระบบแล้ว!" : "ปลดบล็อกผู้ใช้แล้ว"
       );
       
-      setIsModalOpen(false); 
+      setIsBlockModalOpen(false); 
 
     } catch (error) {
       console.error("Block Error:", error);
       toast.error(error.message);
     } finally {
-      setModalProcessing(false);
+      setBlockProcessing(false);
     }
   };
 
@@ -182,6 +193,14 @@ export default function UserManagement() {
       u.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       u.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // Helper สำหรับ Format วันที่
+  const formatDate = (dateString) => {
+    if (!dateString) return "-";
+    return new Date(dateString).toLocaleDateString('th-TH', {
+        year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
+    });
+  };
 
   if (loading) return <Loading />;
 
@@ -227,8 +246,8 @@ export default function UserManagement() {
               ) : (
                 filteredUsers.map((u) => (
                   <tr key={u.id} className="hover:bg-slate-50 transition">
-                    <td className="px-6 py-4">
-                      <div className="font-bold text-slate-800">
+                    <td className="px-6 py-4 cursor-pointer group" onClick={() => openDetailModal(u)}>
+                      <div className="font-bold text-slate-800 group-hover:text-blue-600 transition">
                         {u.name || "ไม่ระบุชื่อ"}
                       </div>
                       <div className="text-sm text-slate-500">{u.email}</div>
@@ -305,58 +324,129 @@ export default function UserManagement() {
         </div>
       </div>
 
-      {/* MODAL UI */}
-      {isModalOpen && (
+      {/* ✅ DETAIL MODAL */}
+      {isDetailModalOpen && selectedUserDetail && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden relative animate-in zoom-in-95">
+            
+            {/* Header / Cover */}
+            <div className="bg-slate-100 h-24 relative">
+                <button 
+                    onClick={() => setIsDetailModalOpen(false)}
+                    className="absolute top-4 right-4 p-2 bg-white/50 hover:bg-white rounded-full transition text-slate-600"
+                >
+                    <X size={20} />
+                </button>
+            </div>
+
+            {/* Avatar & Main Info */}
+            <div className="px-6 pb-6 -mt-12 text-center">
+                <div className="relative size-24 mx-auto rounded-full border-4 border-white shadow-md bg-white overflow-hidden mb-3 flex items-center justify-center">
+                    {selectedUserDetail.avatar ? (
+                        <Image 
+                            src={selectedUserDetail.avatar} 
+                            alt={selectedUserDetail.name} 
+                            fill 
+                            className="object-cover" 
+                        />
+                    ) : (
+                        <User size={40} className="text-slate-300" />
+                    )}
+                </div>
+                
+                <h3 className="text-xl font-bold text-slate-800">{selectedUserDetail.name || "ไม่ระบุชื่อ"}</h3>
+                <p className="text-slate-500 text-sm mb-4">{selectedUserDetail.email}</p>
+
+                {/* Status Badge */}
+                <div className="flex justify-center gap-2 mb-6">
+                    <span className={`px-3 py-1 rounded-full text-xs font-bold border ${
+                        selectedUserDetail.is_blocked 
+                        ? "bg-red-50 text-red-600 border-red-200" 
+                        : "bg-green-50 text-green-600 border-green-200"
+                    }`}>
+                        {selectedUserDetail.is_blocked ? "ถูกระงับการใช้งาน" : "ใช้งานปกติ"}
+                    </span>
+                    <span className={`px-3 py-1 rounded-full text-xs font-bold border ${
+                        selectedUserDetail.role === 'master_admin' ? "bg-indigo-50 text-indigo-600 border-indigo-200" :
+                        selectedUserDetail.role === 'admin' ? "bg-purple-50 text-purple-600 border-purple-200" :
+                        "bg-slate-50 text-slate-600 border-slate-200"
+                    }`}>
+                        {selectedUserDetail.role === 'master_admin' ? "Master Admin" : selectedUserDetail.role === 'admin' ? "Admin" : "User"}
+                    </span>
+                </div>
+
+                {/* Detail List */}
+                <div className="space-y-3 text-left bg-slate-50 p-4 rounded-xl border border-slate-100">
+                    <div className="flex items-center gap-3 text-sm text-slate-600">
+                        <Shield size={16} className="text-slate-400" />
+                        <span className="font-medium w-24">Clerk ID:</span>
+                        <span className="text-slate-500 font-mono text-xs truncate">{selectedUserDetail.clerk_id || "-"}</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-sm text-slate-600">
+                        <Clock size={16} className="text-slate-400" />
+                        <span className="font-medium w-24">สมัครเมื่อ:</span>
+                        <span>{formatDate(selectedUserDetail.created_at)}</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-sm text-slate-600">
+                        <Clock size={16} className="text-slate-400" />
+                        <span className="font-medium w-24">อัปเดตล่าสุด:</span>
+                        <span>{formatDate(selectedUserDetail.updated_at || selectedUserDetail.created_at)}</span>
+                    </div>
+                </div>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* BLOCK MODAL */}
+      {isBlockModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
           <div className="bg-white p-6 md:p-8 rounded-2xl shadow-2xl max-w-sm w-full transform transition-all scale-100 animate-in zoom-in-95">
             <div className="flex flex-col items-center text-center">
               
-              {/* Icon */}
               <div
                 className={`p-4 rounded-full mb-4 ${
-                  selectedUser?.is_blocked
+                  selectedUserForBlock?.is_blocked
                     ? "bg-green-100 text-green-600"
                     : "bg-red-100 text-red-600"
                 }`}
               >
-                {selectedUser?.is_blocked ? <UserCheck size={32} /> : <AlertTriangle size={32} />}
+                {selectedUserForBlock?.is_blocked ? <UserCheck size={32} /> : <AlertTriangle size={32} />}
               </div>
 
-              {/* Title */}
               <h3 className="text-xl font-bold text-slate-800 mb-2">
-                {selectedUser?.is_blocked
+                {selectedUserForBlock?.is_blocked
                   ? "ปลดบล็อกผู้ใช้?"
                   : "บล็อกและตัดออกจากระบบ?"}
               </h3>
 
-              {/* Description */}
               <p className="text-slate-500 mb-6 text-sm md:text-base leading-relaxed">
-                {selectedUser?.is_blocked
-                  ? <span>คุณต้องการคืนสิทธิ์การใช้งานให้กับ <br/><span className="font-bold text-slate-800">"{selectedUser?.name}"</span> ใช่หรือไม่?</span>
-                  : <span>ผู้ใช้ <span className="font-bold text-slate-800">"{selectedUser?.name}"</span> จะถูกตัดออกจากระบบทันที และไม่สามารถเข้าใช้งานได้จนกว่าจะปลดบล็อก</span>}
+                {selectedUserForBlock?.is_blocked
+                  ? <span>คุณต้องการคืนสิทธิ์การใช้งานให้กับ <br/><span className="font-bold text-slate-800">"{selectedUserForBlock?.name}"</span> ใช่หรือไม่?</span>
+                  : <span>ผู้ใช้ <span className="font-bold text-slate-800">"{selectedUserForBlock?.name}"</span> จะถูกตัดออกจากระบบทันที และไม่สามารถเข้าใช้งานได้จนกว่าจะปลดบล็อก</span>}
               </p>
 
-              {/* Buttons */}
               <div className="flex gap-3 w-full">
                 <button
-                  onClick={() => setIsModalOpen(false)}
-                  disabled={modalProcessing}
+                  onClick={() => setIsBlockModalOpen(false)}
+                  disabled={blockProcessing}
                   className="flex-1 px-4 py-2.5 border border-slate-200 text-slate-600 rounded-xl font-bold hover:bg-slate-50 transition disabled:opacity-50"
                 >
                   ยกเลิก
                 </button>
                 <button
                   onClick={() => {
-                    toggleBlockStatus(selectedUser.id, selectedUser.is_blocked);
+                    toggleBlockStatus(selectedUserForBlock.id, selectedUserForBlock.is_blocked);
                   }}
-                  disabled={modalProcessing}
+                  disabled={blockProcessing}
                   className={`flex-1 px-4 py-2.5 text-white rounded-xl font-bold transition shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center ${
-                    selectedUser?.is_blocked
+                    selectedUserForBlock?.is_blocked
                       ? "bg-green-600 hover:bg-green-700 shadow-green-200"
                       : "bg-red-600 hover:bg-red-700 shadow-red-200"
                   }`}
                 >
-                  {modalProcessing ? (
+                  {blockProcessing ? (
                     <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   ) : (
                     "ยืนยัน"

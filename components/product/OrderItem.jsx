@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import { 
-    Clock, CheckCircle, Truck, XCircle, FileText, Box, Star, Edit3, AlertTriangle, CreditCard, Trash2, Loader2 
+    Clock, CheckCircle, Truck, XCircle, FileText, Box, Star, Edit3, AlertTriangle, CreditCard, Trash2, Loader2, PackageOpen 
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import ReceiptModal from "@/components/order/ReceiptModal";
@@ -10,7 +10,7 @@ import OrderTimer from "@/components/product/OrderTimer";
 import toast from "react-hot-toast";
 
 export default function OrderItem({ order }) {
-    const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '$';
+    const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '฿';
     
     // Modal States
     const [showReceipt, setShowReceipt] = useState(false);
@@ -24,7 +24,7 @@ export default function OrderItem({ order }) {
     const [isActionLoading, setIsActionLoading] = useState(false);
     const [isExpired, setIsExpired] = useState(false);
 
-    // 1. Auto-Cancel Logic (ถ้าเกิน 10 นาที)
+    // Auto-Cancel Logic
     useEffect(() => {
         if (order.payment_status === 'pending' && order.status !== 'cancelled') {
             const createdTime = new Date(order.created_at).getTime();
@@ -61,7 +61,21 @@ export default function OrderItem({ order }) {
         }
     }, [order]);
 
-    // 2. Fetch Reviews (เฉพาะออเดอร์ที่จ่ายแล้ว)
+    useEffect(() => {
+        if (order.payment_status === 'pending') {
+            const checkExpiration = () => {
+                const createdTime = new Date(order.created_at).getTime();
+                const now = new Date().getTime();
+                if (now - createdTime > 10 * 60 * 1000) {
+                    setIsExpired(true);
+                }
+            };
+            checkExpiration();
+            const timer = setInterval(checkExpiration, 1000);
+            return () => clearInterval(timer);
+        }
+    }, [order.created_at, order.payment_status]);
+
     const fetchReviews = useCallback(async () => {
         try {
             const { data, error } = await supabase
@@ -86,7 +100,6 @@ export default function OrderItem({ order }) {
         }
     }, [fetchReviews, order.payment_status]);
 
-    // 3. Action Handlers
     const handleConfirmPayment = async () => {
         setIsActionLoading(true);
         try {
@@ -108,7 +121,7 @@ export default function OrderItem({ order }) {
             }
         } catch (error) {
             console.error("Payment Error:", error);
-            toast.error("ไม่สามารถเริ่มต้นการชำระเงินได้");
+            toast.error("ไม่สามารถเริ่มการชำระเงินได้");
             setIsActionLoading(false);
             setShowPayModal(false);
         }
@@ -123,10 +136,10 @@ export default function OrderItem({ order }) {
                 .eq('id', order.id);
 
             if (error) throw error;
-            toast.success("คำสั่งซื้อถูกยกเลิก");
+            toast.success("ยกเลิกคำสั่งซื้อเรียบร้อยแล้ว");
             window.location.reload();
         } catch (error) {
-            toast.error("ไม่สามารถยกเลิกคำสั่งซื้อได้");
+            toast.error("การยกเลิกมีปัญหา");
             setIsActionLoading(false);
         }
     };
@@ -140,7 +153,6 @@ export default function OrderItem({ order }) {
         fetchReviews();
     };
 
-    // Helpers
     const formatDateTH = (dateString) => {
         if(!dateString) return "-";
         return new Date(dateString).toLocaleDateString("th-TH", {
@@ -148,38 +160,65 @@ export default function OrderItem({ order }) {
         });
     };
 
+    const getStatusLabel = (status) => {
+        switch (status?.toLowerCase()) {
+            case "paid": return "ชำระเงินแล้ว";
+            case "pending": return "รอชำระเงิน";
+            case "processing": return "กำลังดำเนินการ";
+            case "shipped": return "กำลังจัดส่ง";
+            case "delivered": return "จัดส่งสำเร็จ";
+            case "cancelled": return "ยกเลิกแล้ว";
+            case "not_paid": return "ไม่ได้ชำระเงิน";
+            default: return status;
+        }
+    };
+
+    // ✅ ปรับสี UI ให้ตรงตามโจทย์ (หน้าลูกค้า)
     const getStatusColor = (status) => {
         switch (status?.toLowerCase()) {
-            case "processing": return "bg-blue-100 text-blue-700 border-blue-200";
-            case "shipped": return "bg-yellow-100 text-yellow-700 border-yellow-200";
-            case "delivered": return "bg-green-100 text-green-700 border-green-200";
+            case "processing": return "bg-purple-100 text-purple-700 border-purple-200"; // 🟣 สีม่วง
+            case "shipped": return "bg-yellow-100 text-yellow-700 border-yellow-200"; // 🟡 สีเหลือง
+            case "delivered": return "bg-green-100 text-green-700 border-green-200"; // 🟢 สีเขียว
             case "paid": return "bg-green-100 text-green-700 border-green-200";
-            case "cancelled": return "bg-red-100 text-red-700 border-red-200";
-            default: return "bg-slate-100 text-slate-700 border-slate-200";
+            case "cancelled": 
+            case "not_paid": return "bg-slate-100 text-slate-500 border-slate-200 line-through";
+            default: return "bg-orange-100 text-orange-700 border-orange-200"; // สีส้ม (Pending)
         }
     };
 
     const getStatusIcon = (status) => {
         switch (status?.toLowerCase()) {
-            case "paid": case "delivered": return <CheckCircle size={14} />;
+            case "paid": return <CheckCircle size={14} />;
+            case "delivered": return <PackageOpen size={14} />;
             case "shipped": return <Truck size={14} />;
-            case "cancelled": return <XCircle size={14} />;
+            case "processing": return <Box size={14} />;
+            case "cancelled": 
+            case "not_paid": return <XCircle size={14} />;
             default: return <Clock size={14} />;
         }
     };
 
-    // คำนวณราคาเต็มก่อนลด
+    const getPaymentStatusDisplay = () => {
+        if (order.status === 'cancelled' || order.payment_status === 'not_paid') {
+            return { label: "ยกเลิก / ไม่ได้ชำระ", color: "text-red-600" };
+        }
+        if (order.payment_status === 'paid') {
+            return { label: "ชำระเงินแล้ว", color: "text-green-600" };
+        }
+        return { label: "รอชำระเงิน", color: "text-orange-600" };
+    };
+
+    const paymentStatus = getPaymentStatusDisplay();
     const originalTotal = (order.total_amount || 0) + (order.discount_amount || 0);
 
     return (
         <>
             <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden hover:shadow-md transition-shadow duration-200 mb-6">
                 
-                {/* --- Header --- */}
                 <div className="bg-slate-50 px-6 py-4 flex flex-col sm:flex-row justify-between sm:items-center gap-4 border-b border-slate-100">
                     <div className="flex flex-wrap gap-4 sm:gap-8">
                         <div>
-                            <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Order ID</p>
+                            <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">หมายเลขคำสั่งซื้อ</p>
                             <p className="text-sm font-mono text-slate-700 font-medium">#{order.id.slice(0, 8).toUpperCase()}</p>
                         </div>
                         <div>
@@ -201,15 +240,20 @@ export default function OrderItem({ order }) {
                                 <p className="text-sm font-bold text-slate-800">{currency}{order.total_amount?.toLocaleString()}</p>
                             )}
                         </div>
+                        <div>
+                            <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">สถานะการเงิน</p>
+                            <p className={`text-sm font-bold ${paymentStatus.color}`}>
+                                {paymentStatus.label}
+                            </p>
+                        </div>
                     </div>
                     
                     <div className="flex items-center gap-3">
                         <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${getStatusColor(order.status)}`}>
                             {getStatusIcon(order.status)}
-                            {order.status?.toUpperCase() || "PENDING"}
+                            {getStatusLabel(order.status)}
                         </span>
 
-                        {/* ✅ ปุ่ม Receipt: แสดงเฉพาะจ่ายเงินแล้ว */}
                         {order.payment_status === 'paid' && (
                             <button 
                                 onClick={() => setShowReceipt(true)}
@@ -221,21 +265,19 @@ export default function OrderItem({ order }) {
                     </div>
                 </div>
 
-                {/* --- Timer Alert --- */}
                 {order.payment_status === 'pending' && order.status !== 'cancelled' && (
                     <div className="bg-orange-50 px-6 py-3 border-b border-orange-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2 animate-in fade-in slide-in-from-top-1">
                         <div className="flex items-center gap-2 text-orange-700">
                             <div className="p-1 bg-orange-100 rounded-full">
                                 <AlertTriangle size={14} />
                             </div>
-                            <span className="text-xs font-bold">กำลังรอการชำระเงิน</span>
-                            <span className="text-xs text-orange-600 hidden sm:inline">• กรุณาชำระเงินภายใน 10 นาที</span>
+                            <span className="text-xs font-bold">รอการชำระเงิน</span>
+                            <span className="text-xs text-orange-600 hidden sm:inline">• กรุณาชำระเงินภายใน 10 นาที มิเช่นนั้นระบบจะยกเลิกอัตโนมัติ</span>
                         </div>
                         <OrderTimer createdAt={order.created_at} />
                     </div>
                 )}
 
-                {/* --- Items List --- */}
                 <div className="p-6">
                     <div className="flex flex-col gap-4">
                         {order.order_items?.map((item, i) => {
@@ -258,7 +300,7 @@ export default function OrderItem({ order }) {
                                                     {item.product?.name} <span className="text-slate-400 font-normal text-xs">({item.product?.model})</span>
                                                 </p>
                                                 <div className="flex items-center gap-2 text-xs text-slate-500 mb-2">
-                                                    <span>Qty: {item.quantity}</span>
+                                                    <span>จำนวน: {item.quantity}</span>
                                                     <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
                                                     {isSaleItem ? (
                                                         <div className="flex items-center gap-1">
@@ -277,8 +319,7 @@ export default function OrderItem({ order }) {
                                                 </div>
                                             </div>
 
-                                            {/* ✅ ปุ่ม Rating: แสดงเฉพาะจ่ายเงินแล้ว */}
-                                            {order.payment_status === 'paid' && (
+                                            {order.status === 'delivered' && (
                                                 <button 
                                                     onClick={() => handleOpenRating(item.product)}
                                                     className={`p-2 rounded-lg border transition-all flex-shrink-0 ${
@@ -302,7 +343,7 @@ export default function OrderItem({ order }) {
                                                         ))}
                                                     </div>
                                                 </div>
-                                                <p className="text-slate-500 italic">"{review.comment || "No comment provided."}"</p>
+                                                <p className="text-slate-500 italic">"{review.comment || "ไม่มีความคิดเห็น"}"</p>
                                             </div>
                                         )}
                                     </div>
@@ -312,8 +353,6 @@ export default function OrderItem({ order }) {
                     </div>
                 </div>
 
-                {/* --- Bottom Actions (Pay Now / Cancel) --- */}
-                {/* แสดงเฉพาะตอนยังไม่จ่าย และยังไม่ถูกยกเลิก */}
                 {order.payment_status === 'pending' && order.status !== 'cancelled' && (
                     <div className="px-6 pb-4 flex gap-3 justify-end border-t border-slate-50 pt-4">
                         <button 
@@ -328,13 +367,12 @@ export default function OrderItem({ order }) {
                             disabled={isActionLoading || isExpired}
                             className="px-6 py-2 bg-indigo-600 text-white hover:bg-indigo-700 rounded-xl text-sm font-bold shadow-md shadow-indigo-100 transition flex items-center gap-2 disabled:opacity-50 disabled:bg-slate-300 disabled:cursor-not-allowed"
                         >
-                            <CreditCard size={16} /> {isExpired ? "หมดเวลาชำระเงิน" : "ชำระเงินตอนนี้"}
+                            <CreditCard size={16} /> {isExpired ? "หมดเวลา" : "ชำระเงิน"}
                         </button>
                     </div>
                 )}
             </div>
 
-            {/* Modals Confirm Pay / Cancel */}
             {showPayModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in">
                     <div className="bg-white p-6 rounded-2xl shadow-xl max-w-sm w-full text-center">
@@ -343,12 +381,12 @@ export default function OrderItem({ order }) {
                         </div>
                         <h3 className="text-xl font-bold text-slate-800">ยืนยันการชำระเงิน?</h3>
                         <p className="text-sm text-slate-500 mt-2 mb-6">
-                            คุณจะถูกเปลี่ยนเส้นทางไปยัง Stripe เพื่อชำระเงิน <span className="font-bold text-slate-900">{currency}{order.total_amount?.toLocaleString()}</span>.
+                            คุณจะถูกส่งไปยังหน้าชำระเงินเพื่อดำเนินการชำระยอดเงินจำนวน <span className="font-bold text-slate-900">{currency}{order.total_amount?.toLocaleString()}</span>
                         </p>
                         <div className="flex gap-3">
                             <button onClick={() => setShowPayModal(false)} className="flex-1 py-2.5 border border-slate-200 rounded-xl font-bold text-slate-600 hover:bg-slate-50">ยกเลิก</button>
                             <button onClick={handleConfirmPayment} disabled={isActionLoading} className="flex-1 py-2.5 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 flex justify-center items-center gap-2">
-                                {isActionLoading && <Loader2 size={16} className="animate-spin" />} ชำระเงินตอนนี้
+                                {isActionLoading && <Loader2 size={16} className="animate-spin" />} ชำระเงิน
                             </button>
                         </div>
                     </div>
@@ -361,14 +399,14 @@ export default function OrderItem({ order }) {
                         <div className="size-16 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
                             <AlertTriangle size={32} />
                         </div>
-                        <h3 className="text-xl font-bold text-slate-800">ยกเลิกคำสั่งซื้อ?</h3>
+                        <h3 className="text-xl font-bold text-slate-800">ยืนยันการยกเลิกคำสั่งซื้อ</h3>
                         <p className="text-sm text-slate-500 mt-2 mb-6">
-                            คุณแน่ใจหรือไม่ว่าต้องการยกเลิกคำสั่งซื้อนี้? การกระทำนี้ไม่สามารถย้อนกลับได้.
+                            คุณแน่ใจหรือไม่ว่าต้องการยกเลิกคำสั่งซื้อนี้? การดำเนินการนี้ไม่สามารถย้อนกลับได้
                         </p>
                         <div className="flex gap-3">
-                            <button onClick={() => setShowCancelModal(false)} className="flex-1 py-2.5 border border-slate-200 rounded-xl font-bold text-slate-600 hover:bg-slate-50">รักษาคำสั่งซื้อไว้</button>
+                            <button onClick={() => setShowCancelModal(false)} className="flex-1 py-2.5 border border-slate-200 rounded-xl font-bold text-slate-600 hover:bg-slate-50">ย้อนกลับ</button>
                             <button onClick={handleCancelOrder} disabled={isActionLoading} className="flex-1 py-2.5 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 flex justify-center items-center gap-2">
-                                {isActionLoading && <Loader2 size={16} className="animate-spin" />} ยกเลิกคำสั่งซื้อ
+                                {isActionLoading && <Loader2 size={16} className="animate-spin" />} ยืนยันการยกเลิก
                             </button>
                         </div>
                     </div>

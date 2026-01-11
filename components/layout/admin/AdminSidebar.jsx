@@ -1,7 +1,7 @@
 'use client'
 
 import { usePathname } from "next/navigation"
-import { HomeIcon, TicketPercentIcon, Users ,ListOrdered} from "lucide-react"
+import { HomeIcon, TicketPercentIcon, Users ,ListOrdered,Newspaper} from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { assets } from "@/assets/assets"
@@ -17,6 +17,7 @@ const AdminSidebar = () => {
         { name: 'แดชบอร์ด', href: '/admin', icon: HomeIcon },
         { name: 'คำสั่งซื้อ', href: '/admin/orders', icon: ListOrdered },
         { name: 'คูปอง', href: '/admin/coupons', icon: TicketPercentIcon  },
+        { name: 'บทความ', href: '/admin/blogs', icon: Newspaper },
 
     ]
 

@@ -11,15 +11,15 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react"; // ✅ Import useEffect
 import { useDispatch, useSelector } from "react-redux";
 import { supabase } from "@/lib/supabase";
 import { toast } from "react-hot-toast";
+import Loading from "@/components/layout/Loading";
 
 export default function Cart() {
   const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || "$";
   
-  // ✅ ดึง cartItems และ isLoaded จาก Redux
   const { cartItems, isLoaded } = useSelector((state) => state.cart);
   const products = useSelector((state) => state.product.list);
   const user = useSelector((state) => state.auth.user);
@@ -28,9 +28,10 @@ export default function Cart() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState(null);
 
-  // --------------------------------------------------------------------------
-  // ✅ Logic คำนวณราคาสินค้า (แก้ไขให้รองรับ Sale Price)
-  // --------------------------------------------------------------------------
+  // ✅ State ใหม่: ใช้หน่วงเวลาเช็คตะกร้าว่าง
+  const [isDataReady, setIsDataReady] = useState(false);
+
+  // 1. Logic คำนวณราคาสินค้า (เหมือนเดิม)
   const { cartArray, totalPrice } = React.useMemo(() => {
     if (!products || products.length === 0) {
       return { cartArray: [], totalPrice: 0 };
@@ -44,20 +45,16 @@ export default function Cart() {
         const product = products.find((p) => p.id === key);
         
         if (product) {
-          // 🟢 เช็คว่ามีโปรโมชั่นหรือไม่
           const isOnSale = product.sale_price && product.sale_price > 0 && product.sale_price < product.price;
-          // 🟢 ถ้าระบุราคา Sale ให้ใช้ราคา Sale, ถ้าไม่ ให้ใช้ราคาปกติ
           const priceToUse = isOnSale ? product.sale_price : product.price;
 
-          // Push ข้อมูลที่คำนวณแล้วลง Array เพื่อเอาไปวนลูปแสดงผล
           newArray.push({ 
               ...product, 
               quantity: value,
-              effectivePrice: priceToUse, // ราคาจริงที่ใช้คำนวณ (ลดแล้ว)
+              effectivePrice: priceToUse, 
               isOnSale: isOnSale 
           });
 
-          // บวกยอดรวมโดยใช้ราคาที่ถูกต้อง
           currentTotal += priceToUse * value;
         }
       }
@@ -65,31 +62,72 @@ export default function Cart() {
 
     return { cartArray: newArray, totalPrice: currentTotal };
   }, [cartItems, products]); 
-  // --------------------------------------------------------------------------
 
-  const handleDeleteItem = async () => {
-    if (!productToDelete) return;
-    try {
-      dispatch(deleteItemFromCart({ productId: productToDelete }));
-      if (user) {
-        await supabase
-          .from("cart")
-          .delete()
-          .eq("user_id", user.id)
-          .eq("product_id", productToDelete);
+  // ✅ 2. เพิ่ม Effect: ป้องกัน "หน้าตะกร้าว่าง" เด้งก่อนข้อมูลมา
+  useEffect(() => {
+    if (isLoaded) {
+      // ถ้ามีของในตะกร้า -> โชว์เลยทันที ไม่ต้องรอ
+      if (cartItems && Object.keys(cartItems).length > 0) {
+        setIsDataReady(true);
+      } 
+      // ถ้าตะกร้าว่าง -> รอ 500ms เผื่อข้อมูลกำลังวิ่งมา (แก้ Flash Empty)
+      else {
+        const timer = setTimeout(() => {
+          setIsDataReady(true);
+        }, 500);
+        return () => clearTimeout(timer);
       }
-      toast.success("สินค้าถูกลบแล้ว");
-    } catch (error) {
-      toast.error("ไม่สามารถลบสินค้าได้: " + error.message);
-    } finally {
-      setIsDeleteModalOpen(false);
-      setProductToDelete(null);
     }
-  };
+  }, [isLoaded, cartItems]);
 
-  const isEmpty = !cartItems || Object.keys(cartItems).length === 0;
+  // =====================================================================
+  // ✅ 3. Loading Condition (ใช้ isDataReady ช่วยคุม)
+  // =====================================================================
+  // ถ้า Redux ยังไม่โหลด OR products ยังไม่มา OR Data ยังไม่ Ready -> โชว์ Skeleton/Loading
+  if (!isLoaded || !products || products.length === 0 || !isDataReady) {
+    return (
+      <div className="min-h-screen bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-10 animate-pulse">
+          {/* Skeleton UI */}
+          <div className="h-10 w-48 bg-slate-200 rounded-xl mb-2"></div>
+          <div className="h-4 w-24 bg-slate-100 rounded-lg mb-10"></div>
 
-  if (isEmpty) {
+          <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 items-start">
+            <div className="w-full lg:flex-[2.5] space-y-6">
+              <div className="hidden sm:grid grid-cols-12 gap-4 pb-6 border-b border-slate-100">
+                <div className="col-span-6 h-4 w-24 bg-slate-200 rounded"></div>
+                <div className="col-span-3 h-4 w-16 bg-slate-200 rounded mx-auto"></div>
+                <div className="col-span-2 h-4 w-16 bg-slate-200 rounded ml-auto"></div>
+              </div>
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="flex gap-4 py-4">
+                  <div className="size-24 bg-slate-200 rounded-2xl flex-shrink-0"></div>
+                  <div className="flex-1 space-y-3 py-2">
+                    <div className="h-5 w-3/4 bg-slate-200 rounded"></div>
+                    <div className="h-3 w-1/4 bg-slate-100 rounded"></div>
+                    <div className="h-4 w-20 bg-slate-200 rounded mt-2"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="w-full lg:flex-1 h-80 bg-slate-50 rounded-3xl p-6 border border-slate-100">
+               <div className="h-6 w-32 bg-slate-200 rounded mb-6"></div>
+               <div className="space-y-4">
+                  <div className="flex justify-between"><div className="h-4 w-20 bg-slate-200 rounded"></div><div className="h-4 w-16 bg-slate-200 rounded"></div></div>
+                  <div className="flex justify-between"><div className="h-4 w-24 bg-slate-200 rounded"></div><div className="h-4 w-12 bg-slate-200 rounded"></div></div>
+               </div>
+               <div className="mt-8 h-12 w-full bg-slate-200 rounded-xl"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // =====================================================================
+  // ✅ 4. Empty State (จะทำงานก็ต่อเมื่อผ่านการรอ 500ms แล้วยังว่างอยู่)
+  // =====================================================================
+  if (cartArray.length === 0) {
     return (
       <div className="min-h-[80vh] flex flex-col items-center justify-center px-6 text-center animate-in fade-in zoom-in duration-500">
         <div className="size-24 bg-slate-50 text-slate-200 rounded-full flex items-center justify-center mb-6">
@@ -115,17 +153,33 @@ export default function Cart() {
     );
   }
 
-  if (!isLoaded || products.length === 0) {
-    return (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-blue-500"></div>
-      </div>
-    );
-  }
+  // =====================================================================
+  // 5. Render หน้า Order (เมื่อมีสินค้าและโหลดเสร็จจริง)
+  // =====================================================================
+  
+  const handleDeleteItem = async () => {
+    if (!productToDelete) return;
+    try {
+      dispatch(deleteItemFromCart({ productId: productToDelete }));
+      if (user) {
+        await supabase
+          .from("cart")
+          .delete()
+          .eq("user_id", user.id)
+          .eq("product_id", productToDelete);
+      }
+      toast.success("สินค้าถูกลบแล้ว");
+    } catch (error) {
+      toast.error("ไม่สามารถลบสินค้าได้: " + error.message);
+    } finally {
+      setIsDeleteModalOpen(false);
+      setProductToDelete(null);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-10 animate-in fade-in duration-300">
         <PageTitle
           heading="ตะกร้าสินค้า"
           text={`${cartArray.length} รายการ`}
@@ -134,7 +188,6 @@ export default function Cart() {
 
         <div className="mt-6 sm:mt-10 flex flex-col lg:flex-row gap-8 lg:gap-12 items-start">
           <div className="w-full lg:flex-[2.5]">
-            {/* Desktop Header */}
             <div className="hidden sm:grid grid-cols-12 gap-4 pb-6 border-b border-slate-100 text-[16px] font-bold uppercase tracking-widest text-slate-400">
               <div className="col-span-6">ข้อมูลสินค้า</div>
               <div className="col-span-3 text-center">จํานวน</div>
@@ -155,12 +208,11 @@ export default function Cart() {
                         className="relative flex-shrink-0 bg-[#F5F5F5] size-24 sm:size-28 rounded-2xl flex items-center justify-center p-3 hover:opacity-90 transition"
                       >
                         <Image
-                          src={item.images[0]}
+                          src={item.images?.[0] || "/placeholder.png"}
                           fill
                           className="object-contain p-2"
                           alt={item.name}
                         />
-                        {/* 🟢 แสดงป้าย Sale เล็กๆ บนรูปในตะกร้า */}
                         {item.isOnSale && (
                             <span className="absolute top-0 right-0 bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-bl-lg rounded-tr-lg">
                                 SALE
@@ -179,7 +231,6 @@ export default function Cart() {
                           {item.brand} | {item.model}
                         </p>
                         
-                        {/* 🟢 ส่วนแสดงราคาต่อชิ้น (อัปเดตใหม่) */}
                         <div className="mt-1.5">
                             {item.isOnSale ? (
                                 <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
@@ -221,7 +272,6 @@ export default function Cart() {
                     <p className="sm:hidden text-[10px] font-bold text-slate-400 uppercase mb-1 tracking-wider">
                       ราคารวม
                     </p>
-                    {/* 🟢 ราคารวมต่อรายการ (ใช้ effectivePrice คูณจำนวน) */}
                     <span className={`font-black text-base sm:text-lg ${item.isOnSale ? 'text-red-600' : 'text-slate-900'}`}>
                       {currency}{(item.effectivePrice * item.quantity).toLocaleString()}
                     </span>
@@ -244,7 +294,6 @@ export default function Cart() {
           </div>
 
           <div className="w-full lg:flex-1 mt-4 lg:mt-0">
-            {/* ส่ง totalPrice ที่คำนวณใหม่ไปให้ OrderSummary */}
             <OrderSummary totalPrice={totalPrice} items={cartArray} />
           </div>
         </div>

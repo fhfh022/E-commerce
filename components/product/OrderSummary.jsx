@@ -65,20 +65,46 @@ const OrderSummary = ({ totalPrice, items }) => {
       if (!addressIdToDelete) return;
       setIsProcessing(true);
       try {
+        // 1. ลองลบจาก Database
         const { error } = await supabase.from("addresses").delete().eq("id", addressIdToDelete);
-        if (error) throw error;
+        
+        if (error) {
+            // 🛡️ ดักจับ Error กรณีที่อยู่ถูกใช้งานใน Order ไปแล้ว (Foreign Key Constraint)
+            // Postgres Error Code 23503 = foreign_key_violation
+            if (error.code === '23503') {
+                throw new Error("ไม่สามารถลบที่อยู่นี้ได้ เนื่องจากมีประวัติการสั่งซื้อ");
+            }
+            throw error; // โยน Error อื่นๆ ไปที่ catch
+        }
+
+        // 2. หา Index ของตัวที่กำลังจะลบ (เพื่อจัดการ Dropdown ไม่ให้เพี้ยน)
+        const indexToDelete = addressList.findIndex(a => a.id === addressIdToDelete);
+        const currentIndex = parseInt(selectedAddressIndex);
+
+        // 3. อัปเดต Redux (ลบออกจาก State หน้าจอ)
         dispatch(deleteAddress(addressIdToDelete));
-        if (addressList[selectedAddressIndex]?.id === addressIdToDelete) setSelectedAddressIndex("");
-        toast.success("ที่อยู่ถูกลบเรียบร้อยแล้ว");
+
+        // 4. จัดการ Selection (Dropdown)
+        if (indexToDelete === currentIndex) {
+            // เคส A: ถ้าลบตัวที่เลือกอยู่ -> รีเซ็ตเป็นไม่เลือก
+            setSelectedAddressIndex("");
+        } else if (!isNaN(currentIndex) && indexToDelete < currentIndex) {
+            // เคส B: ถ้าลบตัวที่อยู่ "ก่อนหน้า" ตัวที่เลือก -> ต้องลด Index ลง 1 เพื่อให้ยังเลือกตัวเดิม
+            setSelectedAddressIndex(prev => prev - 1);
+        }
+
+        toast.success("ลบที่อยู่เรียบร้อยแล้ว");
         setShowDeleteModal(false);
+
       } catch (error) {
-        toast.error("เกิดข้อผิดพลาดในการลบที่อยู่");
+        console.error("Delete address error:", error);
+        // แสดงข้อความ Error ที่เราดักไว้ หรือข้อความ Default
+        toast.error(error.message || "เกิดข้อผิดพลาดในการลบที่อยู่");
       } finally {
         setIsProcessing(false);
         setAddressIdToDelete(null);
       }
   };
-
   // ✅ คำนวณส่วนลดและปัดเศษให้เป็นจำนวนเต็ม
   const discountAmount = coupon
     ? Math.round(
@@ -400,9 +426,9 @@ const OrderSummary = ({ totalPrice, items }) => {
               <div className="size-20 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-6">
                 <AlertTriangle size={36} />
               </div>
-              <h3 className="text-2xl font-black text-slate-900">Delete Address?</h3>
+              <h3 className="text-2xl font-black text-slate-900">ลบที่อยู่?</h3>
               <p className="text-slate-500 mt-2 leading-relaxed">
-                Are you sure you want to remove this address? This action cannot be undone.
+                คุณแน่ใจหรือไม่ว่าต้องการลบที่อยู่นี้?<br/>การดำเนินการนี้ไม่สามารถย้อนกลับได้
               </p>
               <div className="grid grid-cols-1 gap-3 w-full mt-8">
                 <button 
@@ -410,14 +436,14 @@ const OrderSummary = ({ totalPrice, items }) => {
                   onClick={confirmDeleteAddress} 
                   className="w-full py-3.5 bg-red-500 hover:bg-red-600 text-white font-bold rounded-2xl shadow-lg shadow-red-100 active:scale-95 disabled:opacity-70 transition-all"
                 >
-                  {isProcessing ? "Deleting..." : "Yes, Delete it"}
+                  {isProcessing ? "กำลังลบ..." : "ลบที่อยู่นี้"}
                 </button>
                 <button 
                   disabled={isProcessing} 
                   onClick={() => setShowDeleteModal(false)} 
                   className="w-full py-3.5 bg-white text-slate-400 font-bold rounded-2xl hover:text-slate-600 active:scale-95 transition-all"
                 >
-                  Cancel
+                  ยกเลิก
                 </button>
               </div>
             </div>

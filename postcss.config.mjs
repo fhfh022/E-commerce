@@ -1,7 +1,7 @@
 
 
 const config = {
-  plugins: ["@tailwindcss/postcss"],
+  plugins: ["@tailwindcss/postcss",require('@tailwindcss/typography'),],
   extends:{
     container:{
       center:true,

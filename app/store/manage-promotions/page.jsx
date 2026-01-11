@@ -5,6 +5,7 @@ import PageTitle from "@/components/layout/PageTitle";
 import Loading from "@/components/layout/Loading";
 import toast from "react-hot-toast";
 import Image from "next/image";
+import Link from "next/link"; // ✅ เพิ่ม Link
 
 import { Search, Save, XCircle, ArrowRight, ChevronLeft, ChevronRight, Calculator, Loader2 } from "lucide-react";
 
@@ -37,23 +38,18 @@ export default function ManagePromotions() {
     fetchProducts();
   }, []);
 
-  // ฟังก์ชันคำนวณราคา (รองรับทั้ง Fixed และ %)
   const calculateSalePrice = (inputValue, regularPrice) => {
     if (!inputValue || inputValue.trim() === "") return null;
 
     let finalPrice = null;
     const cleanInput = inputValue.trim();
 
-    // กรณีใส่เป็น % (เช่น 10%, 20%)
     if (cleanInput.includes("%")) {
         const percent = parseFloat(cleanInput.replace("%", ""));
         if (!isNaN(percent) && percent > 0 && percent < 100) {
-            // คำนวณราคาสุทธิ (ราคาเต็ม - ส่วนลด) และปัดเศษทิ้ง
             finalPrice = Math.floor(regularPrice * (1 - percent / 100));
         }
-    } 
-    // กรณีใส่เป็นตัวเลขราคาเลย (เช่น 15990)
-    else {
+    } else {
         finalPrice = parseFloat(cleanInput);
     }
 
@@ -63,13 +59,10 @@ export default function ManagePromotions() {
   const handleUpdateSalePrice = async (product, inputValue) => {
     setSavingId(product.id);
     try {
-      // คำนวณราคาใหม่จาก Input
       const saleValue = calculateSalePrice(inputValue, product.price);
       
-      // Validation
       if (saleValue !== null && saleValue >= product.price) {
         toast.error(`ราคาลด (${saleValue}) ต้องน้อยกว่าราคาปกติ (${product.price})`);
-        // รีเซ็ตค่าใน Input กลับเป็นค่าเดิม (ถ้ามี) หรือว่างเปล่า
         const inputEl = document.getElementById(`price-input-${product.id}`);
         if(inputEl) inputEl.value = product.sale_price || "";
         return;
@@ -80,7 +73,6 @@ export default function ManagePromotions() {
          return;
       }
 
-      // ถ้าค่าเหมือนเดิมเป๊ะ ไม่ต้องยิง API
       if (saleValue === product.sale_price) return;
 
       const { error } = await supabase
@@ -90,7 +82,6 @@ export default function ManagePromotions() {
 
       if (error) throw error;
 
-      // Update Local State
       setProducts(
         products.map((p) =>
           p.id === product.id ? { ...p, sale_price: saleValue } : p
@@ -103,7 +94,6 @@ export default function ManagePromotions() {
         
       toast.success(message);
 
-      // อัปเดตค่าในช่อง Input ให้โชว์ราคาใหม่ที่คำนวณแล้ว
       const inputEl = document.getElementById(`price-input-${product.id}`);
       if(inputEl) inputEl.value = saleValue || "";
 
@@ -169,16 +159,22 @@ export default function ManagePromotions() {
            return (
             <div key={product.id} className={`bg-white border rounded-2xl p-4 shadow-sm transition-all hover:shadow-md ${product.sale_price ? 'border-green-200 ring-1 ring-green-100' : 'border-slate-100'}`}>
               <div className="flex gap-4 mb-4">
-                <div className="relative w-20 h-20 bg-slate-50 rounded-lg flex-shrink-0 flex items-center justify-center p-2">
-                  <Image src={product.images?.[0] || "/placeholder.png"} alt={product.name} width={60} height={60} className="object-contain w-full h-full" />
+                
+                {/* ✅ เพิ่ม Link ครอบรูปสินค้า เพื่อกดไปดูหน้าสินค้าจริงได้ */}
+                <Link href={`/product/${product.id}`} target="_blank" className="relative w-20 h-20 bg-slate-50 rounded-lg flex-shrink-0 flex items-center justify-center p-2 group cursor-pointer hover:bg-slate-100 transition">
+                  <Image src={product.images?.[0] || "/placeholder.png"} alt={product.name} width={60} height={60} className="object-contain w-full h-full group-hover:scale-105 transition-transform" />
                   {product.sale_price > 0 && (
                     <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-sm flex items-center gap-0.5">
                       -{discountPercent}%
                     </span>
                   )}
-                </div>
+                </Link>
+
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-bold text-slate-800 truncate text-sm" title={product.name}>{product.name}</h3>
+                  {/* ✅ เพิ่ม Link ที่ชื่อสินค้าด้วย */}
+                  <Link href={`/product/${product.id}`} target="_blank" className="font-bold text-slate-800 truncate text-sm hover:text-blue-600 transition block" title={product.name}>
+                    {product.name}
+                  </Link>
                   <p className="text-xs text-slate-500 mb-2 truncate">{product.model}</p>
                   <div className="text-xs font-medium text-slate-400 bg-slate-50 inline-block px-2 py-1 rounded">
                     ราคาปกติ: {product.price.toLocaleString()}

@@ -78,7 +78,7 @@ const Hero = () => {
               >
                 {displayedText}
               </span>
-              <span className="ml-1 w-1 h-10 bg-slate-800 inline-block animate-pulse align-middle"></span>
+              <span className="ml-1 w-1 h-10 inline-block animate-pulse align-middle"></span>
             </h2>
 
             {/* 🔥 Enhanced CTA Button */}

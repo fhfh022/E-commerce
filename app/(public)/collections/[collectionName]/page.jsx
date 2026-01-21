@@ -24,7 +24,6 @@ export default function CollectionPage() {
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    // ✅ เพิ่ม State สำหรับ Pagination
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 8; 
 
@@ -70,8 +69,7 @@ export default function CollectionPage() {
                     );
                 } else if (collectionName === 'gaming-pro') {
                     filtered = data.filter(p => 
-                        p.category?.toLowerCase() === 'gaming' || 
-                        p.specs?.graphics?.includes('RTX')
+                        p.category?.toLowerCase() === 'gaming' &&  p.specs?.graphics?.includes('RTX')
                     );
                 }
 
@@ -161,9 +159,12 @@ export default function CollectionPage() {
                                 )}
                             </div>
                             
-                            {/* ✅ แก้ไขตรงนี้: ใช้ display_size และ display_specs แทน description */}
+                            {/* ✅ แก้ไข Logic แสดงผลจอภาพ (Display) ให้รองรับทุกเคส */}
                             <p className={`text-sm md:text-base leading-relaxed ${currentTheme.darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-                                {highlightProduct.specs?.display_size} {highlightProduct.specs?.display_specs ? `- ${highlightProduct.specs.display_specs}` : ''}
+                                {[
+                                    highlightProduct.specs?.display_size ? `${highlightProduct.specs.display_size}` : null,
+                                    (highlightProduct.specs?.display_specs || highlightProduct.specs?.display)
+                                ].filter(Boolean).join(" - ")}
                             </p>
 
                             <div className="pt-4 flex items-center gap-4">

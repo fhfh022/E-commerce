@@ -19,13 +19,13 @@ export default function StoreAddProduct() {
     { label: "Lenovo", value: "Lenovo" },
     { label: "MSI", value: "MSI" },
     { label: "Gigabyte", value: "Gigabyte" },
-    { label: "Dell", value: "Dell" },
   ];
 
   /* ---------- State ---------- */
   const [loading, setLoading] = useState(false);
   const [images, setImages] = useState({ 1: null, 2: null, 3: null, 4: null });
   
+  // ✅ ตัด Stock ออกจาก productInfo
   const [productInfo, setProductInfo] = useState({
     name: "", brand: "", model: "", price: "", category: ""
   });
@@ -42,9 +42,11 @@ export default function StoreAddProduct() {
     ports: "",            
     battery: "",          
     os: "",               
-    bluetooth: "",        
     weight: "",           
-    network: ""           
+    // ✅ เพิ่ม 3 ค่านี้
+    wireless: "",
+    bluetooth: "",
+    network: "",
   });
 
   /* ---------- Handlers ---------- */
@@ -113,9 +115,10 @@ export default function StoreAddProduct() {
         model: productInfo.model,
         price: Number(productInfo.price),
         category: productInfo.category,
-        description: productInfo.description,
         images: imageUrls,
-        date: Date.now(),
+        created_at: new Date(),
+        // ✅ ตัด stock ออกจาก payload
+        // description: productInfo.description, // ตัดออกตามที่พี่แจ้ง
         specs: {
             processor: specs.processor,
             processor_detail: specs.processor_detail,
@@ -127,8 +130,10 @@ export default function StoreAddProduct() {
             ports: specs.ports,
             battery: specs.battery,
             os: specs.os,
-            bluetooth: specs.bluetooth,
             weight: specs.weight,
+            // ✅ ส่งค่า Wireless, Bluetooth, Network ไปด้วย
+            wireless: specs.wireless,
+            bluetooth: specs.bluetooth,
             network: specs.network
         }
       });
@@ -141,7 +146,8 @@ export default function StoreAddProduct() {
       setProductInfo({ name: "", brand: "", model: "", price: "", category: ""});
       setSpecs({
         processor: "", processor_detail: "", graphics: "", display: "", display_size: "",
-        ram: "", storage: "", ports: "", battery: "", os: "", bluetooth: "", weight: "", network: ""
+        ram: "", storage: "", ports: "", battery: "", os: "", weight: "",
+        wireless: "", bluetooth: "", network: ""
       });
       setImages({ 1: null, 2: null, 3: null, 4: null });
 
@@ -175,6 +181,13 @@ export default function StoreAddProduct() {
                 <label className={labelClass}>ชื่อสินค้า <span className="text-red-500">*</span></label>
                 <input type="text" name="name" value={productInfo.name} onChange={onChangeHandler} className={inputClass} placeholder="ระบุชื่อสินค้า" required />
             </div>
+             <div>
+                <label className={labelClass}>รุ่น (Model)</label>
+                <input type="text" name="model" value={productInfo.model} onChange={onChangeHandler} className={inputClass} placeholder="ระบุรุ่นสินค้า" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-4">
             <div>
                 <label className={labelClass}>แบรนด์ <span className="text-red-500">*</span></label>
                 <select name="brand" onChange={onChangeHandler} value={productInfo.brand} className={inputClass} required>
@@ -182,24 +195,18 @@ export default function StoreAddProduct() {
                     {brand.map((b, i) => <option key={i} value={b.value}>{b.label}</option>)}
                 </select>
             </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-4">
-            <div>
-                <label className={labelClass}>รุ่น (Model)</label>
-                <input type="text" name="model" value={productInfo.model} onChange={onChangeHandler} className={inputClass} placeholder="ระบุรุ่นสินค้า" />
-            </div>
-            <div>
-                <label className={labelClass}>ราคา (บาท) <span className="text-red-500">*</span></label>
-                <input type="number" name="price" value={productInfo.price} onChange={onChangeHandler} className={inputClass} placeholder="เช่น 29990" required />
-            </div>
-            <div>
+           <div>
                 <label className={labelClass}>หมวดหมู่ <span className="text-red-500">*</span></label>
                 <select name="category" onChange={onChangeHandler} value={productInfo.category} className={inputClass} required>
                     <option value="">เลือกหมวดหมู่</option>
                     {categories.map((c, i) => <option key={i} value={c.value}>{c.label}</option>)}
                 </select>
             </div>
+            <div>
+                <label className={labelClass}>ราคา (บาท) <span className="text-red-500">*</span></label>
+                <input type="number" name="price" value={productInfo.price} onChange={onChangeHandler} className={inputClass} placeholder="เช่น 29990" required />
+            </div>
+            
           </div>
 
         </div>
@@ -249,14 +256,15 @@ export default function StoreAddProduct() {
                 <input type="text" name="graphics" value={specs.graphics} onChange={onChangeSpecs} className={inputClass} placeholder="เช่น NVIDIA GeForce RTX 4060" />
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
-                <div>
-                    <label className={labelClass}>หน้าจอ (Display)</label>
-                    <input type="text" name="display" value={specs.display} onChange={onChangeSpecs} className={inputClass} placeholder="เช่น IPS 165Hz" />
-                </div>
+            <div className="grid grid-cols-2 gap-4 ">
                 <div>
                     <label className={labelClass}>ขนาดหน้าจอ</label>
                     <input type="text" name="display_size" value={specs.display_size} onChange={onChangeSpecs} className={inputClass} placeholder='เช่น 16.0"' />
+                </div>
+
+                <div>
+                    <label className={labelClass}>หน้าจอ (Display)</label>
+                    <input type="text" name="display" value={specs.display} onChange={onChangeSpecs} className={inputClass} placeholder="เช่น IPS 165Hz" />
                 </div>
             </div>
 
@@ -280,22 +288,29 @@ export default function StoreAddProduct() {
                 <input type="text" name="battery" value={specs.battery} onChange={onChangeSpecs} className={inputClass} placeholder="เช่น 4-Cell, 90Wh" />
             </div>
 
+           
+            
+            {/* ✅ เพิ่มส่วนที่ขาดหายไป */}
             <div>
+                <label className={labelClass}>Wireless</label>
+                <input type="text" name="wireless" value={specs.wireless} onChange={onChangeSpecs} className={inputClass} placeholder="เช่น Wi-Fi 6E" />
+            </div>
+            <div>
+                <label className={labelClass}>Bluetooth</label>
+                <input type="text" name="bluetooth" value={specs.bluetooth} onChange={onChangeSpecs} className={inputClass} placeholder="เช่น Bluetooth 5.3" />
+            </div>
+            <div>
+                <label className={labelClass}>เครือข่าย (Network)</label>
+                <input type="text" name="network" value={specs.network} onChange={onChangeSpecs} className={inputClass} placeholder="เช่น 10/100/1000 LAN" />
+            </div>
+             <div>
                 <label className={labelClass}>ระบบปฏิบัติการ (OS)</label>
                 <input type="text" name="os" value={specs.os} onChange={onChangeSpecs} className={inputClass} placeholder="เช่น Windows 11 Home" />
             </div>
-            <div>
-                <label className={labelClass}>บลูทูธ</label>
-                <input type="text" name="bluetooth" value={specs.bluetooth} onChange={onChangeSpecs} className={inputClass} />
-            </div>
-
+            
             <div>
                 <label className={labelClass}>น้ำหนัก</label>
                 <input type="text" name="weight" value={specs.weight} onChange={onChangeSpecs} className={inputClass} placeholder="เช่น 2.50 KG" />
-            </div>
-            <div>
-                <label className={labelClass}>เครือข่าย (LAN/WiFi)</label>
-                <input type="text" name="network" value={specs.network} onChange={onChangeSpecs} className={inputClass} placeholder="เช่น Wi-Fi 6E, Gigabit LAN" />
             </div>
 
           </div>

@@ -1,5 +1,3 @@
-
-
 const config = {
   plugins: ["@tailwindcss/postcss",require('@tailwindcss/typography'),],
   extends:{
@@ -14,6 +12,7 @@ const config = {
         '2xl': '1024px'
       }
     }
+    
   }
 };
 

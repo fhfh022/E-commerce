@@ -14,7 +14,8 @@ import {
   Heart,
   AlertCircle,
   Eye,
-  Truck
+  Truck,
+  Ban // เพิ่ม icon Ban สำหรับสถานะไม่พร้อมจำหน่าย
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
@@ -107,13 +108,21 @@ const ProductDetails = ({ product }) => {
 
   const currentQtyInCart = cart[productId] || 0;
   const realStock = product.stock || 0;
+  
+  // ✅ แก้ไข Logic: เช็คทั้ง in_stock และ จำนวนสินค้า
   const isAvailable = product.in_stock && realStock > 0;
 
   const addToCartHandler = async () => {
-    if (!product.in_stock)
-      return toast.error("This product is currently unavailable.");
+    // ✅ แจ้งเตือนแยกกรณี
+    if (!product.in_stock && realStock > 0) {
+        return toast.error("สินค้านี้ยังไม่พร้อมจำหน่ายในขณะนี้");
+    }
+    if (realStock <= 0) {
+        return toast.error("ขออภัย สินค้าหมดชั่วคราว");
+    }
+    
     if (currentQtyInCart + 1 > realStock)
-      return toast.error(`Sorry! Only ${realStock} items left in stock.`);
+      return toast.error(`ขออภัย! เหลือสินค้าเพียง ${realStock} ชิ้น`);
 
     dispatch(addToCart({ productId: product.id, quantity: 1 }));
 
@@ -192,7 +201,7 @@ const ProductDetails = ({ product }) => {
         )}
       </div>
 
-      {/* Stock Status */}
+      {/* Stock Status (✅ แก้ไข Logic การแสดงผล) */}
       <div className="mb-6">
         {isAvailable ? (
           <div className="flex items-center gap-2 text-green-600 text-sm font-medium">
@@ -200,19 +209,30 @@ const ProductDetails = ({ product }) => {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
               </span>
-            in stock: {realStock} ชิ้น
+            มีสินค้า: {realStock} ชิ้น
           </div>
         ) : (
           <div className="flex items-center gap-2 text-red-500 text-sm font-medium">
-            <AlertCircle size={16} />
-            สินค้าหมดชั่วคราว
+            {realStock > 0 ? (
+                // กรณีมีของ แต่ปิดสถานะการขาย
+                <>
+                    <Ban size={16} />
+                    สินค้าไม่พร้อมจำหน่าย
+                </>
+            ) : (
+                // กรณีของหมดจริง (Stock = 0)
+                <>
+                    <AlertCircle size={16} />
+                    สินค้าหมดชั่วคราว
+                </>
+            )}
           </div>
         )}
       </div>
 
-      {/* Add to Cart */}
+      {/* Add to Cart Button (✅ แก้ไขข้อความปุ่ม) */}
       <div className="flex flex-col gap-4">
-        {cart[productId] && (
+        {cart[productId] && isAvailable && (
           <div className="w-full">
              <Counter productId={productId} stock={realStock} />
           </div>
@@ -233,7 +253,7 @@ const ProductDetails = ({ product }) => {
           `}
         >
           {!isAvailable
-            ? "สินค้าหมดชั่วคราว"
+            ? (realStock > 0 ? "สินค้าไม่พร้อมจำหน่าย" : "สินค้าหมดชั่วคราว") 
             : !cart[productId]
             ? "เพิ่มลงตะกร้า"
             : "ไปที่ตะกร้าสินค้า"}

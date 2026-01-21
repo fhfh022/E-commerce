@@ -6,11 +6,12 @@ import { ClerkProvider } from "@clerk/nextjs";
 import SyncUser from "@/components/providers/SyncUser";
 import RoleInitializer from "@/components/providers/RoleInitializer";
 import AppInitializer from "../components/providers/AppInitializer";
-import CookieConsent from '@/components/layout/CookieConsent';
+import CookieConsent from "@/components/layout/CookieConsent";
+// ✅ 1. Import Provider ที่สร้างใหม่
 
-const prompt = Prompt({ 
-  subsets: ["latin", "thai"], 
-  weight: ["300", "400", "500", "600", "700"] 
+const prompt = Prompt({
+  subsets: ["latin", "thai"],
+  weight: ["300", "400", "500", "600", "700"],
 });
 
 export const metadata = {
@@ -21,8 +22,8 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <ClerkProvider>
+      {/* ✅ 2. ใส่ suppressHydrationWarning ที่ html */}
       <html lang="en">
-        {/* ใช้ prompt.className แทน outfit.className */}
         <body className={`${prompt.className} antialiased`}>
           <StoreProvider>
             <AppInitializer>

@@ -63,7 +63,7 @@ export default function HomeContent() {
                         description="แล็ปท็อปประสิทธิภาพสูงสำหรับเกมเมอร์ตัวยง"
                         products={gamingProducts}
                         // ใช้สีพื้นหลังแบบ Dark Mode + Gradient ม่วง
-                        bgColor="bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-purple-900 to-slate-950 text-white border-y border-purple-900/50 shadow-2xl"
+                        
                     />
                 </div>
             )}
@@ -75,7 +75,7 @@ export default function HomeContent() {
                         title="💻 อัลตร้าบุ๊คพรีเมียม" 
                         description="บาง เบา และทรงพลังสำหรับมืออาชีพ"
                         products={ultrabookProducts}
-                        bgColor="bg-gradient-to-r from-blue-50 via-white to-cyan-50 border-y border-blue-100"
+                        
                     />
                 </div>
             )}

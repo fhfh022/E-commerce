@@ -40,7 +40,25 @@ export async function POST(req) {
     console.log(`🔔 Payment success for Order ID: ${orderId}`);
 
     try {
-      // --- STEP A: อัปเดตสถานะออเดอร์ ---
+      // ✅ ดึงข้อมูล Order ก่อน เพื่อเก็บข้อมูล discount
+      const { data: orderBeforeUpdate, error: orderFetchError } = await supabaseAdmin
+        .from("orders")
+        .select("*")
+        .eq("id", orderId)
+        .single();
+
+      if (orderFetchError) {
+        console.warn(`⚠️ Failed to fetch order ${orderId}: ${orderFetchError.message}`);
+      } else {
+        console.log(`✅ Order Data:`, {
+          id: orderBeforeUpdate.id,
+          discount_amount: orderBeforeUpdate.discount_amount,
+          total_amount: orderBeforeUpdate.total_amount,
+          payment_status: orderBeforeUpdate.payment_status,
+        });
+      }
+
+      // --- STEP A: อัปเดตสถานะออเดอร์ (พร้อมเก็บข้อมูล discount ไว้) ---
       const { error: updateError } = await supabaseAdmin
         .from("orders")
         .update({
@@ -51,8 +69,47 @@ export async function POST(req) {
 
       if (updateError) throw new Error(`Order Update Failed: ${updateError.message}`);
 
-      // --- STEP B: ตัดสต็อกสินค้า (Optional) ---
-      // (ใส่โค้ดตัดสต็อกตรงนี้ได้เลยตามที่เคยคุยกัน)
+      // --- STEP B: ตัดสต็อกสินค้า ---
+      // 1. ดึงรายการสินค้าในออเดอร์นี้
+      const { data: orderItems, error: itemsFetchError } = await supabaseAdmin
+        .from("order_items")
+        .select("product_id, quantity")
+        .eq("order_id", orderId);
+
+      if (itemsFetchError) throw new Error(`Fetch Order Items Failed: ${itemsFetchError.message}`);
+
+      // 2. ตัดสต็อกสำหรับสินค้าแต่ละรายการ
+      if (orderItems && orderItems.length > 0) {
+        for (const item of orderItems) {
+          // ดึงสต็อกปัจจุบัน
+          const { data: product, error: productError } = await supabaseAdmin
+            .from("products")
+            .select("stock, in_stock")
+            .eq("id", item.product_id)
+            .single();
+
+          if (productError) {
+            console.warn(`⚠️ Product ${item.product_id} not found`);
+            continue;
+          }
+
+          // คำนวณสต็อกใหม่
+          const newStock = Math.max(0, (product.stock || 0) - item.quantity);
+          const newInStock = newStock > 0 ? product.in_stock : false;
+
+          // อัปเดตสต็อก
+          const { error: updateStockError } = await supabaseAdmin
+            .from("products")
+            .update({ stock: newStock, in_stock: newInStock })
+            .eq("id", item.product_id);
+
+          if (updateStockError) {
+            console.warn(`⚠️ Failed to update stock for product ${item.product_id}: ${updateStockError.message}`);
+          } else {
+            console.log(`✅ Stock updated: Product ${item.product_id} - New Stock: ${newStock}`);
+          }
+        }
+      }
 
     } catch (err) {
       console.error("❌ Error processing webhook:", err);

@@ -62,9 +62,11 @@ export default function OrdersContent() {
   if (loading && orders.length === 0) return <Loading />;
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-10 min-h-[60vh] animate-in fade-in duration-500">
-      <h1 className="text-2xl font-bold text-slate-800 mb-2">รายการสั่งซื้อทั้งหมด</h1>
-      <p className="text-slate-500 mb-8">ประวัติการสั่งซื้อและสถานะสินค้า</p>
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 min-h-[40vh] animate-in fade-in duration-500">
+      <header className="mb-6">
+        <h1 className="text-3xl font-semibold text-slate-900 leading-tight mb-1">รายการสั่งซื้อทั้งหมด</h1>
+        <p className="text-slate-500 text-sm">ประวัติการสั่งซื้อและสถานะสินค้า</p>
+      </header>
 
       {orders.length === 0 && !loading ? (
         <div className="text-center py-16 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
@@ -81,7 +83,7 @@ export default function OrdersContent() {
           </button>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* ✅ เรียกใช้ OrderItem แทนการเขียน Code ยาวๆ */}
           {orders.map((order) => (
             <OrderItem key={order.id} order={order} />
@@ -89,7 +91,7 @@ export default function OrdersContent() {
 
           {/* Pagination Controls */}
           {totalOrders > ITEMS_PER_PAGE && (
-            <div className="flex justify-center items-center gap-4 mt-10 pt-6 border-t border-slate-100">
+            <div className="flex justify-center items-center gap-4 mt-6 pt-4 border-t border-slate-100">
               <button
                 onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                 disabled={currentPage === 1}

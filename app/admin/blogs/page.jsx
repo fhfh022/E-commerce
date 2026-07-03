@@ -218,11 +218,15 @@ export default function AdminBlogs() {
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-10 pb-20 animate-in fade-in duration-500">
-      <div className="flex justify-between items-center mb-8">
-        <PageTitle heading="จัดการบทความ (Blog)" text="สร้างคอนเทนต์เพื่อดึงดูดลูกค้า" />
-        <button onClick={() => handleOpenModal()} className="bg-slate-900 text-white px-5 py-3 rounded-xl font-bold flex items-center gap-2 transition hover:bg-slate-800 shadow-lg shadow-slate-200">
-            <Plus size={20} /> เขียนบทความใหม่
-        </button>
+      <div className="mb-8">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+          <PageTitle heading="จัดการบทความ (Blog)" text="สร้างคอนเทนต์เพื่อดึงดูดลูกค้า" />
+          <div className="flex-shrink-0 w-full sm:w-auto">
+            <button onClick={() => handleOpenModal()} className="w-full sm:w-auto bg-slate-900 text-white px-5 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition hover:bg-slate-800 shadow-lg shadow-slate-200">
+                <Plus size={20} /> เขียนบทความใหม่
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Blog Grid */}

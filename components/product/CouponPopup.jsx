@@ -47,9 +47,29 @@ export default function CouponPopup() {
     fetchCoupons();
   }, []);
 
-  const handleCopy = (code) => {
-    navigator.clipboard.writeText(code);
-    toast.success(`Copied code: ${code}`);
+  const handleCopy = async (code) => {
+    try {
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(code);
+      } else if (typeof document !== "undefined") {
+        const textarea = document.createElement("textarea");
+        textarea.value = code;
+        textarea.setAttribute("readonly", "");
+        textarea.style.position = "absolute";
+        textarea.style.left = "-9999px";
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textarea);
+      } else {
+        throw new Error("Clipboard not available");
+      }
+
+      toast.success(`Copied code: ${code}`);
+    } catch (error) {
+      console.error("Copy coupon code error:", error);
+      toast.error("ไม่สามารถคัดลอกคูปองได้ กรุณาลองอีกครั้ง");
+    }
   };
 
   if (!isVisible || coupons.length === 0 || !user) return null;

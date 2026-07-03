@@ -145,7 +145,7 @@ const ProductCard = ({ product, hideLikeButton = false }) => {
           </div>
 
           {/* Spec String */}
-          <p className="text-xs text-slate-500 leading-relaxed">
+          <p className="text-xs text-slate-500 leading-relaxed line-clamp-2">
             {specString || product.description || "ดูรายละเอียดสินค้าเพิ่มเติม..."}
           </p>
 

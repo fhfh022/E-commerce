@@ -29,12 +29,12 @@ export default async function BlogPage() {
   // ไม่ต้องมี Loading State แล้ว เพราะ Server จะรอข้อมูลเสร็จค่อยส่ง HTML มาทีเดียว
 
   return (
-    <div className="max-w-7xl mx-auto px-6 pt-10 pb-20 animate-in fade-in duration-500">
-      <div className="text-center mb-16 space-y-4">
-        <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-8 sm:pt-10 pb-16 animate-in fade-in duration-500">
+      <div className="text-center mb-12 sm:mb-16 space-y-3 sm:space-y-4">
+        <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 tracking-tight">
             Latest <span className="text-indigo-600">Updates</span>
         </h1>
-        <p className="text-slate-500 text-lg max-w-2xl mx-auto">
+        <p className="text-slate-500 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
             ข่าวสาร อัปเดตเทคโนโลยี และทริคดีๆ เกี่ยวกับอุปกรณ์ไอทีที่คุณไม่ควรพลาด
         </p>
       </div>
@@ -45,10 +45,10 @@ export default async function BlogPage() {
             <p className="text-slate-400 text-lg">ยังไม่มีบทความในขณะนี้</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
           {blogs.map((blog) => (
             <Link href={`/blogs/${blog.id}`} key={blog.id} className="group flex flex-col bg-white border border-slate-100 rounded-3xl overflow-hidden hover:shadow-xl hover:shadow-indigo-100/50 transition-all duration-300 hover:-translate-y-1">
-              <div className="relative h-60 w-full bg-slate-100 overflow-hidden">
+              <div className="relative h-52 sm:h-56 md:h-60 w-full bg-slate-100 overflow-hidden">
                 {blog.image_url ? (
                     <Image 
                         src={blog.image_url} 

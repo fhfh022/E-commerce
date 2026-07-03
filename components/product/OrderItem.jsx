@@ -213,9 +213,9 @@ export default function OrderItem({ order }) {
 
     return (
         <>
-            <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden hover:shadow-md transition-shadow duration-200 mb-6">
+            <div className="bg-white rounded-lg overflow-hidden hover:shadow-lg transition-shadow duration-200 mb-4 ring-1 ring-slate-100">
                 
-                <div className="bg-slate-50 px-6 py-4 flex flex-col sm:flex-row justify-between sm:items-center gap-4 border-b border-slate-100">
+                <div className="px-4 py-3 flex flex-col sm:flex-row justify-between sm:items-center gap-3 border-b border-slate-100 bg-white">
                     <div className="flex flex-wrap gap-4 sm:gap-8">
                         <div>
                             <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">หมายเลขคำสั่งซื้อ</p>
@@ -266,7 +266,7 @@ export default function OrderItem({ order }) {
                 </div>
 
                 {order.payment_status === 'pending' && order.status !== 'cancelled' && (
-                    <div className="bg-orange-50 px-6 py-3 border-b border-orange-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2 animate-in fade-in slide-in-from-top-1">
+                    <div className="bg-orange-50 px-4 py-2 border-b border-orange-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2 animate-in fade-in slide-in-from-top-1">
                         <div className="flex items-center gap-2 text-orange-700">
                             <div className="p-1 bg-orange-100 rounded-full">
                                 <AlertTriangle size={14} />
@@ -278,15 +278,15 @@ export default function OrderItem({ order }) {
                     </div>
                 )}
 
-                <div className="p-6">
+                <div className="p-4">
                     <div className="flex flex-col gap-4">
                         {order.order_items?.map((item, i) => {
                             const review = existingReviews[item.product?.id];
                             const isSaleItem = item.product?.price > item.price_at_time;
 
-                            return (
-                                <div key={i} className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full bg-white p-3 rounded-xl border border-slate-100 shadow-sm relative group">
-                                    <div className="relative size-16 bg-slate-50 rounded-lg border border-slate-100 flex items-center justify-center overflow-hidden flex-shrink-0">
+                                return (
+                                    <div key={i} className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full bg-white p-3 rounded-lg shadow-sm hover:shadow-md relative group min-w-0 ring-1 ring-slate-50">
+                                    <div className="relative size-16 bg-slate-50 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
                                         {item.product?.images?.[0] ? (
                                             <img src={item.product.images[0]} alt={item.product.name} className="object-contain w-full h-full p-1" />
                                         ) : (
@@ -295,8 +295,8 @@ export default function OrderItem({ order }) {
                                     </div>
                                     <div className="flex-1 min-w-0 w-full">
                                         <div className="flex justify-between items-start">
-                                            <div>
-                                                <p className="text-sm font-bold text-slate-700 truncate mb-0.5" title={`${item.product?.name} ${item.product?.model}`}>
+                                            <div className="min-w-0 overflow-hidden">
+                                                <p className="text-sm font-bold text-slate-700 truncate mb-0.5 max-w-full" title={`${item.product?.name} ${item.product?.model}`}>
                                                     {item.product?.name} <span className="text-slate-400 font-normal text-xs">({item.product?.model})</span>
                                                 </p>
                                                 <div className="flex items-center gap-2 text-xs text-slate-500 mb-2">
@@ -354,7 +354,7 @@ export default function OrderItem({ order }) {
                 </div>
 
                 {order.payment_status === 'pending' && order.status !== 'cancelled' && (
-                    <div className="px-6 pb-4 flex gap-3 justify-end border-t border-slate-50 pt-4">
+                    <div className="px-4 pb-4 flex gap-3 justify-end border-t border-slate-50 pt-3">
                         <button 
                             onClick={() => setShowCancelModal(true)} 
                             disabled={isActionLoading} 

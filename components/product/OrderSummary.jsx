@@ -162,10 +162,22 @@ const OrderSummary = ({ totalPrice, items }) => {
       }
   };
 
+  const stockIssues = items.filter((item) => item.quantity > (item.stock || 0));
+  const hasStockIssue = stockIssues.length > 0;
+
   const handlePlaceOrderClick = (e) => {
     e.preventDefault();
     if (selectedAddressIndex === "" || !user) {
       toast.error("กรุณาเลือกที่อยู่");
+      return;
+    }
+    if (hasStockIssue) {
+      const issue = stockIssues[0];
+      if (issue.stock === 0) {
+        toast.error(`สินค้า "${issue.name}" หมดสต็อกแล้ว`);
+      } else {
+        toast.error(`สินค้า "${issue.name}" สั่งได้สูงสุด ${issue.stock} ชิ้น`);
+      }
       return;
     }
     setShowConfirmModal(true);
@@ -216,11 +228,11 @@ const OrderSummary = ({ totalPrice, items }) => {
   };
 
   return (
-    <div className="w-full max-w-lg mx-auto lg:mx-0 lg:max-w-[340px] bg-white border border-slate-200 text-slate-500 text-sm rounded-2xl p-7 shadow-sm">
-      <h2 className="text-xl font-bold text-slate-800 mb-6">สรุปรายการสั่งซื้อ</h2>
+    <div className="w-full max-w-lg mx-auto lg:mx-0 lg:max-w-[340px] bg-white border border-slate-200 text-slate-500 text-sm rounded-2xl p-5 shadow-sm">
+      <h2 className="text-xl font-bold text-slate-800 mb-4">สรุปรายการสั่งซื้อ</h2>
 
       {/* Payment Method Section */}
-      <div className="space-y-3 mb-6">
+      <div className="space-y-3 mb-4">
         <p className="text-gray-500 text-xs font-bold uppercase tracking-wider">วิธีการชำระเงิน</p>
         
         <label className={`flex gap-3 items-center p-3 border rounded-xl cursor-not-allowed transition-all ${
@@ -255,7 +267,7 @@ const OrderSummary = ({ totalPrice, items }) => {
       </div>
 
       {/* Shipping Address Section */}
-      <div className="my-6 py-6 border-y border-slate-100">
+      <div className="my-4 py-4 border-y border-slate-100">
         <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-3">
           ที่อยู่จัดส่ง
         </p>
@@ -316,7 +328,7 @@ const OrderSummary = ({ totalPrice, items }) => {
       </div>
 
       {/* Cost Breakdown */}
-      <div className="space-y-3 pb-6 border-b border-slate-100">
+      <div className="space-y-3 pb-4 border-b border-slate-100">
         <div className="flex justify-between text-slate-500">
           <span>ราคารวม</span>
           <span className="font-medium text-slate-700">{currency}{Math.round(totalPrice)}</span>
@@ -335,7 +347,7 @@ const OrderSummary = ({ totalPrice, items }) => {
 
       {/* Coupon Section */}
       {!coupon ? (
-        <form onSubmit={handleCouponCode} className="flex gap-2 mt-6">
+        <form onSubmit={handleCouponCode} className="flex gap-2 mt-4">
           <input 
             onChange={(e) => setCouponCodeInput(e.target.value)} 
             value={couponCodeInput} 
@@ -362,8 +374,22 @@ const OrderSummary = ({ totalPrice, items }) => {
         </div>
       )}
 
+      {hasStockIssue && (
+        <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          <p className="font-bold mb-2">มีปัญหาสต็อกในตะกร้า</p>
+          <ul className="list-disc pl-5 space-y-1">
+            {stockIssues.map((issue, index) => (
+              <li key={index}>
+                {issue.stock === 0
+                  ? `สินค้า "${issue.name}" หมดสต็อกแล้ว`
+                  : `สินค้า "${issue.name}" สั่งได้สูงสุด ${issue.stock} ชิ้น`}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       {/* Total */}
-      <div className="flex justify-between items-center py-6">
+      <div className="flex justify-between items-center py-4">
         <span className="font-bold text-slate-800 text-lg">ยอดรวม</span>
         <span className="font-black text-slate-900 text-xl">{currency}{finalTotal}</span>
       </div>
@@ -371,7 +397,7 @@ const OrderSummary = ({ totalPrice, items }) => {
       {/* Place Order Button */}
       <button 
         onClick={handlePlaceOrderClick} 
-        className="w-full bg-slate-900 text-white py-4 rounded-2xl font-bold text-lg hover:bg-slate-800 active:scale-95 transition-all shadow-lg shadow-slate-200"
+        className="w-full bg-slate-900 text-white py-3 rounded-2xl font-bold text-lg hover:bg-slate-800 active:scale-95 transition-all shadow-lg shadow-slate-200"
       >
         สั่งซื้อสินค้า
       </button>

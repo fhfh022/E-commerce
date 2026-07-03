@@ -283,6 +283,43 @@ export default function ChatPage() {
 
   const currentRoom = chatRooms.find((r) => r.id === selectedRoomId);
 
+  const formatChatDate = (dateString) => {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return "";
+    return date.toLocaleDateString("th-TH", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
+  const formatChatTime = (dateString) => {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return "";
+    const today = new Date().toLocaleDateString("th-TH");
+    const messageDate = date.toLocaleDateString("th-TH");
+    const time = date.toLocaleTimeString("th-TH", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    return today === messageDate ? time : `${time} · ${formatChatDate(dateString)}`;
+  };
+
+  const messagesWithDateMarkers = [];
+  let lastMessageDate = "";
+  messages.forEach((msg) => {
+    const msgDate = formatChatDate(msg.created_at);
+    if (msgDate && msgDate !== lastMessageDate) {
+      messagesWithDateMarkers.push({
+        id: `date-${msgDate}-${messagesWithDateMarkers.length}`,
+        type: "date",
+        label: msgDate,
+      });
+      lastMessageDate = msgDate;
+    }
+    messagesWithDateMarkers.push({ ...msg, type: "message" });
+  });
+
   return (
     <div className="h-[calc(100vh-64px)] bg-[#F1F5F9] flex items-center justify-center px-0 sm:px-4 py-4 md:py-8">
       <div className="flex w-full max-w-6xl h-full bg-white sm:rounded-2xl shadow-2xl overflow-hidden border border-slate-200 relative transition-all">
@@ -399,7 +436,17 @@ export default function ChatPage() {
 
               {/* Messages Area */}
               <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-5 bg-[#F8FAFC]">
-                {messages.map((msg) => {
+                {messagesWithDateMarkers.map((msg) => {
+                  if (msg.type === "date") {
+                    return (
+                      <div key={msg.id} className="flex justify-center">
+                        <div className="px-4 py-1 rounded-full bg-slate-200 text-slate-500 text-[11px] font-bold shadow-sm">
+                          {msg.label}
+                        </div>
+                      </div>
+                    );
+                  }
+
                   const isMe = isAdmin ? msg.is_admin : !msg.is_admin;
                   return (
                     <div
@@ -459,10 +506,7 @@ export default function ChatPage() {
                             isMe ? "text-right mr-1" : "ml-1"
                           }`}
                         >
-                          {new Date(msg.created_at).toLocaleTimeString("th-TH", {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
+                          {formatChatTime(msg.created_at)}
                         </span>
                       </div>
                     </div>

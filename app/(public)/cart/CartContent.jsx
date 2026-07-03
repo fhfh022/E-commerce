@@ -265,7 +265,7 @@ export default function Cart() {
                     <p className="sm:hidden text-[10px] font-bold text-slate-400 uppercase mb-2 tracking-wider">
                       จำนวน
                     </p>
-                    <Counter productId={item.id} />
+                    <Counter productId={item.id} stock={item.stock || 0} />
                   </div>
 
                   <div className="col-span-1 sm:col-span-2 text-right mt-[-40px] sm:mt-0">

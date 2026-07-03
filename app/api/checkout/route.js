@@ -62,7 +62,39 @@ export async function POST(req) {
         return NextResponse.json({ error: "Order not found" }, { status: 404 });
       }
 
-      // 2. สร้าง Line Items จากข้อมูลใน DB (ใช้ราคาตอนที่สั่งซื้อ price_at_time)
+      // 2. ตรวจสอบสต็อกสำหรับออเดอร์เดิมก่อนสร้าง Stripe Line Items
+      const orderProductIds = orderData.order_items.map((item) => item.product_id);
+      const { data: dbOrderProducts } = await supabaseAdmin
+        .from("products")
+        .select("id, name, stock")
+        .in("id", orderProductIds);
+
+      const outOfStockOrderItems = [];
+      orderData.order_items.forEach((item) => {
+        const dbProduct = dbOrderProducts.find((p) => p.id === item.product_id);
+        const availableStock = dbProduct?.stock || 0;
+        if (item.quantity > availableStock) {
+          outOfStockOrderItems.push({
+            id: item.product_id,
+            name: dbProduct?.name || "Unknown product",
+            requested: item.quantity,
+            available: availableStock,
+          });
+        }
+      });
+
+      if (outOfStockOrderItems.length > 0) {
+        const messages = outOfStockOrderItems.map((item) => {
+          if (item.available === 0) {
+            return `"${item.name}" หมดสต็อกแล้ว`;
+          }
+          return `"${item.name}" สั่งได้สูงสุด ${item.available} ชิ้น`;
+        });
+
+        return NextResponse.json({ error: `Stock validation failed: ${messages.join(", ")}` }, { status: 400 });
+      }
+
+      // 3. สร้าง Line Items จากข้อมูลใน DB (ใช้ราคาที่บันทึกไว้ตอนสั่งซื้อ price_at_time)
       line_items_for_stripe = orderData.order_items.map((item) => ({
         price_data: {
           currency: "thb",
@@ -104,11 +136,22 @@ export async function POST(req) {
         .select("*")
         .in("id", productIds);
 
-      // 2. คำนวณยอดและสร้าง Line Items
+      // 2. คำนวณยอด, สร้าง Line Items และตรวจสอบสต็อกก่อน
       let subTotal = 0;
+      const outOfStockItems = [];
       line_items_for_stripe = items.map((item) => {
         const dbProduct = dbProducts.find((p) => p.id === item.id);
         if (!dbProduct) throw new Error(`Product ID ${item.id} not found`);
+
+        const availableStock = dbProduct.stock || 0;
+        if (item.quantity > availableStock) {
+          outOfStockItems.push({
+            id: item.id,
+            name: dbProduct.name,
+            requested: item.quantity,
+            available: availableStock,
+          });
+        }
 
         const priceToUse = (dbProduct.sale_price > 0 && dbProduct.sale_price < dbProduct.price)
           ? dbProduct.sale_price
@@ -129,6 +172,16 @@ export async function POST(req) {
           quantity: item.quantity,
         };
       });
+
+      if (outOfStockItems.length > 0) {
+        const messages = outOfStockItems.map((item) => {
+          if (item.available === 0) {
+            return `"${item.name}" หมดสต็อกแล้ว`;
+          }
+          return `"${item.name}" สั่งได้สูงสุด ${item.available} ชิ้น`; 
+        });
+        return NextResponse.json({ error: `Stock validation failed: ${messages.join(', ')}` }, { status: 400 });
+      }
 
       // 3. คำนวณส่วนลดคูปอง (ถ้ามี)
       let discountAmount = 0;

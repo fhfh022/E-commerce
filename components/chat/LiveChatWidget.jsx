@@ -167,8 +167,45 @@ export default function LiveChatWidget() {
 
   if (!user || isAdmin || pathname === "/chat") return null;
 
+  const formatChatDate = (dateString) => {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return "";
+    return date.toLocaleDateString("th-TH", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
+  const formatChatTime = (dateString) => {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return "";
+    const today = new Date().toLocaleDateString("th-TH");
+    const messageDate = date.toLocaleDateString("th-TH");
+    const time = date.toLocaleTimeString("th-TH", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    return today === messageDate ? time : `${time} · ${formatChatDate(dateString)}`;
+  };
+
+  const messagesWithDateMarkers = [];
+  let lastMessageDate = "";
+  messages.forEach((msg) => {
+    const msgDate = formatChatDate(msg.created_at);
+    if (msgDate && msgDate !== lastMessageDate) {
+      messagesWithDateMarkers.push({
+        id: `date-${msgDate}-${messagesWithDateMarkers.length}`,
+        type: "date",
+        label: msgDate,
+      });
+      lastMessageDate = msgDate;
+    }
+    messagesWithDateMarkers.push({ ...msg, type: "message" });
+  });
+
   return (
-    <div className="fixed bottom-6 right-6 z-[999]">
+    <div className="fixed bottom-6 right-6 z-40">
       {isOpen ? (
         <div className="bg-white w-80 h-[480px] rounded-2xl shadow-2xl border flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 fade-in duration-300">
           <div className="bg-indigo-600 p-4 text-white flex justify-between items-center shadow-sm">
@@ -187,50 +224,62 @@ export default function LiveChatWidget() {
             <button onClick={() => setIsOpen(false)} className="hover:bg-white/20 p-1 rounded-full transition"><X size={18} /></button>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#F8FAFC]">
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#F8FAFC]">
             {messages.length === 0 && (
-                <div className="text-center text-xs text-slate-400 mt-10">
-                    <p>👋 สวัสดี! วันนี้เราจะช่วยคุณได้อย่างไรบ้าง?</p>
-                </div>
+              <div className="text-center text-xs text-slate-400 mt-10">
+                <p>👋 สวัสดี! วันนี้เราจะช่วยคุณได้อย่างไรบ้าง?</p>
+              </div>
             )}
-            
-            {messages.map((m, i) => (
-                <div key={i} className={`flex w-full gap-2 ${m.is_admin ? "justify-start" : "justify-end"}`}>
-                    {/* Avatar Admin */}
-                    {m.is_admin && (
-                        <div className="size-6 bg-indigo-100 rounded-full flex items-center justify-center flex-shrink-0 self-end mb-4 shadow-sm">
-                            <MessageCircle size={12} className="text-indigo-600"/>
-                        </div>
-                    )}
 
-                    <div className={`flex flex-col ${m.is_admin ? "items-start" : "items-end"} max-w-[80%]`}>
-                        <div className={`p-2.5 rounded-2xl text-xs leading-relaxed shadow-sm break-words ${
-                            m.is_admin
-                            ? "bg-white text-slate-800 border border-slate-200 rounded-tl-none"
-                            : "bg-indigo-600 text-white rounded-tr-none"
-                        }`}>
-                            {/* ✅ แสดงรูปภาพถ้ามี */}
-                            {m.image_url && (
-                                <div className="mb-2 rounded-lg overflow-hidden border border-black/10">
-                                    <img 
-                                        src={m.image_url} 
-                                        alt="attached" 
-                                        className="w-full h-auto max-h-40 object-cover cursor-pointer hover:opacity-90 transition"
-                                        onClick={() => window.open(m.image_url, '_blank')}
-                                    />
-                                </div>
-                            )}
-                            {m.content}
-                        </div>
-                        
-                        <span className={`text-[10px] text-slate-400 mt-1 ${m.is_admin ? "ml-1" : "mr-1"}`}>
-                            {new Date(m.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                        </span>
+            {messagesWithDateMarkers.map((m, i) => {
+              if (m.type === "date") {
+                return (
+                  <div key={m.id} className="flex justify-center">
+                    <div className="px-3 py-1 rounded-full bg-slate-200 text-slate-500 text-[11px] font-bold shadow-sm">
+                      {m.label}
                     </div>
+                  </div>
+                );
+              }
+
+              return (
+                <div key={m.id || i} className={`flex w-full gap-2 ${m.is_admin ? "justify-start" : "justify-end"}`}>
+                  {/* Avatar Admin */}
+                  {m.is_admin && (
+                    <div className="size-6 bg-indigo-100 rounded-full flex items-center justify-center flex-shrink-0 self-end mb-4 shadow-sm">
+                      <MessageCircle size={12} className="text-indigo-600"/>
+                    </div>
+                  )}
+
+                  <div className={`flex flex-col ${m.is_admin ? "items-start" : "items-end"} max-w-[80%]`}>
+                    <div className={`p-2.5 rounded-2xl text-xs leading-relaxed shadow-sm break-words ${
+                      m.is_admin
+                      ? "bg-white text-slate-800 border border-slate-200 rounded-tl-none"
+                      : "bg-indigo-600 text-white rounded-tr-none"
+                    }`}>
+                      {/* ✅ แสดงรูปภาพถ้ามี */}
+                      {m.image_url && (
+                        <div className="mb-2 rounded-lg overflow-hidden border border-black/10">
+                          <img 
+                            src={m.image_url} 
+                            alt="attached" 
+                            className="w-full h-auto max-h-40 object-cover cursor-pointer hover:opacity-90 transition"
+                            onClick={() => window.open(m.image_url, '_blank')}
+                          />
+                        </div>
+                      )}
+                      {m.content}
+                    </div>
+                            
+                    <span className={`text-[10px] text-slate-400 mt-1 ${m.is_admin ? "ml-1" : "mr-1"}`}>
+                      {formatChatTime(m.created_at)}
+                    </span>
+                  </div>
                 </div>
-            ))}
+              );
+            })}
             <div ref={scrollRef} />
-          </div>
+            </div>
 
           <form onSubmit={handleSend} className="p-3 bg-white border-t border-slate-100 flex gap-2 items-center">
             {/* ✅ ปุ่มเลือกรูปภาพ */}

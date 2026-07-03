@@ -90,7 +90,7 @@ const ProductDescription = ({ product }) => {
         </div>
 
         {/* --- Content Area --- */}
-        <div className="p-6 md:p-10 min-h-[300px]">
+        <div className="p-4 md:p-8 min-h-[240px]">
           
           {/* 1. Specifications Content */}
           {selectedTab === "Specifications" ? (
@@ -99,12 +99,12 @@ const ProductDescription = ({ product }) => {
                 item.value && (
                     <div
                     key={index}
-                    className="group flex flex-col sm:flex-row sm:items-start py-5 border-b border-slate-50 last:border-0 hover:bg-slate-50/50 transition-colors rounded-xl px-2"
+                    className="group flex flex-col sm:flex-row sm:items-start py-3 border-b border-slate-50 last:border-0 transition-colors px-0"
                     >
-                    <span className="w-48 text-xs font-bold text-slate-400 uppercase tracking-widest shrink-0 mb-1 sm:mb-0 pt-1">
+                    <span className="w-36 text-xs font-semibold text-slate-500 uppercase tracking-wide shrink-0 mb-1 sm:mb-0 pt-1 pr-4">
                         {item.label}
                     </span>
-                    <div className="text-sm font-medium text-slate-700 leading-relaxed break-words flex-1">
+                    <div className="font-medium text-slate-700 leading-tight break-words flex-1 text-sm">
                         {item.value}
                     </div>
                     </div>

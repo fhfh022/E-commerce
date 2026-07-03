@@ -82,6 +82,62 @@ export async function POST(req) {
 
     const safeProducts = products || [];
 
+    const parseBudgetFromPrompt = (text) => {
+      if (!text) return null;
+      const normalized = text.replace(/,/g, "");
+      const budgetMatch = normalized.match(/(?:งบ(?:ประมาณ)?|budget|ราคาไม่เกิน|ไม่เกิน|สูงสุด|ประมาณ|around|about)\s*[:\-]?\s*([0-9]+)(?:\s*บาท)?/i);
+      if (budgetMatch) {
+        return Number(budgetMatch[1]);
+      }
+      const directMatch = normalized.match(/([0-9]+)\s*(?:บาท|฿)/);
+      return directMatch ? Number(directMatch[1]) : null;
+    };
+
+    const passedBudget = parseBudgetFromPrompt(prompt);
+    const isGamingPrompt = /(เกม|gaming|เล่นเกม|เล่นเกมส์|nvidia|rtx|geforce|radeon|gpu)/i.test(prompt);
+    const isWorkPrompt = /(office|work|เรียน|งาน|ธุรกิจ|programming|content|content creation|ใช้งานทั่วไป)/i.test(prompt);
+
+    const getProductPrice = (item) => {
+      const price = item.sale_price && item.sale_price > 0 ? item.sale_price : item.price;
+      return Number(price || 0);
+    };
+
+    const extractSpecSummary = (item) => {
+      if (item.specs && typeof item.specs === "object") {
+        const { display_size, processor, ram, storage, graphics } = item.specs;
+        return [display_size ? `${display_size} inch` : null, processor, ram, storage, graphics]
+          .filter(Boolean)
+          .join(" / ");
+      }
+      return item.specs || "สเปกเพิ่มเติมดูในหน้าสินค้า";
+    };
+
+    const recommendedProducts = safeProducts
+      .filter((item) => item.in_stock)
+      .filter((item) => item.images && item.images.length > 0)
+      .sort((a, b) => {
+        const priceA = getProductPrice(a);
+        const priceB = getProductPrice(b);
+        if (passedBudget) {
+          const scoreA = Math.abs(priceA - passedBudget) + (isGamingPrompt && /rtx|radeon|geforce|gpu|gaming/i.test(JSON.stringify(a.specs || "")) ? -10000 : 0);
+          const scoreB = Math.abs(priceB - passedBudget) + (isGamingPrompt && /rtx|radeon|geforce|gpu|gaming/i.test(JSON.stringify(b.specs || "")) ? -10000 : 0);
+          return scoreA - scoreB;
+        }
+        return priceA - priceB;
+      })
+      .slice(0, 5);
+
+    const formattedRecommendations = recommendedProducts.slice(0, 3).map((item) => ({
+      id: item.id,
+      title: `${item.name}${item.model ? ` ${item.model}` : ""}`.trim(),
+      description: extractSpecSummary(item),
+      price: `฿${getProductPrice(item).toLocaleString()}`,
+      image: item.images?.[0] || null,
+      link: `/product/${item.id}`,
+      category: item.brand || item.specs?.graphics || "โน้ตบุ๊ก",
+      available: item.in_stock,
+    }));
+
     // 3. เตรียมข้อมูลสินค้า
     const productContext = safeProducts
       .map((p) => {
@@ -186,7 +242,13 @@ export async function POST(req) {
     const data = await response.json();
     const aiResponse = data.candidates[0].content.parts[0].text;
 
-    // ✅ 7. บันทึกแชทลง Database (ถ้า User Login อยู่)
+    // 8. หากมีคำถามประเภทงบประมาณ ให้ตอบในรูปแบบ Recommend + quick product links
+    const responsePayload = {
+      text: aiResponse,
+      recommendations: formattedRecommendations,
+    };
+
+    // ✅ 9. บันทึกแชทลง Database (ถ้า User Login อยู่)
     if (user) {
       const { data: dbUser } = await supabaseAdmin
         .from("users")
@@ -202,7 +264,7 @@ export async function POST(req) {
       }
     }
 
-    return NextResponse.json({ text: aiResponse });
+    return NextResponse.json(responsePayload);
   } catch (error) {
     console.error("AI Route Error:", error);
     return NextResponse.json(

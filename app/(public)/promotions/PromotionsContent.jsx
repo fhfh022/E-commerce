@@ -57,7 +57,7 @@ export default function PromotionsPage() {
     <div className="min-h-screen bg-slate-50 pb-20">
         
         {/* --- Unique Hero Header (Hot Deals Theme) --- */}
-        <div className="relative py-20 px-6 overflow-hidden bg-gradient-to-br from-orange-500 to-red-600 text-white shadow-xl mb-12">
+        <div className="relative py-12 md:py-20 px-4 md:px-6 overflow-hidden bg-gradient-to-br from-orange-500 to-red-600 text-white shadow-xl mb-8">
             {/* Decorative Elements */}
             <div className="absolute top-0 right-0 w-96 h-96 bg-white opacity-10 rounded-full blur-3xl translate-x-1/2 -translate-y-1/2"></div>
             <div className="absolute bottom-0 left-0 w-64 h-64 bg-yellow-400 opacity-20 rounded-full blur-3xl -translate-x-1/3 translate-y-1/3"></div>
@@ -66,10 +66,10 @@ export default function PromotionsPage() {
                 <div className="inline-flex items-center justify-center p-4 bg-white/20 backdrop-blur-md rounded-full mb-6 shadow-lg border border-white/20 animate-bounce-slow">
                     <Gift size={40} className="text-white drop-shadow-md" />
                 </div>
-                <h1 className="text-4xl md:text-6xl font-black mb-4 tracking-tight drop-shadow-sm">
+                <h1 className="text-3xl md:text-6xl font-black mb-4 tracking-tight drop-shadow-sm">
                     Exclusive Promotions
                 </h1>
-                <p className="text-lg md:text-xl max-w-2xl mx-auto font-medium text-orange-100">
+                <p className="text-base md:text-xl max-w-2xl mx-auto font-medium text-orange-100">
                     ดีลสุดพิเศษและคูปองส่วนลดสำหรับคุณโดยเฉพาะ ช้อปเลยก่อนหมดเวลา!
                 </p>
             </div>
@@ -89,13 +89,65 @@ export default function PromotionsPage() {
                 </h2>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Mobile slider */}
+            <div className="md:hidden">
+              <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory px-2 pb-4">
+                {coupons.map((coupon) => (
+                  <div key={coupon.id} className="snap-start flex-shrink-0 w-[86%] sm:w-80">
+                    <div className="relative bg-white rounded-2xl shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 overflow-hidden border border-orange-100 group">
+                      <div className="absolute top-0 right-0 p-20 bg-orange-50 rounded-bl-full -mr-10 -mt-10 transition-transform group-hover:scale-110"></div>
+                      <div className="relative p-5 flex flex-col h-full justify-between">
+                        <div>
+                          <div className="flex justify-between items-start mb-3">
+                            <div>
+                              <p className="text-xs font-bold text-orange-500 uppercase tracking-wider mb-1">ส่วนลดพิเศษ</p>
+                              <h3 className="text-3xl font-black text-slate-800 tracking-tight">
+                                {coupon.discount_type === "percentage" ? `${coupon.discount_value}%` : `฿${coupon.discount_value.toLocaleString()}`}
+                                <span className="text-lg font-bold text-slate-400 ml-1">OFF</span>
+                              </h3>
+                            </div>
+                            <div className="p-2 bg-white rounded-full shadow-sm text-orange-300 border border-orange-50">
+                              <TicketPercent size={20} />
+                            </div>
+                          </div>
+
+                          <p className="text-slate-600 text-sm mb-4 leading-relaxed line-clamp-2">
+                            {coupon.description}
+                          </p>
+                        </div>
+
+                        <div className="space-y-3">
+                          <div onClick={() => copyCode(coupon.code)} className="flex items-center justify-between bg-slate-50 border-2 border-dashed border-slate-300 rounded-xl p-3 px-4 cursor-pointer hover:bg-orange-50 hover:border-orange-300 transition-colors group/code active:scale-95" title="คลิกเพื่อคัดลอก">
+                            <span className="font-mono font-bold text-lg text-slate-700 tracking-widest group-hover/code:text-orange-600">
+                              {coupon.code}
+                            </span>
+                            <div className="flex items-center gap-1 text-slate-400 group-hover/code:text-orange-500 text-xs font-bold">
+                              <Copy size={14} /> COPY
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between text-[11px] font-bold text-slate-400 bg-slate-50 px-3 py-2 rounded-lg">
+                            <div className="flex items-center gap-1">
+                              <Clock size={12} />
+                              <span>หมดอายุ: {new Date(coupon.expiry_date).toLocaleDateString("th-TH")}</span>
+                            </div>
+                            <span>เหลือ: {coupon.quantity - coupon.used_count} สิทธิ์</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Desktop grid */}
+            <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {coupons.map((coupon) => (
                 <div 
                     key={coupon.id} 
                     className="relative bg-white rounded-2xl shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 overflow-hidden border border-orange-100 group"
                 >
-                    {/* Background Pattern */}
                     <div className="absolute top-0 right-0 p-20 bg-orange-50 rounded-bl-full -mr-10 -mt-10 transition-transform group-hover:scale-110"></div>
 
                     <div className="relative p-6 flex flex-col h-full justify-between">
@@ -119,7 +171,6 @@ export default function PromotionsPage() {
                         </div>
 
                         <div className="space-y-4">
-                            {/* Code Box */}
                             <div 
                                 onClick={() => copyCode(coupon.code)}
                                 className="flex items-center justify-between bg-slate-50 border-2 border-dashed border-slate-300 rounded-xl p-3 px-4 cursor-pointer hover:bg-orange-50 hover:border-orange-300 transition-colors group/code active:scale-95"

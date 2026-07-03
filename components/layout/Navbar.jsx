@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { useSelector } from "react-redux";
 import Banner from "./Banner";
 import { useUser, useClerk, UserButton } from "@clerk/nextjs";
@@ -36,6 +36,8 @@ const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const navRef = useRef(null);
+  const [navHeight, setNavHeight] = useState(0);
 
   // ✅ OPTIMIZATION 1: คำนวณตัวเลข
   const itemCount = useMemo(() => {
@@ -89,11 +91,32 @@ const Navbar = () => {
     setIsMenuOpen(false);
   };
 
+  // Manage navbar height and body scroll when mobile menu opens
+  useEffect(() => {
+    const setHeight = () => {
+      if (navRef.current) setNavHeight(navRef.current.offsetHeight);
+    };
+    setHeight();
+    window.addEventListener('resize', setHeight);
+    return () => window.removeEventListener('resize', setHeight);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (isMenuOpen) {
+      // prevent background scrolling when menu open
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [isMenuOpen]);
+
   return (
     <>
       <Banner />
 
-      <nav className="sticky top-0 z-50 bg-white shadow-sm border-b border-slate-100/50 backdrop-blur-md">
+      <nav ref={navRef} className="sticky top-0 z-50 bg-white shadow-sm border-b border-slate-100/50 backdrop-blur-md">
         <div className="mx-6">
           <div className="flex items-center justify-between max-w-7xl mx-auto py-4 transition-all">
             {/* Logo */}
@@ -291,15 +314,13 @@ const Navbar = () => {
           </div>
         </div>
 
-        {/* Mobile Dropdown */}
+        {/* Mobile Dropdown (fixed overlay) */}
         <section
           id="mobile-dropdown"
-          className={`
-            absolute top-full left-0 w-full bg-white/95 backdrop-blur-md shadow-xl overflow-hidden transition-all duration-300 ease-in-out md:hidden border-t border-slate-100
-            ${isMenuOpen ? "max-h-[80vh] opacity-100" : "max-h-0 opacity-0"}
-          `}
+          className={`fixed left-0 right-0 bg-white/95 backdrop-blur-md shadow-xl overflow-hidden transition-all duration-300 ease-in-out md:hidden border-t border-slate-100 z-50`}
+          style={{ top: navHeight || undefined, display: isMenuOpen ? 'block' : 'none' }}
         >
-          <div className="flex flex-col gap-4 px-6 py-6 text-slate-600 font-medium overflow-y-auto max-h-[75vh]">
+          <div className="flex flex-col gap-4 px-6 py-6 text-slate-600 font-medium overflow-y-auto max-h-[calc(100vh-60px)]">
             <Link
               href="/"
               onClick={() => setIsMenuOpen(false)}

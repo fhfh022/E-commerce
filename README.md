@@ -1,53 +1,113 @@
-# PRT Store - แพลตฟอร์มอีคอมเมิร์ซสมัยใหม่
+# PRT Store - E-Commerce Platform
 
-แพลตฟอร์มอีคอมเมิร์ซที่สมบูรณ์แบบ สร้างด้วย Next.js พร้อมฟีเจอร์การยืนยันตัวตนผู้ใช้ การจัดการสินค้า ตะกร้าสินค้า และแดชบอร์ดสำหรับผู้ดูแลระบบและร้านค้า
+แพลตฟอร์ม e-commerce ที่มีสมบูรณ์พร้อมระบบ Admin Panel, Seller Dashboard, Payment Gateway Integration และระบบบริหารสต็อกอัตโนมัติ
 
-## ✨ ฟีเจอร์หลัก
+## 🎯 ฟีเจอร์หลัก
 
-### 👤 ผู้ใช้ทั่วไป
-- **การยืนยันตัวตน**: เข้าสู่ระบบ/สมัครสมาชิกอย่างปลอดภัยด้วย Clerk
-- **เรียกดูสินค้า**: ค้นหา กรอง และดูรายละเอียดสินค้า
-- **ตะกร้าสินค้า**: เพิ่ม ลบ และจัดการสินค้าในตะกร้า
-- **การสั่งซื้อ**: วางคำสั่งซื้อ ติดตามสถานะ และดูประวัติการสั่งซื้อ
-- **ใบเสร็จ**: พิมพ์และบันทึกใบเสร็จการสั่งซื้อ
-- **สินค้าที่ชอบ**: บันทึกและจัดการสินค้าที่ชื่นชอบ
-- **รีวิวสินค้า**: ให้คะแนนและแสดงความคิดเห็นสินค้า
+### 🛍️ Customer Portal
+- ระบบค้นหาและ Filter สินค้า พร้อม Shopping Cart
+- Process การสั่งซื้อ (Checkout) ด้วย Stripe Integration
+- Order Tracking และ Receipt Management (Print-Ready)
+- ระบบ Review & Rating สินค้า
+- Wish List Management
+- AI-Powered Shopping Assistant (Google Generative AI)
+- Coupon Application
 
-### 🏪 ผู้ขาย/ร้านค้า
-- **จัดการสินค้า**: เพิ่ม แก้ไข และลบสินค้า
-- **จัดการคำสั่งซื้อ**: ติดตามและอัปเดตสถานะคำสั่งซื้อ
-- **แดชบอร์ด**: ดูสถิติยอดขายและสินค้า
+### 🏪 Seller Dashboard
+- CRUD สินค้า (Create, Read, Update, Delete) พร้อม Inventory Management
+- Order Management และ Status Update
+- Sales Analytics Dashboard พร้อม Chart Visualization
+- Promotion Management
 
-### 👨‍💼 ผู้ดูแลระบบ
-- **จัดการผู้ใช้**: ดู จัดการ และบล็อกผู้ใช้
-- **จัดการคูปอง**: สร้างและจัดการคูปองส่วนลด
-- **แดชบอร์ดครบครัน**: จัดการแพลตฟอร์มทั้งหมด
+### 👨‍💼 Admin Panel
+- User Management (Role-Based Access Control)
+- Coupon Management และ Usage Tracking
+- System-Wide Order Monitoring
+- Revenue Analytics และ Business Intelligence
 
-### 🤖 AI Assistant
-- **ผู้ช่วยอัจฉริยะ**: ช่วยเหลือในการเลือกสินค้าและคำถามทั่วไป
+## 🔧 Technology Stack
 
-### 🌐 การรองรับภาษา
-- **อินเทอร์เฟซภาษาไทย**: แปลข้อความ UI เป็นภาษาไทยสำหรับผู้ใช้ไทย
-- **รักษาคำศัพท์เทคนิค**: เก็บคำเฉพาะทางเทคนิคเป็นภาษาอังกฤษ
+| Layer | Technology |
+|-------|-----------|
+| **Frontend Framework** | Next.js 15 + React 19 + TypeScript |
+| **UI Framework** | Tailwind CSS v4 |
+| **State Management** | Redux Toolkit + Redux Persist |
+| **Backend** | Next.js API Routes + Webhook Handler |
+| **Database** | Supabase (PostgreSQL) |
+| **Authentication** | Clerk (OAuth Integration) |
+| **Payment Gateway** | Stripe API (Card, PromptPay) |
+| **AI Integration** | Google Generative AI API |
+| **Visualization** | Recharts (Data Analytics) |
+| **Icons & UI** | Lucide React |
+| **Utilities** | React-to-Print (Document Export) |
 
-## 🛠 เทคโนโลยีที่ใช้
+## ✨ Key Features
 
-- **Frontend**: Next.js 15, React 19, TypeScript
-- **Styling**: Tailwind CSS v4
-- **Authentication**: Clerk
-- **Database**: Supabase (PostgreSQL)
-- **State Management**: Redux Toolkit + Redux Persist
-- **Payment Processing**: Stripe (รองรับบัตรเครดิตและ PromptPay)
-- **AI Integration**: Google Generative AI
-- **Icons**: Lucide React
-- **Charts**: Recharts
-- **Printing**: React-to-Print สำหรับใบเสร็จ
-- **Deployment**: พร้อมใช้งานกับ Vercel/Netlify
+✅ **Automatic Inventory Management**: ระบบอัตโนมัติตัดสต็อก เมื่อ Payment สำเร็จ  
+✅ **Coupon System**: Validation, Usage Tracking และ Expiry Management  
+✅ **Stripe Webhook Integration**: Real-time Order Status Update เมื่อ Payment Completed  
+✅ **Advanced Search & Filtering**: Category, Price Range และ Sorting  
+✅ **Real-time Order Tracking**: Live Status Updates  
+✅ **Invoice Generation**: Export Receipt เป็น PDF
+
+## 🚀 Installation & Setup
+
+```bash
+# Clone repository
+git clone <repository-url>
+cd prt-main
+
+# Install dependencies
+npm install
+
+# Configure Environment Variables (.env.local)
+NEXT_PUBLIC_SUPABASE_URL=<supabase_url>
+SUPABASE_SERVICE_ROLE_KEY=<service_role_key>
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=<clerk_pk>
+CLERK_SECRET_KEY=<clerk_sk>
+STRIPE_PUBLIC_KEY=<stripe_pk>
+STRIPE_SECRET_KEY=<stripe_sk>
+STRIPE_WEBHOOK_SECRET=<webhook_secret>
+NEXT_PUBLIC_BASE_URL=<app_url>
+
+# Start Development Server
+npm run dev
+
+# Production Build
+npm run build
+npm start
+```
+
+## 📊 Database Schema
+
+**Core Tables**: 
+- `users` - User Account Management
+- `products` - Product Catalog & Inventory
+- `orders` - Order Headers
+- `order_items` - Order Line Items
+- `coupons` - Discount Codes Management
+- `cart` - Shopping Cart (Session-based)
+- `favorites` - Wish List
+- `ratings` - Product Reviews & Ratings
+- `blogs` - Content Management
 
 ## 📁 Project Structure
 
 ```
 prt-main/
+├── app/
+│   ├── api/                    # API Routes (Checkout, Webhook)
+│   ├── (public)/               # Customer-facing Pages
+│   ├── admin/                  # Admin Dashboard
+│   └── store/                  # Seller Dashboard
+├── components/                 # Reusable React Components
+├── lib/
+│   ├── supabase.ts            # Database Configuration
+│   ├── stripe.js              # Stripe Setup
+│   └── features/              # Redux Slices
+├── public/                     # Static Assets
+└── middleware.ts               # Authentication Middleware
+```
 ├── app/                          # Next.js App Router
 │   ├── (public)/                 # หน้าเว็บสาธารณะ
 │   │   ├── cart/                 # ตะกร้าสินค้า

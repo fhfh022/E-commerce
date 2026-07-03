@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
 
 export default function AISearchPage() {
-  const { user, isLoaded } = useUser(); // ✅ เพิ่ม isLoaded เพื่อเช็คว่า Clerk โหลดเสร็จยัง
+  const { user, isLoaded } = useUser(); 
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([
     {
@@ -15,7 +15,7 @@ export default function AISearchPage() {
     },
   ]);
   const [isLoading, setIsLoading] = useState(false); // สถานะ AI กำลังตอบ
-  const [isHistoryLoading, setIsHistoryLoading] = useState(true); // ✅ สถานะโหลดประวัติแชท
+  const [isHistoryLoading, setIsHistoryLoading] = useState(true); 
 
   // ✅ ดึงประวัติแชทเมื่อหน้าโหลด และ User Login แล้ว
   useEffect(() => {

@@ -111,6 +111,37 @@ export async function POST(req) {
         }
       }
 
+      // --- STEP C: เพิ่ม used_count ของคูปอง ---
+      if (orderBeforeUpdate?.coupon_id) {
+        const couponId = orderBeforeUpdate.coupon_id;
+        
+        // ดึงข้อมูล coupon ปัจจุบัน
+        const { data: coupon, error: couponError } = await supabaseAdmin
+          .from("coupons")
+          .select("used_count, quantity")
+          .eq("id", couponId)
+          .single();
+
+        if (couponError) {
+          console.warn(`⚠️ Coupon ${couponId} not found: ${couponError.message}`);
+        } else if (coupon) {
+          // คำนวณ used_count ใหม่
+          const newUsedCount = (coupon.used_count || 0) + 1;
+
+          // อัปเดต used_count
+          const { error: updateCouponError } = await supabaseAdmin
+            .from("coupons")
+            .update({ used_count: newUsedCount })
+            .eq("id", couponId);
+
+          if (updateCouponError) {
+            console.warn(`⚠️ Failed to update coupon ${couponId}: ${updateCouponError.message}`);
+          } else {
+            console.log(`✅ Coupon updated: ID ${couponId} - Used Count: ${newUsedCount}/${coupon.quantity}`);
+          }
+        }
+      }
+
     } catch (err) {
       console.error("❌ Error processing webhook:", err);
       return new NextResponse("Internal Server Error", { status: 500 });

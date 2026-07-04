@@ -1,214 +1,140 @@
-# PRT Store - E-Commerce Platform
+# 🛍️ PRT Store: Next-Gen AI-Powered E-Commerce Platform
 
-แพลตฟอร์ม e-commerce ที่มีสมบูรณ์พร้อมระบบ Admin Panel, Seller Dashboard, Payment Gateway Integration และระบบบริหารสต็อกอัตโนมัติ
+[![Next.js](https://img.shields.io/badge/Next.js-15-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
+[![Tailwind CSS v4](https://img.shields.io/badge/Tailwind_CSS-v4-06B6D4?style=for-the-badge&logo=tailwindcss)](https://tailwindcss.com/)
+[![Supabase](https://img.shields.io/badge/Supabase-Database-3ECF8E?style=for-the-badge&logo=supabase)](https://supabase.com/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-4169E1?style=for-the-badge&logo=postgresql)](https://www.postgresql.org/)
+[![Clerk](https://img.shields.io/badge/Clerk-Authentication-6C47FF?style=for-the-badge&logo=clerk)](https://clerk.com/)
+[![Stripe](https://img.shields.io/badge/Stripe-Payments-008CDD?style=for-the-badge&logo=stripe)](https://stripe.com/)
 
-## 🎯 ฟีเจอร์หลัก
+> **Elevate your shopping experience.** An ultra-fast, modern, and secure e-commerce solution integrating cutting-edge AI assistance, robust transaction handling, and comprehensive management portals.
 
-### 🛍️ Customer Portal
-- ระบบค้นหาและ Filter สินค้า พร้อม Shopping Cart
-- Process การสั่งซื้อ (Checkout) ด้วย Stripe Integration
-- Order Tracking และ Receipt Management (Print-Ready)
-- ระบบ Review & Rating สินค้า
-- Wish List Management
-- AI-Powered Shopping Assistant (Google Generative AI)
-- Coupon Application
+---
 
-### 🏪 Seller Dashboard
-- CRUD สินค้า (Create, Read, Update, Delete) พร้อม Inventory Management
-- Order Management และ Status Update
-- Sales Analytics Dashboard พร้อม Chart Visualization
-- Promotion Management
+## 📖 Overview
 
-### 👨‍💼 Admin Panel
-- User Management (Role-Based Access Control)
-- Coupon Management และ Usage Tracking
-- System-Wide Order Monitoring
-- Revenue Analytics และ Business Intelligence
+**PRT Store** is an enterprise-grade full-stack e-commerce solution engineered for speed, safety, and engagement. Powered by **Next.js 15**, **Tailwind CSS v4**, **Supabase**, and **PostgreSQL**, the platform delivers a fluid shopping interface paired with a sophisticated **AI Assistant** for smart searches and customer inquiries. 
 
-## 🔧 Technology Stack
+Additionally, it provides isolated environments tailored for three distinct roles:
+1. **Customers**: Browsing, interactive cart management, dynamic checkout, order tracking, and live AI assistant chat.
+2. **Store Managers**: Product listings creation, real-time inventory configuration, and promotion control.
+3. **System Administrators**: High-level platform governance including user access roles, orders auditing, coupon definitions, and blog management.
 
-| Layer | Technology |
-|-------|-----------|
-| **Frontend Framework** | Next.js 15 + React 19 + TypeScript |
-| **UI Framework** | Tailwind CSS v4 |
-| **State Management** | Redux Toolkit + Redux Persist |
-| **Backend** | Next.js API Routes + Webhook Handler |
-| **Database** | Supabase (PostgreSQL) |
-| **Authentication** | Clerk (OAuth Integration) |
-| **Payment Gateway** | Stripe API (Card, PromptPay) |
-| **AI Integration** | Google Generative AI API |
-| **Visualization** | Recharts (Data Analytics) |
-| **Icons & UI** | Lucide React |
-| **Utilities** | React-to-Print (Document Export) |
+---
 
 ## ✨ Key Features
 
-✅ **Automatic Inventory Management**: ระบบอัตโนมัติตัดสต็อก เมื่อ Payment สำเร็จ  
-✅ **Coupon System**: Validation, Usage Tracking และ Expiry Management  
-✅ **Stripe Webhook Integration**: Real-time Order Status Update เมื่อ Payment Completed  
-✅ **Advanced Search & Filtering**: Category, Price Range และ Sorting  
-✅ **Real-time Order Tracking**: Live Status Updates  
-✅ **Invoice Generation**: Export Receipt เป็น PDF
+### 🛒 Customer Storefront
+*   **Dynamic Product Discovery**: Browse products through optimized sorting, filtering, and deep categorization.
+*   **Frictionless Shopping Cart & Favorites**: Add items, apply promotional discount coupons, and bookmark favorites instantly with persistent client state.
+*   **Receipt & Invoice Printing**: Export invoices easily using custom print-ready formats.
 
-## 🚀 Installation & Setup
+### 🤖 AI Integration
+*   **AI-Powered Product Search**: Leverage natural language search using advanced AI embedding matching.
+*   **AI Assistant Chat**: Get instant answers, product suggestions, and customer support via the integrated chat assistant powered by Google Generative AI (Gemini).
 
-```bash
-# Clone repository
-git clone <repository-url>
-cd prt-main
+### 💳 Secure Payment Gateway
+*   **Stripe Checkout**: Seamless payment routing supporting multiple payment modes (Credit Cards, PromptPay).
+*   **Automated Webhooks**: Real-time order fulfillment, payment verification, and automatic inventory adjustment upon successful payment completion.
 
-# Install dependencies
-npm install
+### 🏪 Store Manager Portal
+*   **Product Management**: Comprehensive interface for adding, editing, and deleting items.
+*   **Promotional Campaign Engine**: Set active promotions, discounts, and custom banners.
 
-# Configure Environment Variables (.env.local)
-NEXT_PUBLIC_SUPABASE_URL=<supabase_url>
-SUPABASE_SERVICE_ROLE_KEY=<service_role_key>
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=<clerk_pk>
-CLERK_SECRET_KEY=<clerk_sk>
-STRIPE_PUBLIC_KEY=<stripe_pk>
-STRIPE_SECRET_KEY=<stripe_sk>
-STRIPE_WEBHOOK_SECRET=<webhook_secret>
-NEXT_PUBLIC_BASE_URL=<app_url>
+### 👨‍💼 Admin Dashboard
+*   **Access Control & Roles**: Transition users between customer and manager roles securely.
+*   **Order Supervision**: Track order updates, total revenue charts, and purchase histories system-wide.
+*   **Marketing Tools**: Manage discount coupons, coupon validation rules, and publish informative blog content.
 
-# Start Development Server
-npm run dev
+---
 
-# Production Build
-npm run build
-npm start
-```
+## 🛠️ Tech Stack
 
-## 📊 Database Schema
+*   **Frontend**: Next.js 15 (App Router), React 19, TypeScript
+*   **Styling**: Tailwind CSS v4, Lucide React (Icons)
+*   **State Management**: Redux Toolkit, Redux Persist
+*   **Database & API**: Supabase Client, Prisma Client, PostgreSQL
+*   **Auth**: Clerk Security & Middleware
+*   **Payments**: Stripe SDK & Stripe Webhooks
+*   **AI**: `@google/generative-ai` (Gemini API)
+*   **Analytics**: Recharts for performance metrics
 
-**Core Tables**: 
-- `users` - User Account Management
-- `products` - Product Catalog & Inventory
-- `orders` - Order Headers
-- `order_items` - Order Line Items
-- `coupons` - Discount Codes Management
-- `cart` - Shopping Cart (Session-based)
-- `favorites` - Wish List
-- `ratings` - Product Reviews & Ratings
-- `blogs` - Content Management
+---
+
+## ⚙️ Environment Variables
+
+Create a `.env` file in the root directory and configure the following variables:
+
+| Variable Name | Description | Example / Format |
+|---|---|---|
+| `NEXT_PUBLIC_CURRENCY_SYMBOL` | Currency symbol used throughout the app | `฿` or `$` |
+| `NEXT_PUBLIC_BASE_URL` | Application root URL | `http://localhost:3000` |
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project API endpoint URL | `https://your-project-id.supabase.co` |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase client public anonymous key | `eyJhbGciOi...` |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase server-side service role secret key | `eyJhbGciOi...` |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`| Clerk public credentials key | `pk_test_...` |
+| `CLERK_SECRET_KEY` | Clerk private security credential | `sk_test_...` |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Stripe client-side token | `pk_test_...` |
+| `STRIPE_SECRET_KEY` | Stripe server-side secret API token | `sk_test_...` |
+| `STRIPE_WEBHOOK_SECRET` | Stripe webhook secret key signature verification | `whsec_...` |
+| `GEMINI_API_KEY` | Google Generative AI API Token | `AIzaSy...` |
+
+---
 
 ## 📁 Project Structure
 
 ```
 prt-main/
 ├── app/
-│   ├── api/                    # API Routes (Checkout, Webhook)
-│   ├── (public)/               # Customer-facing Pages
-│   ├── admin/                  # Admin Dashboard
-│   └── store/                  # Seller Dashboard
-├── components/                 # Reusable React Components
-├── lib/
-│   ├── supabase.ts            # Database Configuration
-│   ├── stripe.js              # Stripe Setup
-│   └── features/              # Redux Slices
-├── public/                     # Static Assets
-└── middleware.ts               # Authentication Middleware
-```
-├── app/                          # Next.js App Router
-│   ├── (public)/                 # หน้าเว็บสาธารณะ
-│   │   ├── cart/                 # ตะกร้าสินค้า
-│   │   ├── favorites/            # สินค้าที่ชอบ
-│   │   ├── orders/               # ประวัติการสั่งซื้อ
-│   │   ├── product/[productId]/  # รายละเอียดสินค้า
-│   │   ├── shop/                 # รายการสินค้า
-│   │   ├── promotions/           # โปรโมชั่น
-│   │   └── page.jsx              # หน้าแรก
-│   ├── admin/                    # แดชบอร์ดผู้ดูแลระบบ
-│   │   ├── coupons/              # จัดการคูปอง
-│   │   ├── orders/               # จัดการคำสั่งซื้อ
-│   │   └── users/                # จัดการผู้ใช้
-│   ├── store/                    # แดชบอร์ดร้านค้า
-│   │   ├── add-product/          # เพิ่มสินค้า
-│   │   ├── manage-product/       # จัดการสินค้า
-│   │   └── manage-promotions/    # จัดการโปรโมชั่น
-│   ├── api/                      # API Routes
-│   │   ├── ai-assistant/         # AI ผู้ช่วย
-│   │   ├── checkout/             # การชำระเงิน
-│   │   ├── stripe/               # Stripe webhooks
-│   │   └── update-user-role/     # อัปเดตสิทธิ์ผู้ใช้
-│   ├── globals.css               # สไตล์หลัก
-│   ├── layout.jsx                # เลย์เอาต์หลัก
-│   └── loading.jsx               # หน้าโหลด
-├── components/                   # คอมโพเนนต์ React
-│   ├── layout/                   # คอมโพเนนต์เลย์เอาต์
-│   │   ├── admin/                # UI ผู้ดูแลระบบ
-│   │   ├── store/                # UI ร้านค้า
-│   │   └── [Banner, Footer, etc.]
-│   ├── product/                  # คอมโพเนนต์สินค้า
-│   │   └── [ProductCard, OrderItem, etc.]
-│   ├── order/                    # คอมโพเนนต์คำสั่งซื้อ
-│   │   └── ReceiptModal.jsx      # ใบเสร็จ
-│   └── providers/                # Context Providers
-├── lib/                          # ยูทิลิตี้และการตั้งค่า
-│   ├── features/                 # Redux Slices
-│   │   ├── address/              # ที่อยู่จัดส่ง
-│   │   ├── auth/                 # การยืนยันตัวตน
-│   │   ├── cart/                 # ตะกร้าสินค้า
-│   │   └── product/              # สินค้า
-│   ├── store.js                  # Redux Store
-│   ├── supabase.ts               # Supabase Client
-│   ├── stripe.js                 # Stripe Config
-│   └── cookies.js                # จัดการคุกกี้
-├── assets/                       # ไฟล์สแตติก
-├── middleware.ts                 # Middleware การยืนยันตัวตน
-├── next.config.mjs               # การตั้งค่า Next.js
-├── postcss.config.mjs            # PostCSS Config
-├── tailwind.config.js            # Tailwind Config
-├── package.json                  # Dependencies
-└── README.md                     # เอกสารนี้
+│   ├── (public)/               # Customer Storefront (Shop, Cart, AI Search, Blogs, Chat)
+│   ├── admin/                  # Admin Dashboard (User roles, Coupons, Store orders, Admin blogs)
+│   ├── store/                  # Store Manager Portal (Inventory management, Product creation)
+│   ├── api/                    # Server-side API endpoints & Stripe webhook listeners
+│   ├── layout.jsx              # Global application wrapping layer
+│   └── globals.css             # Main styling import layer
+├── components/                 # Shared UI elements (Product cards, Cart items, Layout headers)
+├── lib/                        # Configuration clients (Supabase setup, helper scripts)
+└── package.json                # Project dependencies and script runner configurations
 ```
 
-## 🚀 Getting Started
+---
 
-### Prerequisites
+## 🚀 Getting Started & Installation
 
-- Node.js 18+
-- npm or yarn
-- Supabase account
-- Clerk account
-- Stripe account
+Follow these steps to run the development server locally:
 
-### Installation
+1. **Clone the repository**:
+    ```bash
+    git clone https://github.com/PRTEZ/prt-main.git
+    cd prt-main
+    ```
 
-To get started with the PRT e-commerce platform, follow these steps:
+2. **Install dependencies**:
+    ```bash
+    npm install
+    ```
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/yourusername/prt-main.git
-   cd prt-main
-   ```
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Set up environment variables:
-   Create a `.env.local` file in the root directory and add your configuration settings.
-4. Run the development server:
-   ```bash
-   npm run dev
-   ```
-5. Open your browser and navigate to `http://localhost:3000` to see the application in action.
+3. **Configure environment variables**:
+    Duplicate the configuration and fill in the values:
+    ```bash
+    cp .env.example .env
+    ```
 
-## 📄 Usage
+4. **Run the development server**:
+    ```bash
+    npm run dev
+    ```
+    Open [http://localhost:3000](http://localhost:3000) with your browser to see the application.
 
-Once the application is running, you can:
+5. **Build for production**:
+    ```bash
+    npm run build
+    npm run start
+    ```
 
-- Register a new account or log in with an existing account.
-- Browse products, add them to your cart, and place orders.
-- Access the admin dashboard to manage products and orders.
+---
 
+## 📄 License & Credit
 
-## 📜 Available Scripts
-
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run start` - Start production server
-- `npm run lint` - Run ESLint
-
-
-
-
+Developed and maintained by **PRTEZ** / **PRT Corporation**. All rights reserved. 
+For internal use or licensed partnerships.

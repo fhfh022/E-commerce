@@ -1,19 +1,8 @@
 const config = {
-  plugins: ["@tailwindcss/postcss",require('@tailwindcss/typography'),],
-  extends:{
-    container:{
-      center:true,
-      padding: '1rem',
-      screens: {
-        'sm': '640px',
-        'md': '768px',
-        'lg': '1024px',
-        'xl': '1024px', 
-        '2xl': '1024px'
-      }
-    }
-    
-  }
+  plugins: {
+    "@tailwindcss/postcss": {},
+  },
 };
 
 export default config;
+

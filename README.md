@@ -29,9 +29,13 @@ Additionally, it provides isolated environments tailored for three distinct role
 *   **Frictionless Shopping Cart & Favorites**: Add items, apply promotional discount coupons, and bookmark favorites instantly with persistent client state.
 *   **Receipt & Invoice Printing**: Export invoices easily using custom print-ready formats.
 
-### 🤖 AI Integration
-*   **AI-Powered Product Search**: Leverage natural language search using advanced AI embedding matching.
-*   **AI Assistant Chat**: Get instant answers, product suggestions, and customer support via the integrated chat assistant powered by Google Generative AI (Gemini).
+### 🤖 AI Integration (Powered by Gemini API)
+*   **AI-Powered Product Search (Semantic Search)**: Leverage natural language search using advanced AI embedding matching to find items based on concepts and descriptions rather than exact keywords.
+*   **AI Assistant Chat (PRT Assistant)**: Get instant answers, product suggestions, and customer support via the integrated chat assistant.
+*   **AI Specifications Auto-Fill**: Allow store managers to automatically extract and populate technical product specifications during item creation using AI analysis.
+*   **AI Review Summarizer**: Automatically analyze and synthesize customer reviews on product pages into key pros, cons, and overall sentiment.
+*   **Visual Search (Search by Image)**: Search the store catalog simply by uploading a photo of a laptop or hardware component. AI analyzes the image to perform the search.
+*   **Smart Cart Upsell Assistant**: Analyze the items in the user's cart and suggest complementary products (Frequently Bought Together) or related items.
 
 ### 💳 Secure Payment Gateway
 *   **Stripe Checkout**: Seamless payment routing supporting multiple payment modes (Credit Cards, PromptPay).

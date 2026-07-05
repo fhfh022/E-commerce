@@ -2,12 +2,15 @@
 import Counter from "@/components/product/Counter";
 import OrderSummary from "@/components/product/OrderSummary";
 import PageTitle from "@/components/layout/PageTitle";
+import ProductCard from "@/components/product/ProductCard";
 import { deleteItemFromCart } from "@/lib/features/cart/cartSlice";
 import {
   Trash2Icon,
   AlertTriangle,
   ShoppingBag,
   ArrowRight,
+  Sparkles,
+  Loader2,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -30,6 +33,9 @@ export default function Cart() {
 
   // ✅ State ใหม่: ใช้หน่วงเวลาเช็คตะกร้าว่าง
   const [isDataReady, setIsDataReady] = useState(false);
+  const [isRecommending, setIsRecommending] = useState(false);
+  const [recommendedProducts, setRecommendedProducts] = useState([]);
+  const [isFallback, setIsFallback] = useState(false);
 
   // 1. Logic คำนวณราคาสินค้า (เหมือนเดิม)
   const { cartArray, totalPrice } = React.useMemo(() => {
@@ -79,6 +85,69 @@ export default function Cart() {
       }
     }
   }, [isLoaded, cartItems]);
+
+  // ✅ AI Recommendations Logic
+  useEffect(() => {
+    // Only run if cart is not empty and products are loaded
+    if (cartArray.length === 0 || products.length === 0) {
+      setRecommendedProducts([]);
+      return;
+    }
+
+    const fetchRecommendations = async () => {
+      setIsRecommending(true);
+      try {
+        const res = await fetch("/api/cart/recommendations", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ 
+            items: cartArray.map(item => ({ 
+              name: item.name, 
+              category: item.category, 
+              brand: item.brand 
+            })) 
+          })
+        });
+        const data = await res.json();
+        
+        if (data.keywords && data.keywords.length > 0) {
+          // Filter products based on keywords, excluding items already in cart
+          const keywords = data.keywords.map(k => k.toLowerCase());
+          const inCartIds = new Set(cartArray.map(item => item.id));
+          const inCartNames = new Set(cartArray.map(item => item.name?.toLowerCase()));
+          
+          let matches = products.filter(p => !inCartIds.has(p.id) && !inCartNames.has(p.name?.toLowerCase()) && p.in_stock === true);
+          let filteredMatches = matches.filter(p => {
+             const nameStr = (p.name || "").toLowerCase();
+             const catStr = (p.category || "").toLowerCase();
+             return keywords.some(k => nameStr.includes(k) || catStr.includes(k));
+          });
+          
+          if (filteredMatches.length > 0) {
+            filteredMatches = filteredMatches.sort(() => 0.5 - Math.random()).slice(0, 4);
+            setRecommendedProducts(filteredMatches);
+            setIsFallback(false);
+          } else {
+            // Fallback: Show other laptops in store if no matching accessories exist
+            const fallbackMatches = matches.sort(() => 0.5 - Math.random()).slice(0, 4);
+            setRecommendedProducts(fallbackMatches);
+            setIsFallback(true);
+          }
+        }
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setIsRecommending(false);
+      }
+    };
+    
+    // Using a timeout to debounce/delay the AI call slightly for better UX
+    const timer = setTimeout(() => {
+      fetchRecommendations();
+    }, 1000);
+    
+    return () => clearTimeout(timer);
+  }, [cartItems, products.length]); // Use cartItems reference instead of array length to catch item swaps
 
   // =====================================================================
   // ✅ 3. Loading Condition (ใช้ isDataReady ช่วยคุม)
@@ -297,6 +366,35 @@ export default function Cart() {
             <OrderSummary totalPrice={totalPrice} items={cartArray} />
           </div>
         </div>
+
+        {/* AI Recommendations Section */}
+        {cartArray.length > 0 && (isRecommending || recommendedProducts.length > 0) && (
+          <div className="mt-16 pt-10 border-t border-slate-100 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="flex items-center gap-2 mb-6">
+              <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
+                <Sparkles size={20} />
+              </div>
+              <h2 className="text-xl font-bold text-slate-800">
+                {isFallback 
+                  ? "โน้ตบุ๊กเครื่องอื่นที่คุณอาจสนใจ (Recommended Laptops For You)" 
+                  : "AI แนะนำสินค้าที่เข้ากัน (Frequently Bought Together)"}
+              </h2>
+            </div>
+            
+            {isRecommending ? (
+              <div className="flex flex-col items-center justify-center py-12">
+                <Loader2 size={32} className="animate-spin text-indigo-500 mb-4" />
+                <p className="text-slate-500 font-medium">AI กำลังวิเคราะห์สินค้าในตะกร้าของคุณ...</p>
+              </div>
+            ) : recommendedProducts.length > 0 ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+                {recommendedProducts.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+            ) : null}
+          </div>
+        )}
       </div>
 
       {isDeleteModalOpen && (

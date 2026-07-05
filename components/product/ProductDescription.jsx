@@ -1,11 +1,13 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Star, UserCircle, FileText, MessageSquare } from "lucide-react";
+import { Star, UserCircle, FileText, MessageSquare, Sparkles, Loader2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
 const ProductDescription = ({ product }) => {
   const [selectedTab, setSelectedTab] = useState("Specifications");
   const [reviews, setReviews] = useState([]);
+  const [summary, setSummary] = useState(null);
+  const [isSummarizing, setIsSummarizing] = useState(false);
 
   const tabs = [
     { name: "Specifications", icon: <FileText size={18} /> },
@@ -66,6 +68,32 @@ const ProductDescription = ({ product }) => {
     };
     fetchReviews();
   }, [product.id]);
+
+  useEffect(() => {
+    if (reviews.length >= 2) {
+      const fetchSummary = async () => {
+        setIsSummarizing(true);
+        try {
+          const res = await fetch("/api/reviews/summarize", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ productId: product.id })
+          });
+          const data = await res.json();
+          if (data.summary) {
+            setSummary(data.summary);
+          }
+        } catch (e) {
+          console.error("Failed to fetch summary", e);
+        } finally {
+          setIsSummarizing(false);
+        }
+      };
+      fetchSummary();
+    } else {
+      setSummary(null);
+    }
+  }, [reviews, product.id]);
 
   return (
     <div className="mx-6 animate-in fade-in duration-500">
@@ -141,6 +169,51 @@ const ProductDescription = ({ product }) => {
                   ความคิดเห็นจากลูกค้าที่ซื้อสินค้าจริง การรีวิวช่วยให้ผู้ซื้อคนอื่นตัดสินใจได้ง่ายขึ้น
                 </p>
               </div>
+
+              {/* AI Summary Box */}
+              {isSummarizing && (
+                <div className="bg-indigo-50/50 border border-indigo-100 p-6 rounded-3xl animate-pulse flex items-center justify-center gap-3">
+                  <Loader2 className="text-indigo-500 animate-spin" size={20} />
+                  <span className="text-sm font-semibold text-indigo-600">AI กำลังประมวลผลสรุปรีวิว...</span>
+                </div>
+              )}
+
+              {!isSummarizing && summary && (
+                <div className="bg-gradient-to-tr from-indigo-50/80 to-purple-50/80 border border-indigo-100/60 p-6 rounded-3xl shadow-sm">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Sparkles className="text-indigo-600 animate-pulse" size={20} />
+                    <h4 className="font-bold text-slate-800 text-base">สรุปรีวิวด้วย AI (AI Summary)</h4>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+                    <div>
+                      <h5 className="font-bold text-green-600 text-sm mb-2">🟢 จุดเด่น</h5>
+                      <ul className="list-disc list-inside text-sm text-slate-600 space-y-1">
+                        {summary.pros?.map((pro, i) => (
+                          <li key={i}>{pro}</li>
+                        ))}
+                        {(!summary.pros || summary.pros.length === 0) && <li>ไม่มีข้อมูลจุดเด่นที่เด่นชัด</li>}
+                      </ul>
+                    </div>
+                    <div>
+                      <h5 className="font-bold text-red-600 text-sm mb-2">🔴 จุดด้อย / ข้อสังเกต</h5>
+                      <ul className="list-disc list-inside text-sm text-slate-600 space-y-1">
+                        {summary.cons?.map((con, i) => (
+                          <li key={i}>{con}</li>
+                        ))}
+                        {(!summary.cons || summary.cons.length === 0) && <li>ไม่มีข้อกังวลที่เด่นชัด</li>}
+                      </ul>
+                    </div>
+                  </div>
+                  
+                  {summary.overall && (
+                    <div className="border-t border-slate-200/60 pt-3">
+                      <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mb-1">ภาพรวม</p>
+                      <p className="text-sm text-slate-700 leading-relaxed italic">"{summary.overall}"</p>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Reviews List (UI ใหม่) */}
               <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">

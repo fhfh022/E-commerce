@@ -1,13 +1,14 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
-import { currentUser } from "@clerk/nextjs/server"; // ✅ เพิ่ม import
+import { currentUser } from "@clerk/nextjs/server";
+import { getEmbedding } from "@/lib/embeddings";
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-// ฟังก์ชันดึงรายชื่อ models ที่ใช้ได้
+// Get available models
 async function getAvailableModels(apiKey) {
   try {
     const response = await fetch(
@@ -26,13 +27,12 @@ async function getAvailableModels(apiKey) {
   }
 }
 
-// ✅ เพิ่ม API GET สำหรับดึงประวัติแชท
+// GET - Fetch chat history
 export async function GET(req) {
   try {
     const user = await currentUser();
     if (!user) return NextResponse.json({ history: [] });
 
-    // หา ID ใน Supabase
     const { data: dbUser } = await supabaseAdmin
       .from("users")
       .select("id")
@@ -41,12 +41,11 @@ export async function GET(req) {
 
     if (!dbUser) return NextResponse.json({ history: [] });
 
-    // ดึงประวัติแชท
     const { data: history } = await supabaseAdmin
       .from("ai_chat_messages")
       .select("role, content")
       .eq("user_id", dbUser.id)
-      .order("created_at", { ascending: true }); // เรียงจากเก่าไปใหม่
+      .order("created_at", { ascending: true });
 
     return NextResponse.json({ history: history || [] });
   } catch (error) {
@@ -55,9 +54,10 @@ export async function GET(req) {
   }
 }
 
+// POST - Chat with AI and fetch dynamic semantic recommendations
 export async function POST(req) {
   try {
-    const user = await currentUser(); // ✅ ดึง User ปัจจุบัน
+    const user = await currentUser();
     const body = await req.json();
     const prompt = body.prompt;
 
@@ -68,118 +68,117 @@ export async function POST(req) {
       );
     }
 
-    // 2. ดึงข้อมูลสินค้า
-    const { data: products, error } = await supabaseAdmin
-      .from("products")
-      .select("name, model, price, sale_price, specs, stock, in_stock");
+    let recommendedProducts = [];
+    let queryEmbedding = null;
 
-    if (error) {
-      console.error("Supabase Fetch Error:", error);
-      return NextResponse.json({
-        text: "ขออภัยครับ ระบบฐานข้อมูลมีปัญหาชั่วคราว ไม่สามารถดึงข้อมูลสินค้าได้ในขณะนี้",
-      });
+    // 1. Generate embedding of the user's prompt
+    try {
+      queryEmbedding = await getEmbedding(prompt);
+    } catch (embErr) {
+      console.error("Error generating query embedding:", embErr);
     }
 
-    const safeProducts = products || [];
+    // 2. Query products using similarity search via RPC
+    if (queryEmbedding) {
+      const { data: matches, error: rpcError } = await supabaseAdmin.rpc("match_products", {
+        query_embedding: queryEmbedding,
+        match_threshold: 0.1, // retrieve anything loosely relevant to discuss
+        match_count: 5
+      });
 
-    const parseBudgetFromPrompt = (text) => {
-      if (!text) return null;
-      const normalized = text.replace(/,/g, "");
-      const budgetMatch = normalized.match(/(?:งบ(?:ประมาณ)?|budget|ราคาไม่เกิน|ไม่เกิน|สูงสุด|ประมาณ|around|about)\s*[:\-]?\s*([0-9]+)(?:\s*บาท)?/i);
-      if (budgetMatch) {
-        return Number(budgetMatch[1]);
+      if (rpcError) {
+        console.error("Supabase match_products RPC failed:", rpcError);
+      } else {
+        recommendedProducts = matches || [];
       }
-      const directMatch = normalized.match(/([0-9]+)\s*(?:บาท|฿)/);
-      return directMatch ? Number(directMatch[1]) : null;
-    };
+    }
 
-    const passedBudget = parseBudgetFromPrompt(prompt);
-    const isGamingPrompt = /(เกม|gaming|เล่นเกม|เล่นเกมส์|nvidia|rtx|geforce|radeon|gpu)/i.test(prompt);
-    const isWorkPrompt = /(office|work|เรียน|งาน|ธุรกิจ|programming|content|content creation|ใช้งานทั่วไป)/i.test(prompt);
+    // If RPC failed or returned nothing, fallback to basic retrieval to avoid empty context
+    if (recommendedProducts.length === 0) {
+      const { data: fallbackProducts } = await supabaseAdmin
+        .from("products")
+        .select("id, name, brand, model, price, sale_price, specs, stock, in_stock, images")
+        .eq("in_stock", true)
+        .limit(5);
+      
+      recommendedProducts = (fallbackProducts || []).map(p => ({
+        ...p,
+        similarity: 0.0
+      }));
+    }
 
-    const getProductPrice = (item) => {
-      const price = item.sale_price && item.sale_price > 0 ? item.sale_price : item.price;
-      return Number(price || 0);
-    };
-
-    const extractSpecSummary = (item) => {
-      if (item.specs && typeof item.specs === "object") {
-        const { display_size, processor, ram, storage, graphics } = item.specs;
-        return [display_size ? `${display_size} inch` : null, processor, ram, storage, graphics]
-          .filter(Boolean)
-          .join(" / ");
-      }
-      return item.specs || "สเปกเพิ่มเติมดูในหน้าสินค้า";
-    };
-
-    const recommendedProducts = safeProducts
-      .filter((item) => item.in_stock)
-      .filter((item) => item.images && item.images.length > 0)
-      .sort((a, b) => {
-        const priceA = getProductPrice(a);
-        const priceB = getProductPrice(b);
-        if (passedBudget) {
-          const scoreA = Math.abs(priceA - passedBudget) + (isGamingPrompt && /rtx|radeon|geforce|gpu|gaming/i.test(JSON.stringify(a.specs || "")) ? -10000 : 0);
-          const scoreB = Math.abs(priceB - passedBudget) + (isGamingPrompt && /rtx|radeon|geforce|gpu|gaming/i.test(JSON.stringify(b.specs || "")) ? -10000 : 0);
-          return scoreA - scoreB;
+    // 3. Format recommendations for frontend display
+    // Only recommend products with a reasonable similarity score (e.g. >= 0.35)
+    // or if the user asks a query that matched fallback context
+    const RECOMMENDATION_THRESHOLD = 0.35;
+    const formattedRecommendations = recommendedProducts
+      .filter((item) => item.similarity >= RECOMMENDATION_THRESHOLD || item.similarity === 0)
+      .slice(0, 3)
+      .map((item) => {
+        const price = item.sale_price && item.sale_price > 0 ? item.sale_price : item.price;
+        
+        let specsSummary = "";
+        if (item.specs && typeof item.specs === "object") {
+          const { display_size, processor, ram, storage, graphics } = item.specs;
+          specsSummary = [
+            display_size ? `${display_size} inch` : null, 
+            processor, 
+            ram, 
+            storage, 
+            graphics
+          ].filter(Boolean).join(" / ");
+        } else {
+          specsSummary = item.specs || "";
         }
-        return priceA - priceB;
-      })
-      .slice(0, 5);
 
-    const formattedRecommendations = recommendedProducts.slice(0, 3).map((item) => ({
-      id: item.id,
-      title: `${item.name}${item.model ? ` ${item.model}` : ""}`.trim(),
-      description: extractSpecSummary(item),
-      price: `฿${getProductPrice(item).toLocaleString()}`,
-      image: item.images?.[0] || null,
-      link: `/product/${item.id}`,
-      category: item.brand || item.specs?.graphics || "โน้ตบุ๊ก",
-      available: item.in_stock,
-    }));
+        return {
+          id: item.id,
+          title: `${item.name}${item.model ? ` ${item.model}` : ""}`.trim(),
+          description: specsSummary,
+          price: `฿${Number(price || 0).toLocaleString()}`,
+          image: item.images?.[0] || null,
+          link: `/product/${item.id}`,
+          category: item.brand || item.specs?.graphics || "โน้ตบุ๊ก",
+          available: item.in_stock,
+        };
+      });
 
-    // 3. เตรียมข้อมูลสินค้า
-    const productContext = safeProducts
+    // 4. Build system context for Gemini model
+    const productContext = recommendedProducts
       .map((p) => {
-        const currentPrice =
-          p.sale_price && p.sale_price > 0 ? p.sale_price : p.price;
-
-        let specsText = "ไม่มีข้อมูลสเปก";
+        const currentPrice = p.sale_price && p.sale_price > 0 ? p.sale_price : p.price;
+        let specsText = "";
         if (p.specs && typeof p.specs === "object") {
           specsText = Object.entries(p.specs)
             .filter(([_, val]) => val)
             .map(([key, val]) => `${key}: ${val}`)
             .join(", ");
-        } else if (typeof p.specs === "string") {
-          specsText = p.specs;
+        } else if (p.specs) {
+          specsText = String(p.specs);
         }
 
-        return `ชื่อ: ${p.name}, รุ่น: ${p.model}, ราคา: ${currentPrice.toLocaleString()} บาท, สเปก: ${specsText}, สถานะ: ${
+        return `ชื่อ: ${p.name}, แบรนด์: ${p.brand || ""}, รุ่น: ${p.model || ""}, ราคา: ${Number(currentPrice || 0).toLocaleString()} บาท, สเปก: ${specsText}, สถานะ: ${
           p.in_stock ? "มีของ" : "ของหมด"
-        }`;
+        } (ความคล้ายคลึง: ${(p.similarity * 100).toFixed(1)}%)`;
       })
       .join("\n---\n");
 
-    // 4. สร้าง Prompt
     const systemPrompt = `คุณคือ "PRT Assistant" พนักงานขายโน้ตบุ๊ก AI ประจำร้าน PRT Store
 
-    นี่คือรายการสินค้าทั้งหมดที่มีขายในร้านตอนนี้ (ข้อมูล Real-time):
-    ${productContext}
+นี่คือรายการสินค้าที่คล้ายคลึงกับความต้องการของลูกค้ามากที่สุด (ข้อมูลจากระบบค้นหา Vector Search แบบ Real-time):
+${productContext}
 
-    คำแนะนำในการตอบคำถาม:
-    1. **บุคลิก:** ตอบเป็นภาษาไทย สุภาพ เป็นกันเอง เหมือนกูรูไอทีแนะนำเพื่อน
-    2. **กรณีสินค้ามีในร้าน:** ให้ข้อมูล ราคา และสเปก โดยอ้างอิงจากรายการข้างบนเท่านั้น
-    3. **กรณีสินค้า "ไม่มี" ในร้าน หรือเป็นคำถามทั่วไป:** - อนุญาตให้ใช้ความรู้ทั่วไปของคุณ (General Knowledge) ตอบได้เลย 
-      - แต่ต้องแจ้งลูกค้าเสมอว่า "สินค้ารุ่นนี้ไม่ได้จำหน่ายที่ร้านเรา" 
-      - และพยายามแนะนำรุ่นใกล้เคียงที่มีในร้านแทน (ถ้ามี)
-    4. **ห้าม:** ห้ามแต่งเรื่อง "ราคา" หรือ "สถานะสต็อก" ของสินค้าที่ไม่อยู่ในรายการเด็ดขาด
-    5. **รูปแบบการตอบ:** สั้น กระชับ ตรงประเด็น ถ้ามีการเปรียบเทียบให้ใช้ Bullet points`;
+คำแนะนำในการตอบคำถาม:
+1. **บุคลิก:** ตอบเป็นภาษาไทย สุภาพ เป็นกันเอง เหมือนกูรูไอทีแนะนำเพื่อน
+2. **กรณีสินค้ามีในรายการด้านบน:** ให้ข้อมูล ราคา และสเปก โดยอ้างอิงจากรายการด้านบนเท่านั้น
+3. **กรณีสินค้า "ไม่มี" ในรายการ หรือเป็นคำถามทั่วไป:**
+   - อนุญาตให้ใช้ความรู้ทั่วไปของคุณ (General Knowledge) ตอบได้เลย 
+   - แต่ถ้าลูกค้าถามหารุ่นเฉพาะที่ไม่มีในรายการ ให้แจ้งว่า "สินค้ารุ่นนี้ไม่ได้จำหน่ายที่ร้านเราในขณะนี้" และพยายามแนะนำรุ่นที่ใกล้เคียงที่สุดจากรายการด้านบนแทน
+4. **ห้าม:** ห้ามแต่งเรื่อง "ราคา" หรือ "สถานะสต็อก" ของสินค้าที่ไม่อยู่ในรายการเด็ดขาด
+5. **รูปแบบการตอบ:** สั้น กระชับ ตรงประเด็น ถ้ามีการเปรียบเทียบหรือลิสต์รายการให้ใช้ Bullet points`;
 
-    // 5. เลือก Model
-    const availableModels = await getAvailableModels(
-      process.env.GEMINI_API_KEY
-    );
-
+    // 5. Select Model
+    const availableModels = await getAvailableModels(process.env.GEMINI_API_KEY);
     const preferredModels = [
       "gemini-1.5-flash-latest",
       "gemini-1.5-flash",
@@ -189,9 +188,7 @@ export async function POST(req) {
       "gemini-pro",
     ];
 
-    const modelToUse =
-      preferredModels.find((m) => availableModels.includes(m)) ||
-      availableModels[0];
+    const modelToUse = preferredModels.find((m) => availableModels.includes(m)) || availableModels[0];
 
     if (!modelToUse) {
       return NextResponse.json({
@@ -199,56 +196,44 @@ export async function POST(req) {
       });
     }
 
-    // 6. เรียก AI
+    // 6. Request Gemini API
     const apiUrl = `https://generativelanguage.googleapis.com/v1/models/${modelToUse}:generateContent`;
 
-    const response = await fetch(
-      `${apiUrl}?key=${process.env.GEMINI_API_KEY}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [
-            {
-              role: "user",
-              parts: [{ text: systemPrompt }],
-            },
-            {
-              role: "model",
-              parts: [
-                {
-                  text: "รับทราบครับ ผมพร้อมให้คำแนะนำทั้งสินค้าในร้านและความรู้ไอทีทั่วไปแล้วครับ",
-                },
-              ],
-            },
-            {
-              role: "user",
-              parts: [{ text: prompt }],
-            },
-          ],
-        }),
-      }
-    );
+    const response = await fetch(`${apiUrl}?key=${process.env.GEMINI_API_KEY}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [
+          {
+            role: "user",
+            parts: [{ text: systemPrompt }],
+          },
+          {
+            role: "model",
+            parts: [{ text: "รับทราบครับ ผมพร้อมนำข้อมูลสินค้าจาก Vector Search มาช่วยเหลือแนะนำลูกค้าอย่างสุภาพและแม่นยำแล้วครับ" }],
+          },
+          {
+            role: "user",
+            parts: [{ text: prompt }],
+          },
+        ],
+      }),
+    });
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(
-        `Gemini API Error: ${response.status} - ${
-          errorData.error?.message || "Unknown error"
-        }`
-      );
+      throw new Error(`Gemini API Error: ${response.status} - ${errorData.error?.message || "Unknown error"}`);
     }
 
     const data = await response.json();
     const aiResponse = data.candidates[0].content.parts[0].text;
 
-    // 8. หากมีคำถามประเภทงบประมาณ ให้ตอบในรูปแบบ Recommend + quick product links
     const responsePayload = {
       text: aiResponse,
       recommendations: formattedRecommendations,
     };
 
-    // ✅ 9. บันทึกแชทลง Database (ถ้า User Login อยู่)
+    // 7. Save to DB history if user is logged in
     if (user) {
       const { data: dbUser } = await supabaseAdmin
         .from("users")

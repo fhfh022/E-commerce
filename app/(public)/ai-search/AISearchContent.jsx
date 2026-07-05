@@ -20,6 +20,15 @@ export default function AISearchPage() {
 
   // ✅ ดึงประวัติแชทเมื่อหน้าโหลด และ User Login แล้ว
   useEffect(() => {
+    try {
+      const savedRecs = localStorage.getItem("ai_recommendations");
+      if (savedRecs) {
+        setRecommendations(JSON.parse(savedRecs));
+      }
+    } catch (e) {
+      console.error("Failed to parse saved recommendations");
+    }
+
     if (!isLoaded) return; // ถ้า Clerk ยังไม่พร้อม ให้รอไปก่อน
 
     if (user) {
@@ -55,6 +64,7 @@ export default function AISearchPage() {
     setInput("");
     setMessages((prev) => [...prev, { role: "user", content: userMessage }]);
     setRecommendations([]);
+    localStorage.removeItem("ai_recommendations");
     setIsLoading(true);
 
     try {
@@ -72,6 +82,7 @@ export default function AISearchPage() {
         ]);
         if (Array.isArray(data.recommendations)) {
           setRecommendations(data.recommendations);
+          localStorage.setItem("ai_recommendations", JSON.stringify(data.recommendations));
         }
       } else {
         throw new Error(data.error);
@@ -206,15 +217,15 @@ export default function AISearchPage() {
                       href={item.link}
                       className="flex items-center gap-4 rounded-3xl border border-slate-200 p-4 transition hover:shadow-lg hover:border-indigo-100"
                     >
-                      <div className="h-24 w-24 overflow-hidden rounded-3xl bg-slate-100">
+                      <div className="h-24 w-24 overflow-hidden rounded-3xl bg-slate-100 flex-shrink-0">
                         <img
                           src={item.image}
                           alt={item.title}
                           className="h-full w-full object-cover"
                         />
                       </div>
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-slate-900">{item.title}</h4>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-slate-900 truncate">{item.title}</h4>
                         <p className="text-sm text-slate-500 mt-1 truncate">{item.description}</p>
                         <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-500">
                           <span className="rounded-full bg-slate-100 px-2 py-1">{item.price}</span>

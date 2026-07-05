@@ -5,6 +5,7 @@ import Image from "next/image";
 import { toast } from "react-hot-toast";
 import { supabase } from "@/lib/supabase";
 import { assets } from "@/assets/assets";
+import { Sparkles, Loader2 } from "lucide-react";
 
 export default function StoreAddProduct() {
   const categories = [
@@ -23,6 +24,7 @@ export default function StoreAddProduct() {
 
   /* ---------- State ---------- */
   const [loading, setLoading] = useState(false);
+  const [isGeneratingSpecs, setIsGeneratingSpecs] = useState(false);
   const [images, setImages] = useState({ 1: null, 2: null, 3: null, 4: null });
   
   // ✅ ตัด Stock ออกจาก productInfo
@@ -64,6 +66,44 @@ export default function StoreAddProduct() {
     const file = e.target.files[0];
     if (file) {
       setImages((prev) => ({ ...prev, [key]: file }));
+    }
+  };
+
+  const handleGenerateSpecs = async () => {
+    if (!productInfo.name) {
+      toast.error("กรุณากรอกชื่อสินค้าก่อนใช้งาน AI");
+      return;
+    }
+
+    setIsGeneratingSpecs(true);
+    const toastId = toast.loading("AI กำลังสร้างข้อมูลจำเพาะ...");
+    
+    try {
+      const res = await fetch("/api/store/generate-desc", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: productInfo.name,
+          brand: productInfo.brand,
+          model: productInfo.model
+        })
+      });
+
+      const data = await res.json();
+      
+      if (!res.ok) throw new Error(data.error || "เกิดข้อผิดพลาด");
+      if (data.specs) {
+        setSpecs((prev) => ({
+          ...prev,
+          ...data.specs
+        }));
+        toast.success("AI กรอกข้อมูลจำเพาะสำเร็จ!", { id: toastId });
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("AI ไม่สามารถสร้างข้อมูลได้ กรุณาลองใหม่", { id: toastId });
+    } finally {
+      setIsGeneratingSpecs(false);
     }
   };
 
@@ -239,7 +279,18 @@ export default function StoreAddProduct() {
 
         {/* 3. Technical Specs */}
         <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm mb-6">
-          <h3 className="text-lg font-bold text-slate-800 mb-4 border-b pb-2">ข้อมูลจำเพาะ (Specs)</h3>
+          <div className="flex items-center justify-between mb-4 border-b pb-2">
+            <h3 className="text-lg font-bold text-slate-800">ข้อมูลจำเพาะ (Specs)</h3>
+            <button 
+              type="button" 
+              onClick={handleGenerateSpecs}
+              disabled={isGeneratingSpecs || !productInfo.name}
+              className="flex items-center gap-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 px-3 py-1.5 rounded-lg text-sm font-semibold transition-all disabled:opacity-50"
+            >
+              {isGeneratingSpecs ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
+              Auto-Fill ด้วย AI
+            </button>
+          </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
             <div>

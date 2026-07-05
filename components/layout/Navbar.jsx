@@ -12,8 +12,11 @@ import {
   Sparkles,
   MessageCircleMore,
   Home,
-  BookOpenText
+  BookOpenText,
+  Camera,
+  Loader2
 } from "lucide-react";
+import toast from "react-hot-toast";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useMemo, useRef, useEffect } from "react";
@@ -36,6 +39,8 @@ const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isVisionSearching, setIsVisionSearching] = useState(false);
+  const fileInputRef = useRef(null);
   const navRef = useRef(null);
   const [navHeight, setNavHeight] = useState(0);
 
@@ -89,6 +94,50 @@ const Navbar = () => {
       router.push("/ai-search");
     }
     setIsMenuOpen(false);
+  };
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 4 * 1024 * 1024) {
+       toast.error("รูปภาพต้องมีขนาดไม่เกิน 4MB");
+       return;
+    }
+
+    setIsVisionSearching(true);
+    
+    try {
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64data = reader.result;
+        
+        const res = await fetch("/api/ai-vision-search", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ image: base64data, mimeType: file.type })
+        });
+        
+        const data = await res.json();
+        
+        if (res.ok && data.query) {
+          setSearch(data.query);
+          setIsSearchOpen(false);
+          router.push(`/shop?search=${encodeURIComponent(data.query)}`);
+          toast.success(`ค้นพบรูปภาพ: ${data.query}`);
+        } else {
+          toast.error(data.error || "เกิดข้อผิดพลาดในการค้นหาด้วยรูปภาพ");
+        }
+        setIsVisionSearching(false);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error(error);
+      toast.error("เกิดข้อผิดพลาดในการวิเคราะห์รูปภาพ");
+      setIsVisionSearching(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
   };
 
   // Manage navbar height and body scroll when mobile menu opens
@@ -177,6 +226,26 @@ const Navbar = () => {
                     onFocus={() => setIsSearchOpen(true)}
                     onBlur={() => setTimeout(() => setIsSearchOpen(false), 200)}
                     onChange={(e) => setSearch(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isVisionSearching}
+                    className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-colors disabled:opacity-50"
+                    title="ค้นหาด้วยรูปภาพ (Visual Search)"
+                  >
+                    {isVisionSearching ? (
+                      <Loader2 size={18} className="animate-spin text-indigo-500" />
+                    ) : (
+                      <Camera size={18} />
+                    )}
+                  </button>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    ref={fileInputRef}
+                    className="hidden"
+                    onChange={handleImageUpload}
                   />
                 </form>
 

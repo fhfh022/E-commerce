@@ -21,6 +21,7 @@ const CATEGORY_OPTIONS = [ "Gaming","Ultrabook"];
 function ShopContent() {
   const searchParams = useSearchParams();
   const search = searchParams.get("search");
+  const router = useRouter();
 
   // Redux Setup
   const dispatch = useDispatch();
@@ -321,10 +322,23 @@ function ShopContent() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 pb-6 border-b border-slate-100">
           <div>
             <h1 className="text-2xl font-bold text-slate-800">สินค้าทั้งหมด</h1>
-            <p className="text-slate-500 text-sm mt-1">
-              เจอ {finalFilteredProducts.length} ผลลัพธ์{" "}
-              {search && `for "${search}"`}
-            </p>
+            <div className="flex items-center gap-2 mt-1 flex-wrap">
+              <p className="text-slate-500 text-sm">
+                เจอ {finalFilteredProducts.length} ผลลัพธ์
+              </p>
+              {search && (
+                <span className="flex items-center gap-1.5 bg-indigo-50 text-indigo-700 px-3 py-1 rounded-full text-sm font-medium border border-indigo-100">
+                  <span>ค้นหา: "{search}"</span>
+                  <button
+                    onClick={() => router.push('/shop')}
+                    className="hover:bg-indigo-200 p-0.5 rounded-full transition-colors flex items-center justify-center"
+                    title="ล้างคำค้นหา"
+                  >
+                    <X size={14} />
+                  </button>
+                </span>
+              )}
+            </div>
           </div>
           <div className="flex items-center gap-3">
             <button
@@ -389,6 +403,7 @@ function ShopContent() {
                       setSelectedBrands(new Set());
                       setSelectedCategories(new Set());
                       setSortOrder("default");
+                      if (search) router.push('/shop');
                     }}
                     className="mt-6 px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition"
                   >

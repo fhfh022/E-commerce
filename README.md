@@ -9,6 +9,8 @@
 
 > **Elevate your shopping experience.** An ultra-fast, modern, and secure e-commerce solution integrating cutting-edge AI assistance, robust transaction handling, and comprehensive management portals.
 
+🔗 **Live Demo:** [https://prt-main.vercel.app](https://prt-main.vercel.app)
+
 ---
 
 ## 📖 Overview

@@ -59,7 +59,7 @@ Additionally, it provides isolated environments tailored for three distinct role
 *   **Frontend**: Next.js 15 (App Router), React 19, TypeScript
 *   **Styling**: Tailwind CSS v4, Lucide React (Icons)
 *   **State Management**: Redux Toolkit, Redux Persist
-*   **Database & API**: Supabase Client, Prisma Client, PostgreSQL
+*   **Database & API**: Supabase Client, PostgreSQL
 *   **Auth**: Clerk Security & Middleware
 *   **Payments**: Stripe SDK & Stripe Webhooks
 *   **AI**: `@google/generative-ai` (Gemini API)

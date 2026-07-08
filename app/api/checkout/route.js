@@ -49,6 +49,7 @@ export async function POST(req) {
         .select(`
           *,
           order_items (
+            product_id,
             quantity,
             price_at_time,
             product:products (name, images)

@@ -64,14 +64,16 @@ export async function POST(req) {
 
       // 2. ตรวจสอบสต็อกสำหรับออเดอร์เดิมก่อนสร้าง Stripe Line Items
       const orderProductIds = orderData.order_items.map((item) => item.product_id);
-      const { data: dbOrderProducts } = await supabaseAdmin
+      const { data: dbOrderProducts, error: productsError } = await supabaseAdmin
         .from("products")
         .select("id, name, stock")
         .in("id", orderProductIds);
 
+      const productsList = dbOrderProducts || [];
+
       const outOfStockOrderItems = [];
       orderData.order_items.forEach((item) => {
-        const dbProduct = dbOrderProducts.find((p) => p.id === item.product_id);
+        const dbProduct = productsList.find((p) => p.id === item.product_id);
         const availableStock = dbProduct?.stock || 0;
         if (item.quantity > availableStock) {
           outOfStockOrderItems.push({
@@ -131,16 +133,18 @@ export async function POST(req) {
 
       // 1. ดึงข้อมูลสินค้าล่าสุดจาก DB เพื่อความปลอดภัย (กันแก้ราคาหน้าบ้าน)
       const productIds = items.map((item) => item.id);
-      const { data: dbProducts } = await supabaseAdmin
+      const { data: dbProducts, error: dbProductsError } = await supabaseAdmin
         .from("products")
         .select("*")
         .in("id", productIds);
+
+      const productsList2 = dbProducts || [];
 
       // 2. คำนวณยอด, สร้าง Line Items และตรวจสอบสต็อกก่อน
       let subTotal = 0;
       const outOfStockItems = [];
       line_items_for_stripe = items.map((item) => {
-        const dbProduct = dbProducts.find((p) => p.id === item.id);
+        const dbProduct = productsList2.find((p) => p.id === item.id);
         if (!dbProduct) throw new Error(`Product ID ${item.id} not found`);
 
         const availableStock = dbProduct.stock || 0;

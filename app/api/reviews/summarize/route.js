@@ -104,6 +104,9 @@ ${reviewsText}
     });
 
     if (!response.ok) {
+      if (response.status === 429) {
+        return NextResponse.json({ summary: null, message: "ระบบ AI กำลังประมวลผลให้ผู้ใช้จำนวนมาก กรุณาลองใหม่ในอีกสักครู่" });
+      }
       const errorText = await response.text();
       console.error("Gemini API Error in Review Summarizer:", response.status, errorText);
       throw new Error(`Gemini API Error: ${response.status}`);

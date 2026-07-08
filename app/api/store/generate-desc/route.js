@@ -98,6 +98,9 @@ Return ONLY a valid JSON object with the following keys. Do not use markdown blo
     });
 
     if (!response.ok) {
+      if (response.status === 429) {
+        throw new Error("RATE_LIMIT: ระบบ AI มีผู้ใช้งานจำนวนมาก กรุณาลองใหม่ในอีกสักครู่");
+      }
       const errorText = await response.text();
       console.error("Gemini API HTTP Error:", response.status, errorText);
       throw new Error(`Gemini API Error: ${response.status}`);

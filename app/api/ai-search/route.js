@@ -63,6 +63,9 @@ export async function POST(req) {
 
     return NextResponse.json({ recommendations });
   } catch (error) {
+    if (error.message?.includes("RATE_LIMIT") || error.message?.includes("429")) {
+      return NextResponse.json({ error: "ระบบ AI กำลังประมวลผลให้ผู้ใช้จำนวนมาก กรุณาลองใหม่ในอีกสักครู่" }, { status: 429 });
+    }
     console.error("Semantic Search API Error:", error);
     return NextResponse.json({ error: "Search failed", details: error.message }, { status: 500 });
   }

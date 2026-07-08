@@ -78,6 +78,9 @@ Example output:
     });
 
     if (!response.ok) {
+      if (response.status === 429) {
+        return NextResponse.json({ keywords: [] }); // Gracefully fallback
+      }
       const errorText = await response.text();
       console.error("Gemini API Error:", response.status, errorText);
       throw new Error(`Gemini API Error: ${response.status}`);

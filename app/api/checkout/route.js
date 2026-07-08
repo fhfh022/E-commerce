@@ -19,7 +19,7 @@ export async function POST(req) {
     // รับข้อมูลจากหน้าบ้าน
     // กรณี Pay Now: จะส่งมาแค่ { orderId, userEmail } หรือ { items, orderId, ... }
     const { items, userEmail, couponCode, addressId, orderId } = await req.json();
-    const origin = req.headers.get("origin");
+    const origin = req.headers.get("origin") || process.env.NEXT_PUBLIC_BASE_URL || req.nextUrl?.origin || "http://localhost:3000";
 
     // --- ส่วนเตรียมข้อมูลสำหรับ Stripe ---
     let line_items_for_stripe = [];

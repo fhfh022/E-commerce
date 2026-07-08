@@ -90,6 +90,9 @@ CRITICAL RULES:
     });
 
     if (!response.ok) {
+      if (response.status === 429) {
+        return NextResponse.json({ query: "acer" }); // Fallback to a safe search query on rate limit
+      }
       const errorText = await response.text();
       console.error("Gemini Vision API Error:", response.status, errorText);
       throw new Error(`Gemini API Error: ${response.status}`);

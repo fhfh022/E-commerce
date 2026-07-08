@@ -221,6 +221,12 @@ ${productContext}
     });
 
     if (!response.ok) {
+      if (response.status === 429) {
+        return NextResponse.json({
+          text: "ระบบ AI กำลังให้บริการลูกค้าท่านอื่นจำนวนมาก กรุณาลองพิมพ์ถามใหม่อีกครั้งในอีกสักครู่นะครับ",
+          recommendations: [],
+        });
+      }
       const errorData = await response.json();
       throw new Error(`Gemini API Error: ${response.status} - ${errorData.error?.message || "Unknown error"}`);
     }

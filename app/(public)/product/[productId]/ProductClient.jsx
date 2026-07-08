@@ -100,10 +100,10 @@ export default function ProductClient() {
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
                     
                     {/* 🟢 LEFT COLUMN (Images + Description) */}
-                    <div className="lg:col-span-7 xl:col-span-8 flex flex-col gap-10">
+                    <div className="contents lg:flex lg:flex-col lg:col-span-7 xl:col-span-8 lg:gap-10">
                         
                         {/* --- Image Gallery Section (ย้ายมาจาก ProductDetails) --- */}
-                        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+                        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm order-1 lg:order-none">
                             <div className="flex flex-col-reverse md:flex-row gap-4">
                                 {/* Thumbnails */}
                                 <div className="flex md:flex-col gap-3 overflow-x-auto md:overflow-y-auto md:max-h-[500px] no-scrollbar">
@@ -142,13 +142,13 @@ export default function ProductClient() {
                         </div>
 
                         {/* --- Description & Reviews --- */}
-                        <div id="details">
+                        <div id="details" className="order-3 lg:order-none">
                             <ProductDescription product={product} />
                         </div>
                     </div>
 
                     {/* 🟢 RIGHT COLUMN (Sticky Info) */}
-                    <div className="lg:col-span-5 xl:col-span-4">
+                    <div className="lg:col-span-5 xl:col-span-4 order-2 lg:order-none">
                         <div className="sticky top-24 space-y-6">
                             <ProductDetails product={product} />
                         </div>

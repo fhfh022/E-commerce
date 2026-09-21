@@ -100,6 +100,7 @@ const Hero = () => {
             className="w-[70%] mx-auto mt-auto sm:absolute sm:bottom-0 sm:right-2 sm:mt-0 sm:w-[45%] lg:w-[42%] xl:w-[45%] xl:max-w-[500px] xl:right-0 drop-shadow-xl transition-transform duration-700 group-hover:scale-105 z-0 pointer-events-none"
             src={assets.hero_model_img}
             alt="Hero Model"
+            priority
           />
         </div>
 

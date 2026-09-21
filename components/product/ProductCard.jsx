@@ -2,7 +2,7 @@
 import { Heart } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import React from "react";
+import React, { useMemo } from "react";
 import { assets } from "@/assets/assets";
 import { useDispatch, useSelector } from "react-redux";
 import { supabase } from "@/lib/supabase";
@@ -64,7 +64,7 @@ const ProductCard = ({ product, hideLikeButton = false }) => {
     ? Math.round(((product.price - product.sale_price) / product.price) * 100)
     : 0;
 
-  const generateSpecString = () => {
+  const specString = useMemo(() => {
     const s = product.specs || {}; 
     const getFirstWord = (text) => text ? text.split(' ')[0] : null;
 
@@ -77,9 +77,7 @@ const ProductCard = ({ product, hideLikeButton = false }) => {
     ];
 
     return parts.filter(Boolean).join(" / ");
-  };
-
-  const specString = generateSpecString();
+  }, [product.specs]);
 
   return (
     <Link href={`/product/${product.id}`} className="block h-full">

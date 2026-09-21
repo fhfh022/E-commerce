@@ -54,6 +54,34 @@ export async function GET(req) {
   }
 }
 
+// DELETE - Clear chat history for user
+export async function DELETE(req) {
+  try {
+    const user = await currentUser();
+    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const { data: dbUser } = await supabaseAdmin
+      .from("users")
+      .select("id")
+      .eq("clerk_id", user.id)
+      .single();
+
+    if (!dbUser) return NextResponse.json({ error: "User not found" }, { status: 404 });
+
+    const { error } = await supabaseAdmin
+      .from("ai_chat_messages")
+      .delete()
+      .eq("user_id", dbUser.id);
+
+    if (error) throw error;
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Delete History Error:", error);
+    return NextResponse.json({ error: "Failed to delete history" }, { status: 500 });
+  }
+}
+
 // POST - Chat with AI and fetch dynamic semantic recommendations
 export async function POST(req) {
   try {

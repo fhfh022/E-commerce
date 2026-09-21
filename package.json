@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@bilions/thailand-address": "^2.0.1",
     "@clerk/nextjs": "^6.36.1",
     "@google/generative-ai": "^0.24.1",
     "@prisma/adapter-pg": "^7.1.0",
@@ -39,7 +40,8 @@
     "recharts": "^3.1.2",
     "redux-persist": "^6.0.0",
     "stripe": "^20.1.0",
-    "svix": "^1.82.0"
+    "svix": "^1.82.0",
+    "thailand-address-simple": "^0.0.6"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

@@ -20,7 +20,7 @@ export default function CouponPopup() {
         const { data } = await supabase
           .from("coupons")
           .select(
-            "code, discount_value, discount_type, description, expiry_date, quantity, used_count"
+            "code, discount_value, discount_type, description, expiry_date, quantity, used_count",
           )
           .eq("is_active", true)
           .gte("expiry_date", new Date().toISOString())
@@ -30,7 +30,7 @@ export default function CouponPopup() {
         if (data && data.length > 0) {
           // Filter เอาเฉพาะที่ยังไม่หมดสิทธิ์
           const availableCoupons = data.filter(
-            (c) => c.used_count < c.quantity
+            (c) => c.used_count < c.quantity,
           );
           if (availableCoupons.length > 0) {
             setCoupons(availableCoupons);
@@ -65,7 +65,7 @@ export default function CouponPopup() {
         throw new Error("Clipboard not available");
       }
 
-      toast.success(`Copied code: ${code}`);
+      toast.success(`คัดลอกรหัส: ${code}`);
     } catch (error) {
       console.error("Copy coupon code error:", error);
       toast.error("ไม่สามารถคัดลอกคูปองได้ กรุณาลองอีกครั้ง");

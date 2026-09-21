@@ -151,6 +151,31 @@ Follow these steps to run the development server locally:
 
 ---
 
+## ⚡ Stripe Webhook Configuration
+
+To handle order updates automatically after a successful payment, you need to configure Stripe Webhooks.
+
+### Local Development (Stripe CLI)
+1. **Download & Install** the [Stripe CLI](https://docs.stripe.com/stripe-cli).
+2. **Login to Stripe**:
+   ```bash
+   stripe login
+   ```
+3. **Forward Webhook Events** to your local server:
+   ```bash
+   stripe listen --forward-to localhost:3000/api/webhook/stripe
+   ```
+4. **Copy the signing secret** (starts with `whsec_...`) printed in the terminal, and set it as `STRIPE_WEBHOOK_SECRET` in your `.env` file.
+
+### Production / Deployment (e.g., Vercel)
+1. Go to the **Stripe Dashboard** > **Developers** > **Webhooks**.
+2. Click **Add destination** and set the endpoint URL:
+   `https://your-domain.com/api/webhook/stripe`
+3. Select the event to listen to: `checkout.session.completed`.
+4. Click **Create destination**, retrieve the **Signing secret** (`whsec_...`), and add it to your server environment variables as `STRIPE_WEBHOOK_SECRET`.
+
+---
+
 ## 📄 License & Credit
 
 Developed and maintained by **PRTEZ** / **PRT Corporation**. All rights reserved.

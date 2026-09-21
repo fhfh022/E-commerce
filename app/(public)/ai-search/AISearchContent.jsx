@@ -1,39 +1,32 @@
 "use client";
-import { useState, useRef, useEffect } from "react";
-import { Sparkles, Send, Bot, User, Loader2, ArrowLeft } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Sparkles, Send, Bot, User, Loader2, ArrowLeft, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
+
+const DEFAULT_GREETING = [
+  {
+    role: "assistant",
+    content:
+      "สวัสดีครับ! ผมคือ PRT Assistant มีอะไรให้ผมช่วยเลือกโน้ตบุ๊กวันนี้ไหมครับ? เช่น 'แนะนำงบ 30,000' หรือ 'หาคอมเล่นเกมแรงๆ' ได้เลยครับ",
+  },
+];
 
 export default function AISearchPage() {
   const { user, isLoaded } = useUser(); 
   const [input, setInput] = useState("");
-  const [messages, setMessages] = useState([
-    {
-      role: "assistant",
-      content:
-        "สวัสดีครับ! ผมคือ PRT Assistant มีอะไรให้ผมช่วยเลือกโน้ตบุ๊กวันนี้ไหมครับ? เช่น 'แนะนำงบ 30,000' หรือ 'หาคอมเล่นเกมแรงๆ' ได้เลยครับ",
-    },
-  ]);
-  const [isLoading, setIsLoading] = useState(false); // สถานะ AI กำลังตอบ
+  const [messages, setMessages] = useState(DEFAULT_GREETING);
+  const [isLoading, setIsLoading] = useState(false);
   const [isHistoryLoading, setIsHistoryLoading] = useState(true);
   const [recommendations, setRecommendations] = useState([]);
 
   // ✅ ดึงประวัติแชทเมื่อหน้าโหลด และ User Login แล้ว
   useEffect(() => {
-    try {
-      const savedRecs = localStorage.getItem("ai_recommendations");
-      if (savedRecs) {
-        setRecommendations(JSON.parse(savedRecs));
-      }
-    } catch (e) {
-      console.error("Failed to parse saved recommendations");
-    }
-
-    if (!isLoaded) return; // ถ้า Clerk ยังไม่พร้อม ให้รอไปก่อน
+    if (!isLoaded) return;
 
     if (user) {
       const fetchHistory = async () => {
-        setIsHistoryLoading(true); // เริ่มโหลด
+        setIsHistoryLoading(true);
         try {
           const res = await fetch("/api/ai-assistant");
           const data = await res.json();
@@ -43,18 +36,50 @@ export default function AISearchPage() {
               content: msg.content,
             }));
             setMessages(formattedHistory);
+
+            // โหลดสินค้าแนะนำเฉพาะเมื่อมีประวัติแชทใน DB จริง
+            const savedRecs = localStorage.getItem("ai_recommendations");
+            if (savedRecs) {
+              try {
+                setRecommendations(JSON.parse(savedRecs));
+              } catch (e) {
+                console.error("Failed to parse saved recommendations");
+              }
+            }
+          } else {
+            // กรณีไม่มีประวัติแชทใน DB (หรือถูกลบออกไป) -> เคลียร์สินค้าแนะนำและรีเซ็ตข้อความ
+            setMessages(DEFAULT_GREETING);
+            setRecommendations([]);
+            localStorage.removeItem("ai_recommendations");
           }
         } catch (error) {
           console.error("Failed to load chat history", error);
         } finally {
-          setIsHistoryLoading(false); // โหลดเสร็จแล้ว (ไม่ว่าจะสำเร็จหรือล้มเหลว)
+          setIsHistoryLoading(false);
         }
       };
       fetchHistory();
     } else {
-      setIsHistoryLoading(false); // ถ้าไม่ได้ Login ก็ไม่ต้องโหลด ปิดไปเลย
+      setMessages(DEFAULT_GREETING);
+      setRecommendations([]);
+      localStorage.removeItem("ai_recommendations");
+      setIsHistoryLoading(false);
     }
   }, [user, isLoaded]);
+
+  const handleClearHistory = async () => {
+    if (!confirm("คุณต้องการล้างประวัติการแชททั้งหมดหรือไม่?")) return;
+    try {
+      const res = await fetch("/api/ai-assistant", { method: "DELETE" });
+      if (res.ok) {
+        setMessages(DEFAULT_GREETING);
+        setRecommendations([]);
+        localStorage.removeItem("ai_recommendations");
+      }
+    } catch (error) {
+      console.error("Failed to clear chat history", error);
+    }
+  };
 
   const handleSend = async (e) => {
     e.preventDefault();
@@ -126,6 +151,17 @@ export default function AISearchPage() {
               </div>
             </div>
           </div>
+
+          {user && messages.length > 1 && (
+            <button
+              onClick={handleClearHistory}
+              className="flex items-center gap-1.5 text-xs font-medium text-slate-400 hover:text-red-500 hover:bg-red-50 px-3 py-1.5 rounded-lg transition"
+              title="ล้างประวัติการแชท"
+            >
+              <Trash2 size={14} />
+              <span className="hidden sm:inline">ล้างประวัติ</span>
+            </button>
+          )}
         </div>
 
         {/* Chat Area */}

@@ -1,0 +1,233 @@
+[33mcommit 82b511b4a231fe60eb5df843b634ac0fb1685eb2[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m
+Author: PRTEZ <fhfh011@gmail.com>
+Date:   Wed Jul 8 21:03:34 2026 +0700
+
+    fix(checkout): add product_id to select query to fetch product stock
+
+[33mcommit a36abc138d7376cec2a5121ff88c6e1283bf657f[m
+Author: PRTEZ <fhfh011@gmail.com>
+Date:   Wed Jul 8 20:44:28 2026 +0700
+
+    fix(checkout): fallback undefined db response to array to fix type error
+
+[33mcommit 38dc76b9b08c4690b8f9d0c82862ab1518d40ee5[m
+Author: PRTEZ <fhfh011@gmail.com>
+Date:   Wed Jul 8 20:17:41 2026 +0700
+
+    fix(checkout): fallback origin url for stripe checkout & minor updates
+
+[33mcommit 81b54a7155ab23015336e78c33fc82f091505b07[m
+Author: PRTEZ <158792435+fhfh022@users.noreply.github.com>
+Date:   Mon Jul 6 21:27:41 2026 +0700
+
+    Update README.md
+
+[33mcommit 48f34480d102f34fb8906757398345e9e4c47fd4[m
+Author: PRTEZ <fhfh011@gmail.com>
+Date:   Mon Jul 6 20:46:21 2026 +0700
+
+    docs: update deployment link in README
+
+[33mcommit 4f2a8446cda7d7a8a838b44d8e9aa780685275d0[m
+Author: PRTEZ <fhfh011@gmail.com>
+Date:   Sun Jul 5 15:26:58 2026 +0700
+
+    fix: resolve PostCSS ReferenceError and invalid tsconfig ignoreDeprecations value
+
+[33mcommit cec32895b8bc49e2286971848df995f9fe573007[m
+Author: PRTEZ <fhfh011@gmail.com>
+Date:   Sun Jul 5 15:05:52 2026 +0700
+
+    feat: implement e-commerce AI assistant suite (Semantic Search, Spec Generator, Review Summarizer, Visual Search, Upsell Recommender)
+
+[33mcommit 9ae1dc7b833d5f9013f559c6a24903549dc071b6[m
+Author: PRTEZ <fhfh011@gmail.com>
+Date:   Sat Jul 4 21:53:11 2026 +0700
+
+    docs: Update README.md with comprehensive project guidelines
+
+[33mcommit 62b920547c175aa3ea66e7e53b52d2bb6d4895e2[m
+Author: PRTEZ <fhfh011@gmail.com>
+Date:   Fri Jul 3 23:58:39 2026 +0700
+
+    Update responsive UI, AI assistant, blog pages, promotions, orders, checkout stock validation, and chat widget fixes
+
+[33mcommit 8209a4bb4549f804feacd27dc174e136ce2c83a4[m
+Author: PRTEZ <fhfh011@gmail.com>
+Date:   Fri Jul 3 17:00:54 2026 +0700
+
+    feat: complete payment webhook with stock deduction and coupon tracking
+
+[33mcommit 3467ff339f034f3ad5a0e6f94f9d12b6c03f4ef1[m
+Author: PRTEZ <fhfh011@gmail.com>
+Date:   Fri Jul 3 16:54:24 2026 +0700
+
+    docs: update README with professional technical documentation
+
+[33mcommit becfa7cfcc725144961a5b1fac568572c1acb5c4[m
+Author: PRTEZ <fhfh011@gmail.com>
+Date:   Fri Feb 27 09:12:28 2026 +0700
+
+    fix: auto deduct product stock when payment completed and add discount logging in stripe webhook
+
+[33mcommit a054e7f48314b8955f7243b3b1f7490ad80b390a[m
+Author: PRTEZ <fhfh011@gmail.com>
+Date:   Wed Jan 21 08:05:46 2026 +0700
+
+    Update project files
+
+[33mcommit aeb1adb8eeb3ac235daf70c888475064fe4f3a08[m
+Author: PRTEZ <fhfh011@gmail.com>
+Date:   Sun Jan 11 20:08:55 2026 +0700
+
+    Update various components and add blog features
+
+[33mcommit 7c938cea61c81ea4b5c3774501f0b4be033309ef[m
+Author: PRTEZ <fhfh011@gmail.com>
+Date:   Sat Jan 10 20:22:16 2026 +0700
+
+    Update UI text to Thai localization and add receipt functionality
+    
+    - Translate user interface text to Thai for better localization
+    - Add receipt printing functionality with react-to-print
+    - Update date display to Thai Buddhist calendar (พศ)
+    - Improve component translations across the application
+    - Add new collections page structure
+
+[33mcommit a9b2bd2851d06a38d87201b42e86909852fe1244[m
+Author: PRTEZ <fhfh011@gmail.com>
+Date:   Sat Jan 10 15:19:38 2026 +0700
+
+    Update UI text to Thai and add receipt functionality
+
+[33mcommit ef02f86d5e2f9426bca79a392c5306f8e5e5c929[m
+Author: PRTEZ <fhfh011@gmail.com>
+Date:   Fri Jan 9 12:52:53 2026 +0700
+
+    Update components and pages
+
+[33mcommit 6b202aefae2040a8b1359aea200619f64153ff83[m
+Author: PRTEZ <fhfh011@gmail.com>
+Date:   Tue Jan 6 13:21:35 2026 +0700
+
+    Update project files
+
+[33mcommit 84a9cc9ca2e3c87eadbd7488b6dc5375d4ea80e7[m
+Author: PRTEZ <fhfh011@gmail.com>
+Date:   Sat Jan 3 23:37:02 2026 +0700
+
+    component to support new specifications and clean UI.
+    - Updated ProductDetails component for better price display and stock management.
+    - Introduced ProductSlider component for better product navigation.
+
+[33mcommit 3212e8afaf2b3a7112347f9832fd67b273021b9d[m
+Author: PRTEZ <fhfh011@gmail.com>
+Date:   Mon Dec 29 23:32:44 2025 +0700
+
+    feat: redesign chat ui, implement image upload, ai auto-greeting, and enhance hero section
+
+[33mcommit 18557d1671c8dca488c58055cff2286a3410f27a[m
+Author: fhfh022 <158792435+fhfh022@users.noreply.github.com>
+Date:   Sun Dec 28 22:35:24 2025 +0700
+
+    Rename project from GoCart to PRT
+
+[33mcommit 1670d041cc42381e2605b411e5e8c1ab4b5d3283[m
+Author: PRTEZ <fhfh011@gmail.com>
+Date:   Sun Dec 28 22:32:50 2025 +0700
+
+    Update features: add product promotions management, update UI components, add stock and coupon management, improve order system and user actions
+
+[33mcommit 445ffe2ac33efe9d1bc8ab68188a96150a629df5[m
+Author: PRTEZ <fhfh011@gmail.com>
+Date:   Sat Dec 27 00:42:49 2025 +0700
+
+    Implement comprehensive updates: order payment flow, admin user management, role synchronization, UI improvements, and middleware enhancements
+
+[33mcommit c972ec4d8deebcd562a29e2777f10960aefb495c[m
+Author: PRTEZ <fhfh011@gmail.com>
+Date:   Fri Dec 26 10:35:20 2025 +0700
+
+    Update README
+
+[33mcommit 334d6f0b5504a819af63fd243eeaf6c66fcb2cb5[m
+Author: PRTEZ <fhfh011@gmail.com>
+Date:   Fri Dec 26 10:34:23 2025 +0700
+
+    Update README and add new files
+
+[33mcommit d7092e889473e5df413c91b28741e33a928c8000[m
+Author: PRTEZ <fhfh011@gmail.com>
+Date:   Wed Dec 24 00:36:47 2025 +0700
+
+    อพเดพ
+
+[33mcommit 080c4cba67972508c1bd4f13fa798f29b0434d0f[m
+Author: PRTEZ <fhfh011@gmail.com>
+Date:   Tue Dec 23 00:05:55 2025 +0700
+
+    อัปเดตโค้ดของวันที่ 23 ธันวาคม 2025
+
+[33mcommit 8e384a2e004f22a9237bea4fcd78c15ea956a916[m
+Author: PRTEZ <fhfh011@gmail.com>
+Date:   Sun Dec 21 23:44:28 2025 +0700
+
+    Update changes for today: improved favorites page, shop filtering, admin/store layouts, product management, and added promotions page
+
+[33mcommit bf148ee631b2885ef93c505f9fea5eacbf284840[m
+Author: PRTEZ <fhfh011@gmail.com>
+Date:   Sat Dec 20 23:31:19 2025 +0700
+
+    Update README with comprehensive project documentation
+
+[33mcommit 17da0f845531a77af244036bd07a8638c063adaa[m
+Author: PRTEZ <fhfh011@gmail.com>
+Date:   Sat Dec 20 23:28:54 2025 +0700
+
+    Refactor component imports and add favorites and authentication features
+
+[33mcommit f864cbc3c051a3558d96bb6132a131d60c838970[m
+Author: PRTEZ <fhfh011@gmail.com>
+Date:   Sat Dec 20 23:28:21 2025 +0700
+
+    Update code for December 20, 2025 - Reorganized components into providers, layout, and product folders and fixed all imports
+
+[33mcommit 8e85694973faf0c08c6a7118d2bb75c4dd84698d[m
+Author: PRTEZ <fhfh011@gmail.com>
+Date:   Fri Dec 19 23:30:32 2025 +0700
+
+    Update changes made on December 19, 2025
+
+[33mcommit 36780463e900f15c677759fa8c25cb9ab2a4da42[m
+Author: PRTEZ <fhfh011@gmail.com>
+Date:   Thu Dec 18 23:21:58 2025 +0700
+
+    Refactor user synchronization and role management
+    
+    - Updated SyncUser component to use `clerk_user_id` instead of `clerk_id` for upserting user data in Supabase.
+    - Removed AdminApprove and AdminStores components as they are no longer needed.
+    - Simplified AdminDashboard by removing the stores count.
+    - Added RoleInitializer component to fetch and set user role from Supabase.
+    - Enhanced Navbar to include admin and store dashboard links based on user role.
+    - Updated AdminNavbar and StoreNavbar branding.
+    - Implemented userSlice for Redux state management of user roles.
+    - Integrated userSlice into the Redux store.
+    - Modified middleware to restrict access to admin and store routes based on user authentication and role.
+
+[33mcommit efa1984761093ba89de30273d4c0cda9b27e2cb0[m
+Author: PRTEZ <fhfh011@gmail.com>
+Date:   Mon Dec 15 20:47:40 2025 +0700
+
+    edit: Add Supabase integration and SyncUser component
+
+[33mcommit 9eed72fbdaea05634f498943184efcb3674d8975[m
+Author: PRTEZ <fhfh011@gmail.com>
+Date:   Thu Dec 11 23:55:39 2025 +0700
+
+    update
+
+[33mcommit c97b8390a96199d10ea673137119a1c6a75167f7[m
+Author: PRTEZ <fhfh011@gmail.com>
+Date:   Thu Dec 11 09:56:53 2025 +0700
+
+    Initial commit of the project

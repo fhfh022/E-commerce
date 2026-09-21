@@ -1,4 +1,5 @@
 'use client'
+import React, { useMemo } from 'react';
 import Hero from "@/components/layout/Hero";
 import Newsletter from "@/components/layout/Newsletter";
 import OurSpecs from "@/components/product/OurSpec";
@@ -9,21 +10,27 @@ export default function HomeContent() {
     // ดึงข้อมูลสินค้าทั้งหมดจาก Redux
     const allProducts = useSelector(state => state.product.list);
 
-    // --- LOGIC การแบ่งกลุ่มสินค้า ---
+    // --- LOGIC การแบ่งกลุ่มสินค้า (ใช้ useMemo เพื่อป้องกันการคำนวณใหม่ทุกครั้งที่ render) ---
 
     // 1. Promotion Products
-    const promotionProducts = allProducts.filter(p => p.sale_price && p.sale_price > 0);
+    const promotionProducts = useMemo(() => {
+        return allProducts.filter(p => p.sale_price && p.sale_price > 0);
+    }, [allProducts]);
 
     // 2. Best Selling (สมมติว่า sort ตามราคา หรือ logic อื่น)
-    const bestSellingProducts = [...allProducts]
-        .sort((a, b) => b.price - a.price)
-        .slice(0, 10);
+    const bestSellingProducts = useMemo(() => {
+        return [...allProducts].sort((a, b) => b.price - a.price).slice(0, 10);
+    }, [allProducts]);
 
     // 3. Gaming Category
-    const gamingProducts = allProducts.filter(p => p.category?.toLowerCase() === 'gaming');
+    const gamingProducts = useMemo(() => {
+        return allProducts.filter(p => p.category?.toLowerCase() === 'gaming');
+    }, [allProducts]);
 
     // 4. Ultrabook Category
-    const ultrabookProducts = allProducts.filter(p => p.category?.toLowerCase() === 'ultrabook');
+    const ultrabookProducts = useMemo(() => {
+        return allProducts.filter(p => p.category?.toLowerCase() === 'ultrabook');
+    }, [allProducts]);
 
     return (
         <div className="overflow-x-hidden"> {/* ป้องกัน scroll แนวนอนจาก animation */}

@@ -36,6 +36,9 @@ yarn-error.log*
 .env.test.local
 .env.prod.local
 
+# presentation guide (local presentation notes only)
+PRESENTATION_GUIDE.md
+
 # vercel
 .vercel
 
